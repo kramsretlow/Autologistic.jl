@@ -1,6 +1,7 @@
-authors = ["mwolters <mark@mwolters.com>"]
 name = "Autologistic"
 uuid = "05505b62-b0bd-11e8-1cec-1f3e16cbc293"
+authors = ["mwolters <mark@mwolters.com>"]
 version = "0.1.0"
 
 [deps]
+Revise = "295af30f-e4ad-537b-8983-00126c2a3abe"
