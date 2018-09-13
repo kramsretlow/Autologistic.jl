@@ -11,10 +11,21 @@
 # - Question: be sure about making it a "mutable struct" or just a "struct".
 #   E.g. if fields are arrays (mutable types) then their values can still be
 #   changed inside a regular immutable struct.
+
+# Define a type "Dichotomous" that holds a state, and a coding.
+# Inner constructor with "new" used to ensure value matches coding. BUT, since
+#   it's mutable, can still change value later on.
 mutable struct Dichotomous
     labels::Tuple{String,String}  #two strings giving the labels, e.g. "low" and "high"
     coding::Tuple{Real,Real}  #two numbers giving the numerical coding of the states
     value::Real  #numeric value of this particular Dichotomous
+    Dichotomous(labels, coding, value) = value in coding ?
+        new(labels, coding, value) : error("value doesn't match coding")
 end
 
-# Define a type "Dichotomous" that holds a state, and a coding.
+#Non-default "outer" constructor
+Dichotomous() = Dichotomous(("low","high"), (-1,1), -1)
+
+
+#NB for future: can use incomplete initialization if fields can't be assigned at
+#   construction time.
