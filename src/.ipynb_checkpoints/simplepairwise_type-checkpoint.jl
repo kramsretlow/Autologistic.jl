@@ -2,7 +2,7 @@
 # Association matrix is a parameter times the adjacency matrix.
 
 # ***TODO*** 
-# [x] Make constructor with graph only (initialize λ to zero) 
+# [] Make constructor with graph only (initialize λ to zero) 
 
 # Type definition
 #    Note: made this mutable so I could set λ.  Not sure how best to handle.

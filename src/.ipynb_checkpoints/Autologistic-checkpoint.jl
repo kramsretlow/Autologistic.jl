@@ -2,9 +2,6 @@ module Autologistic
 
 using Statistics, LightGraphs
 
-# ***TODO*** 
-# [] Make and export concrete Centering types (or let the types be an enumeration)
-
 # ***Question: how to decide which abstract types to export?***
 export
     #----- types -----
