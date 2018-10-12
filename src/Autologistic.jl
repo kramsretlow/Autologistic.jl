@@ -12,7 +12,7 @@ export
     AbstractUnary,
     AbstractPairwise,
     ALmodel,
-    Centering,
+    Centering, none, expectation, onehalf,
     FullUnary,
     LinPredUnary,
     SimplePairwise,
