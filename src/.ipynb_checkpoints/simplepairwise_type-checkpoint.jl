@@ -2,7 +2,7 @@
 # Association matrix is a parameter times the adjacency matrix.
 
 # ***TODO*** 
-# [] Make constructor with graph only (initialize λ to zero) 
+# [x] Make constructor with graph only (initialize λ to zero) 
 
 # Type definition
 #    Note: made this mutable so I could set λ.  Not sure how best to handle.
@@ -12,7 +12,10 @@ mutable struct SimplePairwise{T<:Real} <: AbstractPairwise
 end
 
 # Constructors
+# - If provide only a graph, set λ = 0.
+# - If provide only an integer, set λ = 0 and make a totally disconnected graph.
 SimplePairwise(G::SimpleGraph) = SimplePairwise(0, G)
+SimplePairwise(n::Int) = SimplePairwise(0, SimpleGraph(n))
 
 # Methods required for AbstractArray interface (AbstractPairwise <: AbstractArray)
 Base.size(p::SimplePairwise) = (nv(p.G), nv(p.G))

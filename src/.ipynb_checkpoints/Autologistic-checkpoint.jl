@@ -2,27 +2,27 @@ module Autologistic
 
 using Statistics, LightGraphs
 
+# ***TODO*** 
+# [] Make and export concrete Centering types (or let the types be an enumeration)
+
 # ***Question: how to decide which abstract types to export?***
 export
     #----- types -----
     AbstractAutologistic,
     AbstractUnary,
     AbstractPairwise,
-    AbstractCentering,
-    ALmodel,
+    Centering,
     FullUnary,
     LinPredUnary,
     SimplePairwise,
     #----- functions -----
-    greet,
     getparameters,
     setparameters!
 
 include("abstractautologistic_type.jl")
 include("abstractunary_type.jl")
 include("abstractpairwise_type.jl")
-include("abstractcentering_type.jl")
-include("almodel_type.jl")
+include("centering.jl")
 include("fullunary_type.jl")
 include("linpredunary_type.jl")
 include("simplepairwise_type.jl")
