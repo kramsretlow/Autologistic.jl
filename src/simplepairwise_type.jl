@@ -6,8 +6,8 @@
 
 # Type definition
 #    Note: made this mutable so I could set λ.  Not sure how best to handle.
-mutable struct SimplePairwise{T<:Real} <: AbstractPairwise
-	λ::T
+mutable struct SimplePairwise <: AbstractPairwise
+	λ::Float64
 	G::SimpleGraph{Int}
 end
 

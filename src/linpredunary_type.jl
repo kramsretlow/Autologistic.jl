@@ -12,6 +12,16 @@ struct LinPredUnary{M<:Matrix{<:Real}, V<:Vector{<:Real}} <: AbstractUnary
     end
 end
 
+# Constructors
+function LinPredUnary(X::Matrix{<:Real})
+    (n,p) = size(X)
+    return LinPredUnary(X, Vector{Float64}(undef,p))
+end
+function LinPredUnary(n::Int,p::Int)
+    X = Matrix{Float64}(undef,n,p)
+    return LinPredUnary(X, Vector{Float64}(undef,p))
+end
+
 # Methods required for AbstractArray interface
 Base.size(u::LinPredUnary) = (size(u.X, 1),)
 Base.getindex(u::LinPredUnary, i::Int) = u.X[i,:]' * u.β

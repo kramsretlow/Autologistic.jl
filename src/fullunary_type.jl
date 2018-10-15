@@ -1,9 +1,12 @@
 #----- FullUnary ---------------------------------------------------------------
 # A unary part with one parameter per variable.
 struct FullUnary{T<:Vector{<:Real}} <: AbstractUnary
-	#TODO: constructors
     α::T
 end
+
+# Constructors
+FullUnary(n::Int) = FullUnary(Vector{Float64}(undef,n))
+
 # Methods required for AbstractArray interface
 Base.size(u::FullUnary) = (lastindex(u.α),)
 Base.getindex(u::FullUnary, i::Int) = u.α[i]
