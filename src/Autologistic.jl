@@ -4,6 +4,8 @@ using Statistics, LightGraphs
 
 # ***TODO*** 
 # [x] Make and export concrete Centering types (or let the types be an enumeration)
+# [ ] Consider how to include spatial/spatiotemporal locations of the vertices
+#     in our types, so they can be used, e.g., for plotting.
 
 # ***Question: how to decide which abstract types to export?***
 export
@@ -17,9 +19,11 @@ export
     LinPredUnary,
     SimplePairwise,
     #----- functions -----
-    ALRsimple
+    ALRsimple,
     getparameters,
-    setparameters!
+    setparameters!,
+    grid4,
+    grid8
 
 include("abstractautologistic_type.jl")
 include("abstractunary_type.jl")
