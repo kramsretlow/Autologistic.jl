@@ -1,6 +1,6 @@
 module Autologistic
 
-using Statistics, LightGraphs
+using Statistics, LightGraphs, LinearAlgebra
 
 # ***TODO*** 
 # [x] Make and export concrete Centering types (or let the types be an enumeration)
@@ -15,6 +15,7 @@ export
     AbstractPairwise,
     ALmodel,
     CenteringKinds, none, expectation, onehalf,
+    CoordType,
     FullUnary,
     LinPredUnary,
     SimplePairwise,
@@ -23,7 +24,8 @@ export
     getparameters,
     setparameters!,
     grid4,
-    grid8
+    grid8,
+    spatialgraph
 
 include("abstractautologistic_type.jl")
 include("abstractunary_type.jl")
