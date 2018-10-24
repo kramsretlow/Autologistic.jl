@@ -6,8 +6,8 @@
 # [x] Review constructors: 
 #      - What (if any) inner constructor do we need?
 #      - How best to check for dimension consistency, etc.?
-# [] Plan out constructors
-# [] Make various constructor functions
+# [x] Plan out constructors
+# [x] Make various constructor functions
 # [] Make getparameters(), setparameters!() methods for ALmodel type
 
 mutable struct ALmodel{U<:AbstractUnary, P<:AbstractPairwise, C<:CenteringKinds} <: AbstractAutologistic
@@ -45,9 +45,9 @@ function ALmodel(unary::U, pairwise::P; Y::Union{Nothing,<:VecOrMat}=nothing,
     end
     return ALmodel(Y,unary,pairwise,centering,coding,labels)
 end
-function ALRsimple(graph::SimpleGraph{Int}, X::Matrix{<:Real}; 
+function ALRsimple(graph::SimpleGraph{Int}, X::Matrix{Float64}; 
                    Y::VecOrMat=Array{Bool,2}(undef,nv(graph),1), 
-                   β::Vector{<:Real}=Array{Float64,1}(undef,size(X)[2]), 
+                   β::Vector{Float64}=Array{Float64,1}(undef,size(X)[2]), 
                    λ::Float64=0.0, centering::CenteringKinds=none, 
                    coding::Tuple{Real,Real}=(-1,1),
                    labels::Tuple{String,String}=("low","high"))
@@ -55,13 +55,22 @@ function ALRsimple(graph::SimpleGraph{Int}, X::Matrix{<:Real};
     p = SimplePairwise(λ, graph)
     return ALmodel(makebool(Y),u,p,centering,coding,labels)
 end
-#ALRadaptive()
+#TODO: ALRadaptive() (requires an appropriate pairwise type)
 
-# TODO somewhere: make a lattice(n,m,k) function somewhere to produce a graph
-# with n-by-m k-connected lattice.
-
-
-# Methods to define
-# getparameters, setparameters!
-# getunaryparameters, setunaryparameters!
-# getpairwiseparameters, setpairwiseparameters!
+# Methods
+getparameters(M::ALmodel) = [getparameters(M.unary); getparameters(M.pairwise)]
+getunaryparameters(M::ALmodel) = getparameters(M.unary)
+getpairwiseparameters(M::ALmodel) = getparameters(M.pairwise)
+function setparameters!(M::ALmodel, newpars::Vector{Float64})
+    p, q = (length(getunaryparameters(M)), length(getpairwiseparameters(M)))
+    @assert length(newpars) == p + q "newpars has wrong length"
+    setparameters!(M.unary, newpars[1:p])
+    setparameters!(M.pairwise, newpars[p+1:p+q])
+    return newpars
+end
+function setunaryparameters!(M::ALmodel, newpars::Vector{Float64})
+    setparameters!(M.unary, newpars)
+end
+function setpairwiseparameters!(M::ALmodel, newpars::Vector{Float64})
+    setparameters!(M.pairwise, newpars)
+end

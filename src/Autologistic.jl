@@ -23,6 +23,10 @@ export
     ALRsimple,
     getparameters,
     setparameters!,
+    getunaryparameters,
+    setunaryparameters!,
+    getpairwiseparameters,
+    setpairwiseparameters!,
     grid4,
     grid8,
     spatialgraph

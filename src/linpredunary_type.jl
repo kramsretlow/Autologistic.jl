@@ -1,19 +1,19 @@
 #----- LinPredUnary ------------------------------------------------------------
 # The unary part containing the regression linear predictor.
-struct LinPredUnary{M<:Matrix{<:Real}, V<:Vector{<:Real}} <: AbstractUnary
-    X::M
-    β::V
+struct LinPredUnary <: AbstractUnary
+    X::Matrix{Float64}
+    β::Vector{Float64}
 
-    function LinPredUnary(x::M,beta::V) where {M, V}
+    function LinPredUnary(x, beta) 
         if size(x)[2] != length(beta)
             error("LinPredUnary: X and β dimensions are inconsistent")
         end
-        new{M,V}(x,beta)
+        new(x,beta)
     end
 end
 
 # Constructors
-function LinPredUnary(X::Matrix{<:Real})
+function LinPredUnary(X::Matrix{Float64})
     (n,p) = size(X)
     return LinPredUnary(X, Vector{Float64}(undef,p))
 end
@@ -31,6 +31,6 @@ Base.setindex!(u::LinPredUnary, v::Real, i::Int) =
 
 # Methods required for AbstractUnary interface
 getparameters(u::LinPredUnary) = u.β
-function setparameters!(u::LinPredUnary, newpars::Vector{<:Real})
+function setparameters!(u::LinPredUnary, newpars::Vector{Float64})
     u.β[:] = newpars
 end
