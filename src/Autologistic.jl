@@ -11,8 +11,8 @@ using Statistics, LightGraphs, LinearAlgebra
 export
     #----- types -----
     AbstractAutologistic,
-    AbstractUnary,
     AbstractPairwise,
+    AbstractUnary,
     ALmodel,
     CenteringKinds, none, expectation, onehalf,
     CoordType,
@@ -21,22 +21,25 @@ export
     SimplePairwise,
     #----- functions -----
     ALRsimple,
+    centering_adjustment,
     getparameters,
-    setparameters!,
-    getunaryparameters,
-    setunaryparameters!,
     getpairwiseparameters,
-    setpairwiseparameters!,
+    getunaryparameters,
     grid4,
     grid8,
+    makecoded,
+    negpotential,
+    setparameters!,
+    setunaryparameters!,
+    setpairwiseparameters!,
     spatialgraph
 
 include("abstractautologistic_type.jl")
 include("abstractunary_type.jl")
 include("abstractpairwise_type.jl")
 include("common.jl")
-include("centering.jl")
 include("almodel_type.jl")
+include("almodel_functions.jl")
 include("fullunary_type.jl")
 include("linpredunary_type.jl")
 include("simplepairwise_type.jl")

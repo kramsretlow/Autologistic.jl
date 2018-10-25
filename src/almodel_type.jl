@@ -8,7 +8,7 @@
 #      - How best to check for dimension consistency, etc.?
 # [x] Plan out constructors
 # [x] Make various constructor functions
-# [] Make getparameters(), setparameters!() methods for ALmodel type
+# [x] Make getparameters(), setparameters!() methods for ALmodel type
 
 mutable struct ALmodel{U<:AbstractUnary, P<:AbstractPairwise, C<:CenteringKinds} <: AbstractAutologistic
     responses::Array{Bool,2}                   
@@ -32,7 +32,7 @@ mutable struct ALmodel{U<:AbstractUnary, P<:AbstractPairwise, C<:CenteringKinds}
     end
 end
 
-# Constructors
+# === Constructors =============================================================
 function ALmodel(unary::U, pairwise::P; Y::Union{Nothing,<:VecOrMat}=nothing, 
                  centering::CenteringKinds=none, coding::Tuple{Real,Real}=(-1,1),
                  labels::Tuple{String,String}=("low","high")
@@ -57,7 +57,7 @@ function ALRsimple(graph::SimpleGraph{Int}, X::Matrix{Float64};
 end
 #TODO: ALRadaptive() (requires an appropriate pairwise type)
 
-# Methods
+# === Methods: getting/setting parameters ======================================
 getparameters(M::ALmodel) = [getparameters(M.unary); getparameters(M.pairwise)]
 getunaryparameters(M::ALmodel) = getparameters(M.unary)
 getpairwiseparameters(M::ALmodel) = getparameters(M.pairwise)
@@ -74,3 +74,6 @@ end
 function setpairwiseparameters!(M::ALmodel, newpars::Vector{Float64})
     setparameters!(M.pairwise, newpars)
 end
+
+
+

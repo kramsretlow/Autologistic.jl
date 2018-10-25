@@ -28,6 +28,7 @@ function makebool(v::V) where V<:VecOrMat
 end
 
 
+
 # A function to produce a graph with a 4-connected 2D grid structure, having r 
 # rows and c columns.  Returns a tuple containing the graph, and an array of 
 # vertex spatial coordinates.
