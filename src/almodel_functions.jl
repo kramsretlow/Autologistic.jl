@@ -56,3 +56,36 @@ function negpotential(M::ALmodel)
     return out
 end
 
+
+# === pseudolikelihood =========================================================
+# pseudolikelihood(M) computes the negative log pseudolikelihood for the given 
+# ALmodel with its responses.  Returns a Float64.
+function pseudolikelihood(M::ALmodel)
+    out = 0.0;
+
+    # Loop through replicates
+    for j = 1:size(M.responses)[2]
+    
+        Yj = M.responses[:,j];                    #-The current replicate's observations.
+
+        ### matlab code
+    #     α = M.unary;                              #-Current replicate's unary parameters.
+    #     mu = obj.Mu(1:obj.N, m);                  %-Current replicate's centering terms.
+    
+    #     % Get the (lambda-weighted) neighbour sums and add to the unary parameters.
+    #     s = obj.AssociationMatrix * (Ym - mu);
+    #     a_plus_s = alpha + s;
+        
+    #     % Get this replicate's log pseudolikelihood
+    #     loterm = exp(obj.Coding(1)*a_plus_s);
+    #     hiterm = exp(obj.Coding(2)*a_plus_s);
+    #     logPL = sum(Ym.*a_plus_s - log(loterm + hiterm));
+        
+    #     % Subtract this replicate's log PL from the total.
+    #     out = out - logPL;
+    
+    end
+    
+end
+    
+    
