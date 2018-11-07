@@ -19,7 +19,7 @@ mutable struct ALmodel{U<:AbstractUnary, P<:AbstractPairwise, C<:CenteringKinds}
     labels::Tuple{String,String}
     
     function ALmodel(y,u::U,p::P,c::C,cod,lab) where {U,P,C}
-        if !(size(y)[1] == length(u) == size(p)[1])
+        if !(size(y) == size(u) == size(p)[[1,3]])
             error("ALmodel: inconsistent sizes of Y, unary, and pairwise")
         end
         if cod[1] >= cod[2]

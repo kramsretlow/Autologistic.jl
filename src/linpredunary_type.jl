@@ -37,10 +37,10 @@ function LinPredUnary(n::Int,p::Int,m::Int)
 end
 
 # Methods required for AbstractArray interface
-Base.size(u::LinPredUnary) = size(u.X)
+Base.size(u::LinPredUnary) = size(u.X)[[1,3]]
 function Base.values(u::LinPredUnary)
-    out = Array{Float64,2}(undef,size(u)[[1,3]])
-    for r = 1:size(u)[3]
+    out = Array{Float64,2}(undef,size(u))
+    for r = 1:size(u)[2]
         out[:,r] = u.X[:,:,r]*u.β
     end
     return out

@@ -1,6 +1,7 @@
 # NOTE: @test_warn and @test_nowarn give Base.IOError exception when this 
 # file is included in jupyter notebook.
 using Test
+using LightGraphs
 using Autologistic
 
 println("Running tests:")
@@ -55,8 +56,8 @@ end
              44.0 88.0]
     X1beta = reshape(Xbeta[:,1], (4,1))
 
-    @test size(u1) == size(u4) == size(u6) == (4,3,2)
-    @test size(u2) == size(u3) == size(u5) == (4,3,1)
+    @test size(u1) == size(u4) == size(u6) == (4,2)
+    @test size(u2) == size(u3) == size(u5) == (4,1)
     @test values(u1) == Xbeta 
     @test values(u2) == X1beta
     @test u1[3,2] == u1[7] == 68.0
@@ -65,4 +66,26 @@ end
     setparameters!(u1, [2.0, 3.0, 4.0])
     @test getparameters(u1) == [2.0, 3.0, 4.0]
 
+end
+
+@testset "SimplePairwise constructors and interfaces" begin
+    n = 10                                                       # length of y_i
+    m = 3                                                 # number of replicates
+    λ = 1.0
+    G = Graph(n, Int(floor(n*(n-1)/4)))
+    p1 = SimplePairwise([λ], G, m)
+    p2 = SimplePairwise(G)
+    p3 = SimplePairwise(G, m)
+    p4 = SimplePairwise(n)
+    p5 = SimplePairwise(n, m)
+    p6 = SimplePairwise(λ, G)
+    p7 = SimplePairwise(λ, G, m)
+
+    @test any(i -> (i!==(n,n,m)), [size(j) for j in [p1, p2, p3, p4, p5, p6, p7]])
+    @test values(p1) == values(p6) == values(p7) == λ*adjacency_matrix(G)
+    @test p1[2,2,2] == p1[2,2] == λ*adjacency_matrix(G)[2,2]
+    @test p1[:,:,1] == p1[:,:,2] == p1[:,:,3] == values(p1)
+
+    setparameters!(p1, [2.0])
+    @test getparameters(p1) == [2.0]
 end
