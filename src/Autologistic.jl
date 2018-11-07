@@ -27,6 +27,7 @@ export
     getunaryparameters,
     grid4,
     grid8,
+    makebool,
     makecoded,
     negpotential,
     setparameters!,

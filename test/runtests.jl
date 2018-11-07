@@ -33,6 +33,7 @@ println("Running tests:")
 
     u3 = FullUnary(10)
     u4 = FullUnary(10,4)
+
     @test size(u3) == (10,1)
     @test size(u4) == (10,4)
 end
@@ -64,6 +65,7 @@ end
     @test getparameters(u1) == beta
 
     setparameters!(u1, [2.0, 3.0, 4.0])
+
     @test getparameters(u1) == [2.0, 3.0, 4.0]
 
 end
@@ -87,5 +89,39 @@ end
     @test p1[:,:,1] == p1[:,:,2] == p1[:,:,3] == values(p1)
 
     setparameters!(p1, [2.0])
+
     @test getparameters(p1) == [2.0]
+end
+
+@testset "ALmodel constructors" begin
+    (n, p, m) = (100, 4, 1)
+    X = rand(n,p,m)
+    β = [1.0, 2.0, 3.0, 4.0]
+    Y = makebool(round.(rand(n,m)))
+    unary = LinPredUnary(X, β)
+    pairwise = SimplePairwise(n, m)
+    m1 = ALmodel(Y, unary, pairwise, none, (-1.0,1.0), ("low","high"))
+    m2 = ALmodel(unary, pairwise)
+    m3 = ALRsimple(Graph(n, Int(floor(n*(n-1)/4))), X, Y=Y, β=β, λ = 1.0)
+
+    @test getparameters(m3) == [β; 1.0]
+    @test getunaryparameters(m3) == β
+    @test getpairwiseparameters(m3) == [1.0]
+    
+    setparameters!(m1, [1.1, 2.2, 3.3, 4.4, -1.0])
+    setunaryparameters!(m2, [1.1, 2.2, 3.3, 4.4])
+    setpairwiseparameters!(m2, [-1.0])
+
+    @test getparameters(m1) == getparameters(m2) == [1.1, 2.2, 3.3, 4.4, -1.0]
+end
+
+@testset "Helper functions" begin
+    y1 = [false, false, true]
+    y2 = [1 2; 1 2]
+    y3 = [1.0 2.0; 1.0 2.0]
+    y4 = ["yes", "no", "no"]
+
+    @test makebool(y1) == reshape([false, false, true], (3,1))
+    @test makebool(y2) == makebool(y3) == [false true; false true]
+    @test makebool(y4) == reshape([true, false, false], (3,1))
 end

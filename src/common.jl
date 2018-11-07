@@ -1,6 +1,8 @@
 # Type Aliases
-const VecOrMat = Union{Vector{N},Matrix{N}} where N<:Number
-const CoordType = Union{Array{Tuple{T,T},1},Array{Tuple{T,T,T},1}} where T<:Real
+const VecOrMat = Union{Array{T,1}, Array{T,2}} where T
+const Float1D2D = Union{Array{Float64,1},Array{Float64,2}}
+const Float2D3D = Union{Array{Float64,2},Array{Float64,3}}
+const CoordType = Union{Array{NTuple{2,T},1},Array{NTuple{3,T},1}} where T<:Real
 
 # Enumerations
 @enum CenteringKinds none expectation onehalf
@@ -10,7 +12,9 @@ function makebool(v::V) where V<:VecOrMat
     if ndims(v)==1
         v = v[:,:]    #**convet to 2D, not sure the logic behind [:,:] index
     end
-    if typeof(v) == Array{Bool,2} return end
+    if typeof(v) == Array{Bool,2} 
+        return v 
+    end
     vals = unique(v)
     if length(vals) != 2
         error("Need exactly 2 unique values to make a Bool array")
@@ -33,6 +37,7 @@ end
 # rows and c columns.  Returns a tuple containing the graph, and an array of 
 # vertex spatial coordinates.
 # NB: LightGraphs has a function Grid() for this case.
+# TODO: write tests
 function grid4(r::Int, c::Int, xlim::Tuple{Real,Real}=(0.0,1.0), 
                ylim::Tuple{Real,Real}=(0.0,1.0))
 
@@ -66,6 +71,7 @@ end
 # A function to produce a graph with an 8-connected 2D grid structure, having r 
 # rows and c columns.  Returns a tuple containing the graph, and an array of 
 # vertex spatial coordinates.
+# TODO: write tests
 function grid8(r::Int, c::Int, xlim::Tuple{Real,Real}=(0.0,1.0), 
                ylim::Tuple{Real,Real}=(0.0,1.0))
 
@@ -95,6 +101,7 @@ end
 # A function to generate a graph from points with given coordinates, by
 # creating edges between all points within a certain Euclidean distance of 
 # one another.
+# TODO: write tests
 function spatialgraph(coords::C, δ::Real) where C<:CoordType
     n = length(coords)
     G = Graph(n)
