@@ -9,22 +9,26 @@
 # [x] Plan out constructors
 # [x] Make various constructor functions
 # [x] Make getparameters(), setparameters!() methods for ALmodel type
-# [ ] Decide if a "coords" field should be included.  This would be a 
+# [x] Decide if a "coords" field should be included.  This would be a 
 #     type <: CoordType, holding optional spatial coordinates of vertices. 
 #     Should it be in ALmodel, or maybe make it part of the pairwise part?
 #      ==> Go for it as part of ALmodel.  Need to adapt constructors and tests.
 #          For common case where not supplied, just set all coords to (0,0).
 #          (or, let it be possible to leave coords as nothing?)
 
-mutable struct ALmodel{U<:AbstractUnary, P<:AbstractPairwise, C<:CenteringKinds} <: AbstractAutologistic
+mutable struct ALmodel{U<:AbstractUnary, 
+                       P<:AbstractPairwise, 
+                       C<:CenteringKinds,
+                       S<:CoordType} <: AbstractAutologistic
     responses::Array{Bool,2}                   
     unary::U
     pairwise::P
     centering::C
     coding::Tuple{Real,Real}           
     labels::Tuple{String,String}
+    coordinates::S
     
-    function ALmodel(y,u::U,p::P,c::C,cod,lab) where {U,P,C}
+    function ALmodel(y,u::U,p::P,c::C,cod,lab,coords::S) where {U,P,C,S}
         if !(size(y) == size(u) == size(p)[[1,3]])
             error("ALmodel: inconsistent sizes of Y, unary, and pairwise")
         end
@@ -34,14 +38,15 @@ mutable struct ALmodel{U<:AbstractUnary, P<:AbstractPairwise, C<:CenteringKinds}
         if lab[1] == lab[2] 
             error("ALmodel: labels must be different")
         end
-        new{U,P,C}(y,u,p,c,cod,lab)
+        new{U,P,C,S}(y,u,p,c,cod,lab,coords)
     end
 end
 
 # === Constructors =============================================================
 function ALmodel(unary::U, pairwise::P; Y::Union{Nothing,<:VecOrMat}=nothing, 
                  centering::CenteringKinds=none, coding::Tuple{Real,Real}=(-1,1),
-                 labels::Tuple{String,String}=("low","high")
+                 labels::Tuple{String,String}=("low","high"), 
+                 coordinates::CoordType=nothing
                 ) where U<:AbstractUnary where P<:AbstractPairwise
     n = length(unary)
     if Y==nothing
@@ -49,17 +54,18 @@ function ALmodel(unary::U, pairwise::P; Y::Union{Nothing,<:VecOrMat}=nothing,
     else 
         Y = makebool(Y)
     end
-    return ALmodel(Y,unary,pairwise,centering,coding,labels)
+    return ALmodel(Y,unary,pairwise,centering,coding,labels,coordinates)
 end
 function ALRsimple(graph::SimpleGraph{Int}, X::Float2D3D; 
                    Y::VecOrMat=Array{Bool,2}(undef,nv(graph),1), 
                    β::Vector{Float64}=Array{Float64,1}(undef,size(X)[2]), 
                    λ::Float64=0.0, centering::CenteringKinds=none, 
                    coding::Tuple{Real,Real}=(-1,1),
-                   labels::Tuple{String,String}=("low","high"))
+                   labels::Tuple{String,String}=("low","high"),
+                   coordinates::CoordType=nothing)
     u = LinPredUnary(X, β)
     p = SimplePairwise(λ, graph)
-    return ALmodel(makebool(Y),u,p,centering,coding,labels)
+    return ALmodel(makebool(Y),u,p,centering,coding,labels,coordinates)
 end
 #TODO: ALRadaptive() (requires an appropriate pairwise type)
 

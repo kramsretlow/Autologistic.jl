@@ -100,7 +100,8 @@ end
     Y = makebool(round.(rand(n,m)))
     unary = LinPredUnary(X, β)
     pairwise = SimplePairwise(n, m)
-    m1 = ALmodel(Y, unary, pairwise, none, (-1.0,1.0), ("low","high"))
+    coords = [(rand(),rand()) for i=1:n]
+    m1 = ALmodel(Y, unary, pairwise, none, (-1.0,1.0), ("low","high"), coords)
     m2 = ALmodel(unary, pairwise)
     m3 = ALRsimple(Graph(n, Int(floor(n*(n-1)/4))), X, Y=Y, β=β, λ = 1.0)
 

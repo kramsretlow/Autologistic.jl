@@ -2,7 +2,7 @@
 const VecOrMat = Union{Array{T,1}, Array{T,2}} where T
 const Float1D2D = Union{Array{Float64,1},Array{Float64,2}}
 const Float2D3D = Union{Array{Float64,2},Array{Float64,3}}
-const CoordType = Union{Array{NTuple{2,T},1},Array{NTuple{3,T},1}} where T<:Real
+const CoordType = Union{Nothing, Array{NTuple{2,T},1},Array{NTuple{3,T},1}} where T<:Real
 
 # Enumerations
 @enum CenteringKinds none expectation onehalf
@@ -103,6 +103,7 @@ end
 # one another.
 # TODO: write tests
 function spatialgraph(coords::C, δ::Real) where C<:CoordType
+    @assert coords !== nothing 
     n = length(coords)
     G = Graph(n)
     for i in 1:n
