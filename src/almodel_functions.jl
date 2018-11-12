@@ -80,5 +80,3 @@ function pseudolikelihood(M::ALmodel)
     return out
 
 end
-    
-    

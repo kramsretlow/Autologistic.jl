@@ -6,6 +6,7 @@
 
 # ***TODO*** 
 # [x] Make constructor with graph only (initialize λ to zero) 
+# [ ] (here and elsewhere) make setparameters! functions return the modified object?
 
 # Type definition
 #    Note: made this mutable so I could set λ.  Not sure how best to handle.
