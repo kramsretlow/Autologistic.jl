@@ -30,6 +30,7 @@ export
     makebool,
     makecoded,
     negpotential,
+    pseudolikelihood,
     setparameters!,
     setunaryparameters!,
     setpairwiseparameters!,

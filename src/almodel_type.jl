@@ -58,13 +58,13 @@ function ALmodel(unary::U, pairwise::P; Y::Union{Nothing,<:VecOrMat}=nothing,
 end
 function ALRsimple(graph::SimpleGraph{Int}, X::Float2D3D; 
                    Y::VecOrMat=Array{Bool,2}(undef,nv(graph),1), 
-                   β::Vector{Float64}=Array{Float64,1}(undef,size(X)[2]), 
+                   β::Vector{Float64}=zeros(size(X)[2]), 
                    λ::Float64=0.0, centering::CenteringKinds=none, 
                    coding::Tuple{Real,Real}=(-1,1),
                    labels::Tuple{String,String}=("low","high"),
                    coordinates::CoordType=nothing)
     u = LinPredUnary(X, β)
-    p = SimplePairwise(λ, graph)
+    p = SimplePairwise(λ, graph, size(X,3))
     return ALmodel(makebool(Y),u,p,centering,coding,labels,coordinates)
 end
 #TODO: ALRadaptive() (requires an appropriate pairwise type)

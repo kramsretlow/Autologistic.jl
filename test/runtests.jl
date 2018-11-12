@@ -117,12 +117,43 @@ end
 end
 
 @testset "Helper functions" begin
+    # --- makebool() ---
     y1 = [false, false, true]
     y2 = [1 2; 1 2]
     y3 = [1.0 2.0; 1.0 2.0]
     y4 = ["yes", "no", "no"]
-
     @test makebool(y1) == reshape([false, false, true], (3,1))
     @test makebool(y2) == makebool(y3) == [false true; false true]
     @test makebool(y4) == reshape([true, false, false], (3,1))
+
+end
+
+@testset "almodel_functions" begin
+    # --- makecoded() ---
+    M1 = ALRsimple(Graph(4,3), rand(4,2), 
+                  Y=[true, false, false, true], coding=(-1,1))
+    @test makecoded(M1) == reshape([1, -1, -1, 1], (4,1))
+
+    # --- centering_adjustment() ---
+    @test centering_adjustment(M1) == zeros(4,1)
+    @test centering_adjustment(M1, onehalf) == ones(4,1)./2
+    @test centering_adjustment(M1, expectation) == zeros(4,1)
+    M2 = ALRsimple(grid4(2,2)[1], ones(4,2,3), β = [1.0, 1.0], centering = expectation,
+                   coding = (0,1), Y = repeat([true, true, false, false],1,3))
+    @test centering_adjustment(M2) ≈ ℯ^2/(1+ℯ^2) .* ones(4,3)
+
+    # --- negpotential() ---
+    setpairwiseparameters!(M2, [1.0])
+    @test negpotential(M2) ≈ 5.907246752353881 * ones(3,1)
+
+    # --- pseudolikelihood() ---
+    X = [1.1 2.2
+         1.0 2.0
+         2.1 1.2
+         3.0 0.3]
+    Y = reshape([0, 0, 1, 0],(4,1))
+    M3 = ALRsimple(grid4(2,2)[1], cat(X,X,dims=3), Y=cat(Y,Y,dims=2), 
+                   β=[-0.5, 1.5], λ=1.25, centering=expectation)
+    @test pseudolikelihood(M3) ≈ 12.333549445795818
+    
 end
