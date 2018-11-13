@@ -1,13 +1,19 @@
-# A fcn to convert the Boolean responses in an ALmodel into coded values.
-# Returns a 2D array of Float64
-function makecoded(M::ALmodel)
+# A fcn to convert Boolean responses into coded values.
+# Returns a 2D array of Float64.  If Y is not supplied, use the responses stored
+# in the 1st argument.
+function makecoded(M::ALmodel, Y=nothing)
+    if Y==nothing
+        Y = M.responses
+    else
+        Y = makebool(Y)
+    end
     lo = M.coding[1]
     hi = M.coding[2]
-    n, m = size(M.responses)
+    n, m = size(Y)
     out = Array{Float64,2}(undef, n, m)
     for j = 1:m
         for i = 1:n
-            out[i,j] = M.responses[i,j] ? hi : lo
+            out[i,j] = Y[i,j] ? hi : lo
         end
     end
     return out
@@ -40,23 +46,6 @@ function centering_adjustment(M::ALmodel, kind::Union{Nothing,CenteringKinds}=no
 end
 
 
-# === negpotential function ====================================================
-# negpotential(M) returns an m-vector of Float64 negpotential values, where 
-# m is the number of replicate observations found in M.responses.
-function negpotential(M::ALmodel)
-    m = size(M.responses)[2]
-    out = Array{Float64}(undef, m)
-    Y = makecoded(M)
-    α = M.unary
-    Λ = M.pairwise
-    μ = centering_adjustment(M)
-    for j = 1:m
-        out[j] = Y[:,j]'*α[:,j] - α[:,j]'*Λ[:,:,j]*μ[:,j]  + α[:,j]'*Λ[:,:,j]*α[:,j]/2
-    end
-    return out
-end
-
-
 # === pseudolikelihood =========================================================
 # pseudolikelihood(M) computes the negative log pseudolikelihood for the given 
 # ALmodel with its responses.  Returns a Float64.
@@ -76,7 +65,72 @@ function pseudolikelihood(M::ALmodel)
         logPL = sum(y.*s - log.(exp.(lo*s) + exp.(hi*s)))
         out = out - logPL               #-Subtract this rep's log PL from total.
     end
-    
+
     return out
 
 end
+
+
+# === negpotential function ====================================================
+# negpotential(M) returns an m-vector of Float64 negpotential values, where 
+# m is the number of replicate observations found in M.responses.
+function negpotential(M::ALmodel)
+    Y = makecoded(M)
+    m = size(Y,2)
+    out = Array{Float64}(undef, m)
+    α = M.unary
+    Λ = M.pairwise
+    μ = centering_adjustment(M)
+    for j = 1:m
+        out[j] = Y[:,j]'*α[:,j] - Y[:,j]'*Λ[:,:,j]*μ[:,j]  + Y[:,j]'*Λ[:,:,j]*Y[:,j]/2
+    end
+    return out
+end
+
+
+# === probabilitytable =========================================================
+# probabilitytable(M) returns a 2^n by n+1 by m array of Float64.  Each page in 
+# the 3D array is a probability table giving all possible configurations of the
+# response in the rows, with the associated probabilities in the last column. 
+# The pages correspond to the different replicates in the ALmodel M (in general,
+# different replicates need to be tabulated separately, because they could have 
+# different unary and pairwise terms) 
+# If the probability table is only desired for certain replicates, use keyword 
+# argument replicates to provide the indices of the desired ones. 
+# If the number of responses is greater than 20, this function will throw an
+# error.  Use keyword argument force to override this behavior.
+function fullPMF(M::ALmodel; replicates=nothing, force::Bool=false)
+    n, m = size(M.unary)
+    nc = 2^n
+    if n>20 && !force
+        error("Attempting to tabulate a PMF with more than 2^20 configurations."
+              * "\nIf you really want to do this, set force=true.")
+    end
+    if replicates == nothing
+        replicates = 1:m
+    elseif minimum(replicates)<1 || maximum(replicates)>m 
+        error("replicate index out of bounds")
+    end
+    lo = M.coding[1]
+    hi = M.coding[2]
+    T = zeros(nc, n+1, length(replicates))
+    configs = zeros(nc,n)
+    partition = zeros(m)
+    for i in 1:n
+        inner = [repeat([lo],Int(nc/2^i)); repeat([hi],Int(nc/2^i))]
+        configs[:,i] = repeat(inner , 2^(i-1) )
+    end
+    for i in 1:length(replicates)
+        r = replicates[i]
+        T[:,1:n,i] = configs
+        α = M.unary[:,r]
+        Λ = M.pairwise[:,:,r]
+        μ = centering_adjustment(M)[:,r]
+        unnormalized = mapslices(v -> exp.(v'*α - v'*Λ*μ + v'*Λ*v/2), configs, dims=2)
+        partition[i] = sum(unnormalized)
+        T[:,n+1,i] = unnormalized / partition[i]
+    end
+
+    return (table=T, partition=partition)
+end
+

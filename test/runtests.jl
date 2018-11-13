@@ -94,26 +94,28 @@ end
 end
 
 @testset "ALmodel constructors" begin
-    (n, p, m) = (100, 4, 1)
-    X = rand(n,p,m)
-    β = [1.0, 2.0, 3.0, 4.0]
-    Y = makebool(round.(rand(n,m)))
-    unary = LinPredUnary(X, β)
-    pairwise = SimplePairwise(n, m)
-    coords = [(rand(),rand()) for i=1:n]
-    m1 = ALmodel(Y, unary, pairwise, none, (-1.0,1.0), ("low","high"), coords)
-    m2 = ALmodel(unary, pairwise)
-    m3 = ALRsimple(Graph(n, Int(floor(n*(n-1)/4))), X, Y=Y, β=β, λ = 1.0)
+    for r in [1 5]
+        (n, p, m) = (100, 4, r)
+        X = rand(n,p,m)
+        β = [1.0, 2.0, 3.0, 4.0]
+        Y = makebool(round.(rand(n,m)))
+        unary = LinPredUnary(X, β)
+        pairwise = SimplePairwise(n, m)
+        coords = [(rand(),rand()) for i=1:n]
+        m1 = ALmodel(Y, unary, pairwise, none, (-1.0,1.0), ("low","high"), coords)
+        m2 = ALmodel(unary, pairwise)
+        m3 = ALRsimple(Graph(n, Int(floor(n*(n-1)/4))), X, Y=Y, β=β, λ = 1.0)
 
-    @test getparameters(m3) == [β; 1.0]
-    @test getunaryparameters(m3) == β
-    @test getpairwiseparameters(m3) == [1.0]
-    
-    setparameters!(m1, [1.1, 2.2, 3.3, 4.4, -1.0])
-    setunaryparameters!(m2, [1.1, 2.2, 3.3, 4.4])
-    setpairwiseparameters!(m2, [-1.0])
+        @test getparameters(m3) == [β; 1.0]
+        @test getunaryparameters(m3) == β
+        @test getpairwiseparameters(m3) == [1.0]
+        
+        setparameters!(m1, [1.1, 2.2, 3.3, 4.4, -1.0])
+        setunaryparameters!(m2, [1.1, 2.2, 3.3, 4.4])
+        setpairwiseparameters!(m2, [-1.0])
 
-    @test getparameters(m1) == getparameters(m2) == [1.1, 2.2, 3.3, 4.4, -1.0]
+        @test getparameters(m1) == getparameters(m2) == [1.1, 2.2, 3.3, 4.4, -1.0]
+    end
 end
 
 @testset "Helper functions" begin
@@ -133,6 +135,7 @@ end
     M1 = ALRsimple(Graph(4,3), rand(4,2), 
                   Y=[true, false, false, true], coding=(-1,1))
     @test makecoded(M1) == reshape([1, -1, -1, 1], (4,1))
+    @test makecoded(M1,[4, 3, 3, 4]) == reshape([1, -1, -1, 1], (4,1))
 
     # --- centering_adjustment() ---
     @test centering_adjustment(M1) == zeros(4,1)
@@ -144,8 +147,8 @@ end
 
     # --- negpotential() ---
     setpairwiseparameters!(M2, [1.0])
-    @test negpotential(M2) ≈ 5.907246752353881 * ones(3,1)
-
+    @test negpotential(M2) ≈ 1.4768116880884703 * ones(3,1)
+    
     # --- pseudolikelihood() ---
     X = [1.1 2.2
          1.0 2.0
@@ -156,4 +159,13 @@ end
                    β=[-0.5, 1.5], λ=1.25, centering=expectation)
     @test pseudolikelihood(M3) ≈ 12.333549445795818
     
+    # --- probabilitytable() ---
+    M4 = ALRsimple(Graph(3,0), reshape([-1. 0. 1. -1. 0. 1.],(3,1,2)), β=[1.0])
+    pmf = fullPMF(M4)
+    probs = [0.0524968; 0.387902; 0.0524968; 0.387902; 0.00710467; 0.0524968;
+             0.00710467; 0.0524968]
+    @test pmf.partition ≈ 19.04878276433453 * ones(2)
+    @test pmf.table[:,4,1] == pmf.table[:,4,2] 
+    @test isapprox(pmf.table[:,4,1], probs, atol=1e-6)
+
 end

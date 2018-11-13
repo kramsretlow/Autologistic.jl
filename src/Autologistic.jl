@@ -30,6 +30,7 @@ export
     makebool,
     makecoded,
     negpotential,
+    fullPMF,
     pseudolikelihood,
     setparameters!,
     setunaryparameters!,

@@ -64,7 +64,7 @@ function grid4(r::Int, c::Int, xlim::Tuple{Real,Real}=(0.0,1.0),
     rngy = range(ylim[1], stop=ylim[2], length=r)
     locs = [(rngx[i], rngy[j]) for i in 1:c for j in 1:r]
 
-    return (G, locs)
+    return (G=G, locs=locs)
 end
 
 
@@ -94,7 +94,7 @@ function grid8(r::Int, c::Int, xlim::Tuple{Real,Real}=(0.0,1.0),
         end
     end
 
-    return (G, locs)
+    return (G=G, locs=locs)
 end
 
 
@@ -113,5 +113,5 @@ function spatialgraph(coords::C, δ::Real) where C<:CoordType
             end
         end
     end
-    return (G,coords)
+    return (G=G, locs=coords)
 end

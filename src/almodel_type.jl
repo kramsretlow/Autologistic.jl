@@ -48,17 +48,17 @@ function ALmodel(unary::U, pairwise::P; Y::Union{Nothing,<:VecOrMat}=nothing,
                  labels::Tuple{String,String}=("low","high"), 
                  coordinates::CoordType=nothing
                 ) where U<:AbstractUnary where P<:AbstractPairwise
-    n = length(unary)
+    (n, m) = size(unary)
     if Y==nothing
-        Y = Array{Bool,2}(undef, n, 1)
+        Y = Array{Bool,2}(undef, n, m)
     else 
         Y = makebool(Y)
     end
     return ALmodel(Y,unary,pairwise,centering,coding,labels,coordinates)
 end
 function ALRsimple(graph::SimpleGraph{Int}, X::Float2D3D; 
-                   Y::VecOrMat=Array{Bool,2}(undef,nv(graph),1), 
-                   β::Vector{Float64}=zeros(size(X)[2]), 
+                   Y::VecOrMat=Array{Bool,2}(undef,nv(graph),size(X,3)), 
+                   β::Vector{Float64}=zeros(size(X,2)), 
                    λ::Float64=0.0, centering::CenteringKinds=none, 
                    coding::Tuple{Real,Real}=(-1,1),
                    labels::Tuple{String,String}=("low","high"),
