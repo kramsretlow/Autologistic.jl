@@ -15,6 +15,8 @@
 #      ==> Go for it as part of ALmodel.  Need to adapt constructors and tests.
 #          For common case where not supplied, just set all coords to (0,0).
 #          (or, let it be possible to leave coords as nothing?)
+# [ ] Review whether functions that take M::ALmodel as argument should actually
+#     take M<:AbstractAutologistic instead.  Do we need the abstract type?
 
 mutable struct ALmodel{U<:AbstractUnary, 
                        P<:AbstractPairwise, 

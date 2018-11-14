@@ -159,7 +159,7 @@ end
                    β=[-0.5, 1.5], λ=1.25, centering=expectation)
     @test pseudolikelihood(M3) ≈ 12.333549445795818
     
-    # --- probabilitytable() ---
+    # --- fullPMF() ---
     M4 = ALRsimple(Graph(3,0), reshape([-1. 0. 1. -1. 0. 1.],(3,1,2)), β=[1.0])
     pmf = fullPMF(M4)
     probs = [0.0524968; 0.387902; 0.0524968; 0.387902; 0.00710467; 0.0524968;

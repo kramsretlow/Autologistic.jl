@@ -88,17 +88,45 @@ function negpotential(M::ALmodel)
 end
 
 
-# === probabilitytable =========================================================
-# probabilitytable(M) returns a 2^n by n+1 by m array of Float64.  Each page in 
-# the 3D array is a probability table giving all possible configurations of the
-# response in the rows, with the associated probabilities in the last column. 
-# The pages correspond to the different replicates in the ALmodel M (in general,
-# different replicates need to be tabulated separately, because they could have 
-# different unary and pairwise terms) 
-# If the probability table is only desired for certain replicates, use keyword 
-# argument replicates to provide the indices of the desired ones. 
-# If the number of responses is greater than 20, this function will throw an
-# error.  Use keyword argument force to override this behavior.
+# === fullPMF ==================================================================
+"""
+    fullPMF(M::ALmodel; replicates=nothing, force::Bool=false)
+
+Compute the PMF of an ALmodel, and return a `NamedTuple` `(:table, :partition)`.
+
+For an ALmodel with ``n`` observations and ``m`` replicates, `:table` is a ``2^n×(n+1)×m`` 
+array of `Float64`. Each page of the 3D array holds a probability table for a replicate.  
+Each row of the table holds a specific configuration of the responses, with the 
+corresponding probability in the last column.  In the ``m=1`` case,  `:table` is a 2D array.
+
+Output `:partition` is a vector of normalizing constant (a.k.a. partition function) values.
+In the ``m=1`` case, it is a scalar `Float64`.
+
+# Arguments
+- `M::ALmodel`: an autologistic model.
+- `replicates=nothing`: indices of specific replicates from wich to obtain the output. By 
+  default, all replicates are used.
+- `force::Bool=false`: calling the function with ``n>20`` will throw an error unless 
+  `force=true`. 
+
+# Examples
+```jldoctest
+julia> M = ALRsimple(Graph(3,0),ones(3,1));
+julia> pmf = fullPMF(M);
+julia> pmf.table
+8×4 Array{Float64,2}:
+ -1.0  -1.0  -1.0  0.125
+ -1.0  -1.0   1.0  0.125
+ -1.0   1.0  -1.0  0.125
+ -1.0   1.0   1.0  0.125
+  1.0  -1.0  -1.0  0.125
+  1.0  -1.0   1.0  0.125
+  1.0   1.0  -1.0  0.125
+  1.0   1.0   1.0  0.125
+julia> pmf.partition
+ 8.0
+```
+"""
 function fullPMF(M::ALmodel; replicates=nothing, force::Bool=false)
     n, m = size(M.unary)
     nc = 2^n
@@ -130,7 +158,10 @@ function fullPMF(M::ALmodel; replicates=nothing, force::Bool=false)
         partition[i] = sum(unnormalized)
         T[:,n+1,i] = unnormalized / partition[i]
     end
-
+    if length(replicates)==1
+        T  = dropdims(T,dims=3)
+        partition = partition[1]
+    end
     return (table=T, partition=partition)
 end
 
