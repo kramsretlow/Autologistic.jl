@@ -6,6 +6,6 @@
 # [] Should this type be a subtype of a sparse array?  Or should we allow
 #    subtypes of AbstractPairwise to decide if they should be sparse or not?
 #    This is especially important if we make it a 3D array with replicates.
-abstract type AbstractPairwise <: AbstractArray{Real, 3} end
+abstract type AbstractPairwise <: AbstractArray{Float64, 3} end
 Base.IndexStyle(::Type{<:AbstractPairwise}) = IndexCartesian()
 Base.summary(p::AbstractPairwise) = "**TODO**"

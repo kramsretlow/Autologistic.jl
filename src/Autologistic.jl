@@ -18,10 +18,12 @@ export
     CoordType,
     FullUnary,
     LinPredUnary,
+    SamplingMethods, Gibbs, perfect,
     SimplePairwise,
     #----- functions -----
     ALRsimple,
     centering_adjustment,
+    fullPMF,
     getparameters,
     getpairwiseparameters,
     getunaryparameters,
@@ -30,8 +32,8 @@ export
     makebool,
     makecoded,
     negpotential,
-    fullPMF,
     pseudolikelihood,
+    sample,
     setparameters!,
     setunaryparameters!,
     setpairwiseparameters!,
@@ -46,6 +48,7 @@ include("almodel_functions.jl")
 include("fullunary_type.jl")
 include("linpredunary_type.jl")
 include("simplepairwise_type.jl")
+include("samplers.jl")
 
 
 end # module

@@ -127,7 +127,6 @@ end
     @test makebool(y1) == reshape([false, false, true], (3,1))
     @test makebool(y2) == makebool(y3) == [false true; false true]
     @test makebool(y4) == reshape([true, false, false], (3,1))
-
 end
 
 @testset "almodel_functions" begin
@@ -167,5 +166,12 @@ end
     @test pmf.partition ≈ 19.04878276433453 * ones(2)
     @test pmf.table[:,4,1] == pmf.table[:,4,2] 
     @test isapprox(pmf.table[:,4,1], probs, atol=1e-6)
+end
 
+@testset "samplers" begin
+    M5 = ALRsimple(grid4(4,4)[1], rand(16,1))
+    out1 = sample(M5, 10000, average=false)
+    @test all(x->isapprox(x,0.5,atol=0.05), sum(out1.==1, dims=2)/10000)
+    out2 = sample(M5, 10000, average=true, burnin=100, start=rand([1,2], 16))
+    @test all(x->isapprox(x,0.0,atol=0.05), out2)
 end

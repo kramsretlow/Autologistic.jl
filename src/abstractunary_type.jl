@@ -1,6 +1,6 @@
 #AbstractUnary is the α (which could be parametrized, e.g. by β)
 # We make it a 2D AbstractArray so that we can handle replicates.
-abstract type AbstractUnary <: AbstractArray{Real, 2} end
+abstract type AbstractUnary <: AbstractArray{Float64, 2} end
 Base.IndexStyle(::Type{<:AbstractUnary}) = IndexCartesian()
 function Base.summary(u::AbstractUnary)
     if size(u)[2] == 1
