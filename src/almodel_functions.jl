@@ -34,8 +34,7 @@ function centering_adjustment(M::ALmodel, kind::Union{Nothing,CenteringKinds}=no
     elseif k == onehalf
         return fill(0.5, size(M.unary))
     elseif k == expectation
-        lo = M.coding[1]
-        hi = M.coding[2]
+        lo, hi = M.coding
         α = M.unary
         num = lo*exp.(lo*α) + hi*exp.(hi*α)
         denom = exp.(lo*α) + exp.(hi*α)

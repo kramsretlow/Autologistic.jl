@@ -21,12 +21,13 @@
 mutable struct ALmodel{U<:AbstractUnary, 
                        P<:AbstractPairwise, 
                        C<:CenteringKinds,
+                       R<:Real,
                        S<:CoordType} <: AbstractAutologistic
     responses::Array{Bool,2}                   
     unary::U
     pairwise::P
     centering::C
-    coding::Tuple{Real,Real}           
+    coding::Tuple{R,R}           
     labels::Tuple{String,String}
     coordinates::S
     

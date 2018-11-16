@@ -41,6 +41,7 @@ function gibbssample(lo::Float64, hi::Float64, Y::Vector{Float64},
     temp = zeros(n, k)
     for j = 1:k
         #*** TODO: profile this code and figure out what's going on to be slow! *** 
+        # maybe use @views or view()?
         for i in vertices(G)
             nb = neighbors(G, i)
             nbrsum = sum(Λ[nb,i] .* (Y[nb] - μ[nb]))
