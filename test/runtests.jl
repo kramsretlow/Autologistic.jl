@@ -84,8 +84,8 @@ end
     p7 = SimplePairwise(λ, G, m)
 
     @test any(i -> (i!==(n,n,m)), [size(j) for j in [p1, p2, p3, p4, p5, p6, p7]])
-    @test values(p1) == values(p6) == values(p7) == λ*adjacency_matrix(G)
-    @test p1[2,2,2] == p1[2,2] == λ*adjacency_matrix(G)[2,2]
+    @test values(p1) == values(p6) == values(p7) == λ*adjacency_matrix(G,Float64)
+    @test p1[2,2,2] == p1[2,2] == λ*adjacency_matrix(G,Float64)[2,2]
     @test p1[:,:,1] == p1[:,:,2] == p1[:,:,3] == values(p1)
 
     setparameters!(p1, [2.0])

@@ -1,6 +1,6 @@
 module Autologistic
 
-using Statistics, LightGraphs, LinearAlgebra
+using Statistics, LightGraphs, LinearAlgebra, SparseArrays
 
 # ***TODO*** 
 # [x] Make and export concrete Centering types (or let the types be an enumeration)

@@ -43,16 +43,17 @@ SimplePairwise(λ::Real, G::SimpleGraph, m::Int) = SimplePairwise([(Float64)(λ)
 # return a 2D matrix as the values.  Also allow indexing using 2 indices.  If 3 
 # indices used, need to check for the 3rd one being out of bounds.
 Base.size(p::SimplePairwise) = (nv(p.G), nv(p.G), p.replicates)
-Base.values(p::SimplePairwise) = p.λ[1] * adjacency_matrix(p.G)  
+Base.values(p::SimplePairwise) = p.λ[1] * adjacency_matrix(p.G, Float64)  
 function Base.getindex(p::SimplePairwise, I::Vararg{Int,3})
 	if I[3] > p.replicates
 		error("SimplePairwise getindex: 3rd index is larger than replicates")
 	end
-	return p.λ[1] * adjacency_matrix(p.G)[ I[[1, 2]] ]
+	return p.λ[1] * adjacency_matrix(p.G, Float64)[ I[[1, 2]] ]
 end
 Base.setindex!(p::SimplePairwise, v::Real, I::Vararg{Int,3}) = 
     error("Pairwise values cannot be set directly. Use setparameters! instead.")
-Base.getindex(p::SimplePairwise, I::Vararg{Int,2}) = p.λ[1] * adjacency_matrix(p.G)[I]
+Base.getindex(p::SimplePairwise, I::Vararg{Int,2}) = 
+    p.λ[1] * adjacency_matrix(p.G, Float64)[I]
 Base.setindex!(p::SimplePairwise, v::Real, I::Vararg{Int,2}) = 
     error("Pairwise values cannot be set directly. Use setparameters! instead.")
 
