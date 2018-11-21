@@ -1,5 +1,9 @@
 # NOTE: @test_warn and @test_nowarn give Base.IOError exception when this 
 # file is included in jupyter notebook.
+
+# TODO: 
+# [] Decide whether values() is needed for interfaces, either delete or keep.
+
 using Test
 using LightGraphs
 using Autologistic
@@ -13,8 +17,8 @@ println("Running tests:")
     u1 = FullUnary(M[:,1])
     u2 = FullUnary(M)
     
-    @test values(u1) == reshape([1.1; 2.2; 3.3], (3,1))
-    @test values(u2) == M
+    #@test values(u1) == reshape([1.1; 2.2; 3.3], (3,1))
+    #@test values(u2) == M
     @test u1[2] == 2.2
     @test u2[2,3] == 8.8
     @test size(u1) == (3,1)
@@ -26,10 +30,10 @@ println("Running tests:")
     u1[2] = 2.22
     u2[2,3] = 8.88    
 
-    @test values(u1) == reshape([0.1, 2.22, 0.3], (3,1))
-    @test values(u2) == [0.1 0.4 0.7
-                         0.2 0.5 8.88
-                         0.3 0.6 0.9] 
+    #@test values(u1) == reshape([0.1, 2.22, 0.3], (3,1))
+    #@test values(u2) == [0.1 0.4 0.7
+    #                     0.2 0.5 8.88
+    #                     0.3 0.6 0.9] 
 
     u3 = FullUnary(10)
     u4 = FullUnary(10,4)
@@ -59,8 +63,8 @@ end
 
     @test size(u1) == size(u4) == size(u6) == (4,2)
     @test size(u2) == size(u3) == size(u5) == (4,1)
-    @test values(u1) == Xbeta 
-    @test values(u2) == X1beta
+    #@test values(u1) == Xbeta 
+    #@test values(u2) == X1beta
     @test u1[3,2] == u1[7] == 68.0
     @test getparameters(u1) == beta
 
@@ -84,9 +88,9 @@ end
     p7 = SimplePairwise(λ, G, m)
 
     @test any(i -> (i!==(n,n,m)), [size(j) for j in [p1, p2, p3, p4, p5, p6, p7]])
-    @test values(p1) == values(p6) == values(p7) == λ*adjacency_matrix(G,Float64)
+    #@test values(p1) == values(p6) == values(p7) == λ*adjacency_matrix(G,Float64)
     @test p1[2,2,2] == p1[2,2] == λ*adjacency_matrix(G,Float64)[2,2]
-    @test p1[:,:,1] == p1[:,:,2] == p1[:,:,3] == values(p1)
+    #@test p1[:,:,1] == p1[:,:,2] == p1[:,:,3] == values(p1)
 
     setparameters!(p1, [2.0])
 

@@ -35,7 +35,7 @@ function centering_adjustment(M::ALmodel, kind::Union{Nothing,CenteringKinds}=no
         return fill(0.5, size(M.unary))
     elseif k == expectation
         lo, hi = M.coding
-        α = M.unary
+        α = Base.values(M.unary)  #TODO: fix for Base.values() or [:,1] to get Vector{Float64}?
         num = lo*exp.(lo*α) + hi*exp.(hi*α)
         denom = exp.(lo*α) + exp.(hi*α)
         return num./denom
@@ -77,8 +77,8 @@ function negpotential(M::ALmodel)
     Y = makecoded(M)
     m = size(Y,2)
     out = Array{Float64}(undef, m)
-    α = M.unary
-    Λ = M.pairwise
+    α = Base.values(M.unary)
+    Λ = Base.values(M.pairwise)
     μ = centering_adjustment(M)
     for j = 1:m
         out[j] = Y[:,j]'*α[:,j] - Y[:,j]'*Λ[:,:,j]*μ[:,j]  + Y[:,j]'*Λ[:,:,j]*Y[:,j]/2

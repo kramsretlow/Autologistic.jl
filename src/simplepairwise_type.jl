@@ -16,6 +16,7 @@ mutable struct SimplePairwise <: AbstractPairwise
 	λ::Vector{Float64}
 	G::SimpleGraph{Int}
 	replicates::Int
+	A::SparseMatrixCSC{Float64,Int64}
 	function SimplePairwise(lam, g, m)
 		if length(lam) !== 1
 			error("SimplePairwise: λ must have length 1")
@@ -23,7 +24,7 @@ mutable struct SimplePairwise <: AbstractPairwise
 		if m < 1
 			error("SimplePairwise: replicates must be positive")
 		end
-		new(lam, g, m)
+		new(lam, g, m, adjacency_matrix(g, Float64))
 	end
 end
 
@@ -43,19 +44,43 @@ SimplePairwise(λ::Real, G::SimpleGraph, m::Int) = SimplePairwise([(Float64)(λ)
 # return a 2D matrix as the values.  Also allow indexing using 2 indices.  If 3 
 # indices used, need to check for the 3rd one being out of bounds.
 Base.size(p::SimplePairwise) = (nv(p.G), nv(p.G), p.replicates)
-Base.values(p::SimplePairwise) = p.λ[1] * adjacency_matrix(p.G, Float64)  
+
+#TODO: Base.values not needed for AbstractArray?
+#Base.values(p::SimplePairwise) = p.λ[1] * adjacency_matrix(p.G, Float64)  
+
+#TODO: Learn techniques for performant indexing from sparsematrix.jl.
+# To get good performance here we need to implement more methods.
+# Can generally use pattern like:
+#    getindex(p, <args>) = p.λ[1] * getindex(p.A, <args>)
+function getindex(p::SimplePairwise, i::Int, j::Int)
+	return p.λ[1] * p.A[i, j]
+end
+function getindex(p::SimplePairwise, i::Int, j::Int, k::Int)
+	return getindex(p, i, j)
+end
+function getindex(p::SimplePairwise, i::Int) 
+	return p.λ[1] * p.A[i]
+end
+setindex!(p::SimplePairwise, i::Int, j::Int) =
+	error("Pairwise values cannot be set directly. Use setparameters! instead.")
+setindex!(p::SimplePairwise, i::Int, j::Int, k::Int) = 
+	error("Pairwise values cannot be set directly. Use setparameters! instead.")
+setindex!(p::SimplePairwise, i::Int) =
+	error("Pairwise values cannot be set directly. Use setparameters! instead.")
+ #=
 function Base.getindex(p::SimplePairwise, I::Vararg{Int,3})
 	if I[3] > p.replicates
 		error("SimplePairwise getindex: 3rd index is larger than replicates")
 	end
 	return p.λ[1] * adjacency_matrix(p.G, Float64)[ I[[1, 2]] ]
 end
-Base.setindex!(p::SimplePairwise, v::Real, I::Vararg{Int,3}) = 
-    error("Pairwise values cannot be set directly. Use setparameters! instead.")
 Base.getindex(p::SimplePairwise, I::Vararg{Int,2}) = 
     p.λ[1] * adjacency_matrix(p.G, Float64)[I]
+Base.setindex!(p::SimplePairwise, v::Real, I::Vararg{Int,3}) = 
+    error("Pairwise values cannot be set directly. Use setparameters! instead.")
 Base.setindex!(p::SimplePairwise, v::Real, I::Vararg{Int,2}) = 
     error("Pairwise values cannot be set directly. Use setparameters! instead.")
+=#
 
 # Methods required for AbstractPairwise interface
 getparameters(p::SimplePairwise) = p.λ

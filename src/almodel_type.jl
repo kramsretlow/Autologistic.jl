@@ -31,7 +31,7 @@ mutable struct ALmodel{U<:AbstractUnary,
     labels::Tuple{String,String}
     coordinates::S
     
-    function ALmodel(y,u::U,p::P,c::C,cod,lab,coords::S) where {U,P,C,S}
+    function ALmodel(y,u::U,p::P,c::C,cod::Tuple{R,R},lab,coords::S) where {U,P,C,R,S}
         if !(size(y) == size(u) == size(p)[[1,3]])
             error("ALmodel: inconsistent sizes of Y, unary, and pairwise")
         end
@@ -41,7 +41,7 @@ mutable struct ALmodel{U<:AbstractUnary,
         if lab[1] == lab[2] 
             error("ALmodel: labels must be different")
         end
-        new{U,P,C,S}(y,u,p,c,cod,lab,coords)
+        new{U,P,C,R,S}(y,u,p,c,cod,lab,coords)
     end
 end
 

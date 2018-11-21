@@ -1,4 +1,8 @@
 #----- LinPredUnary ------------------------------------------------------------
+
+#***TODO: BIG PROBLEM TO FIX:  if I just use M.unary in my code, it returns an 
+# object of type LinPredUnary, NOT a vector of floats.  This causes massive slowdowns.
+
 # The unary part containing a regression linear predictor.
 # X is an n-by-p-by-m matrix (n obs, p predictors, m replicates)
 # β is a p-vector of parameters (same for all replicates)
@@ -45,9 +49,14 @@ function Base.values(u::LinPredUnary)
     end
     return out
 end
+Base.getindex(u::LinPredUnary, i::Int, j::Int) = Base.values(u)[i,j]
+Base.setindex!(u::LinPredUnary, v::Real, i::Int, j::Int) =
+    error("Values of $(typeof(u)) must be set using setparameters!().")
+#= TODO: finalize getindex for speed
 Base.getindex(u::LinPredUnary, I::Vararg{Int,2}) = Base.values(u)[CartesianIndex(I)]
 Base.setindex!(u::LinPredUnary, v::Real, I::Vararg{Int,2}) =
     error("Values of $(typeof(u)) must be set using setparameters!().")
+=#
 
 # Methods required for AbstractUnary interface
 getparameters(u::LinPredUnary) = u.β
