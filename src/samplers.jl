@@ -40,9 +40,16 @@ function gibbssample(lo::Float64, hi::Float64, Y::Vector{Float64},
                      α::Vector{Float64}, μ::Vector{Float64}, n::Int, k::Int, average::Bool, 
                      start::Vector{Float64}, burnin::Int, verbose::Bool)
     temp = zeros(Float64, n, k)
+
+    # To try: pull out the .fadjlist from pairwise ahead of time and keep it so that 
+    # we don't have to create nb over and over (or: just access .fadjlist in-place...)
+    # (use a macro to do in-place access succinctly?)
+    # Maybe try mapping type functions? map over all vertices...
+
     for j = 1:k
         #*** TODO: profile this code and figure out what's going on to be slow! *** 
         # maybe use @views or view()?
+        # This version seems to make more allocations but be faster
         for i in vertices(G)
             nb = neighbors(G, i)
             nbrsum = sum(Λ[nb,i] .* (Y[nb] - μ[nb]))
@@ -52,6 +59,7 @@ function gibbssample(lo::Float64, hi::Float64, Y::Vector{Float64},
             Y[i] = ifelse(rand()<p_i, hi, lo)
         end
         #=
+        # This version seems to make half the allocations but be a bit slower.
         for i = 1:n
             nbrsum = Λ[:,i]'*(Y-μ)
             etalo = exp(lo*(α[i] + nbrsum))

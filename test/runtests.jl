@@ -2,7 +2,9 @@
 # file is included in jupyter notebook.
 
 # TODO: 
-# [] Decide whether values() is needed for interfaces, either delete or keep.
+# [x] Decide whether values() is needed for interfaces, either delete or keep.
+#     - Seems not needed for SimplePairwise. 
+# [ ] Add more tests for getindex() with simplepairwise (many methods)
 
 using Test
 using LightGraphs
