@@ -9,7 +9,8 @@ begin #-Setup tasks
     using Pkg
     Pkg.activate(pwd())   #At cmd line, could use ]activate .
     
-    using Autologistic, Revise
+    using Revise
+    using Autologistic
     using LightGraphs, Plots, Profile, ProfileView, SparseArrays
 
     include("test\\runtests.jl")
@@ -17,7 +18,7 @@ end
 
 
 # === Trying to speed things up ===
-n1 = 30
+n1 = 35
 M = ALRsimple(grid4(n1,n1)[1], rand(n1^2,3))
-@time S = sample(M);
+@time S = sample(M,100);
 

@@ -2,6 +2,8 @@
 
 #***TODO: BIG PROBLEM TO FIX:  if I just use M.unary in my code, it returns an 
 # object of type LinPredUnary, NOT a vector of floats.  This causes massive slowdowns.
+# ==> I think this is fixed after eliminating Base.values() and just using getindex()
+#     But should verify.
 
 # The unary part containing a regression linear predictor.
 # X is an n-by-p-by-m matrix (n obs, p predictors, m replicates)
@@ -41,22 +43,13 @@ function LinPredUnary(n::Int,p::Int,m::Int)
 end
 
 # Methods required for AbstractArray interface
-Base.size(u::LinPredUnary) = size(u.X)[[1,3]]
-function Base.values(u::LinPredUnary)
-    out = Array{Float64,2}(undef,size(u))
-    for r = 1:size(u)[2]
-        out[:,r] = u.X[:,:,r]*u.β
-    end
-    return out
-end
-Base.getindex(u::LinPredUnary, i::Int, j::Int) = Base.values(u)[i,j]
+# TODO: finalize getindex for speed
+# TODO: better way to do vector inner prod?
+Base.size(u::LinPredUnary) = (size(u.X,1), size(u.X,3))
+Base.getindex(u::LinPredUnary, i::Int, j::Int) = sum(u.X[i,:,j] .* u.β)   
+Base.getindex(u::LinPredUnary, ::Colon, j::Int) = u.X[:,:,j] * u.β
 Base.setindex!(u::LinPredUnary, v::Real, i::Int, j::Int) =
     error("Values of $(typeof(u)) must be set using setparameters!().")
-#= TODO: finalize getindex for speed
-Base.getindex(u::LinPredUnary, I::Vararg{Int,2}) = Base.values(u)[CartesianIndex(I)]
-Base.setindex!(u::LinPredUnary, v::Real, I::Vararg{Int,2}) =
-    error("Values of $(typeof(u)) must be set using setparameters!().")
-=#
 
 # Methods required for AbstractUnary interface
 getparameters(u::LinPredUnary) = u.β

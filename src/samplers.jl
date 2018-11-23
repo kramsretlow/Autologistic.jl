@@ -1,10 +1,10 @@
 # Take the strategy of using a single user-facing function sample() that has an
 # argument method<:SamplingMethods (an enum).  Use the enum to do argument 
-# checking and submit the work to the specialized functions (currntly gibbssample()
+# checking and submit the work to the specialized functions (currently gibbssample()
 # and perfectsample()).
 
 function sample(M::ALmodel, k::Int = 1; method::SamplingMethods = Gibbs, replicate::Int = 1, 
-                average::Bool = true, start = nothing, burnin::Int = 0, verbose::Bool = false)
+                average::Bool = false, start = nothing, burnin::Int = 0, verbose::Bool = false)
     if k < 1 
         error("k must be positive") 
     end
@@ -17,18 +17,18 @@ function sample(M::ALmodel, k::Int = 1; method::SamplingMethods = Gibbs, replica
     lo = Float64(M.coding[1])
     hi = Float64(M.coding[2])
     Y = Vector{Float64}(vec(makecoded(M, M.responses[:,replicate])))
-    Λ = sparse(M.pairwise[:,:,replicate])   #**TODO*** figure out Λ structure
+    Λ = M.pairwise[:,:,replicate]   #**TODO*** figure out Λ structure
     α = vec(M.unary[:,replicate])
     μ = vec(centering_adjustment(M)[:,replicate])
     n = length(α)
-    G = M.pairwise.G  #**TODO: decide on passing just G, or just Λ**
+    adjlist = M.pairwise.G.fadjlist  #**TODO: decide on what bits of G to pass**
     if method == Gibbs
         if start == nothing
             start = Vector{Float64}(rand([M.coding[1] M.coding[2]], size(M.unary, 1)))
         else
             start = Vector{Float64}(vec(makecoded(M, makebool(start))))
         end
-        return gibbssample(lo, hi, Y, Λ, G, α, μ, n, k, average, start, burnin, verbose)
+        return gibbssample(lo, hi, Y, Λ, adjlist, α, μ, n, k, average, start, burnin, verbose)
     elseif method == perfect
         return perfectsample(lo, hi, Y, Λ, α, μ, n, k, average, verbose)
     end
@@ -36,23 +36,29 @@ end
 
 
 function gibbssample(lo::Float64, hi::Float64, Y::Vector{Float64}, 
-                     Λ::SparseMatrixCSC{Float64,Int}, G::SimpleGraph{Int},
+                     Λ::SparseMatrixCSC{Float64,Int}, adjlist::Array{Array{Int64,1},1},
                      α::Vector{Float64}, μ::Vector{Float64}, n::Int, k::Int, average::Bool, 
                      start::Vector{Float64}, burnin::Int, verbose::Bool)
-    temp = zeros(Float64, n, k)
+
+    temp = average ? zeros(Float64, n) : zeros(Float64, n, k-burnin)
 
     # To try: pull out the .fadjlist from pairwise ahead of time and keep it so that 
     # we don't have to create nb over and over (or: just access .fadjlist in-place...)
     # (use a macro to do in-place access succinctly?)
     # Maybe try mapping type functions? map over all vertices...
+    # TODO: pre-calc all the rand() values for one sample?.
 
     for j = 1:k
         #*** TODO: profile this code and figure out what's going on to be slow! *** 
         # maybe use @views or view()?
         # This version seems to make more allocations but be faster
-        for i in vertices(G)
-            nb = neighbors(G, i)
-            nbrsum = sum(Λ[nb,i] .* (Y[nb] - μ[nb]))
+        for i in 1:length(adjlist)
+            #nb = neighbors(G, i)
+            #nb = view(G.fadjlist, i)
+
+            #This doesn't help???
+            nbrsum = sum(Λ[adjlist[i],i] .* (Y[adjlist[i]] - μ[adjlist[i]]))
+
             etalo = exp(lo*(α[i] + nbrsum))
             etahi = exp(hi*(α[i] + nbrsum))
             p_i = ifelse(etahi==Inf, 1.0, etahi/(etalo + etahi))   #-handle rare overflows.
@@ -68,16 +74,21 @@ function gibbssample(lo::Float64, hi::Float64, Y::Vector{Float64},
             Y[i] = ifelse(rand()<p_i, hi, lo)
         end
         =#
-        temp[:,j] = Y
+
+        if average 
+            temp += Y
+        elseif j > burnin
+            temp[:,j-burnin] = Y
+        end
+
         if verbose 
             println("finished draw $(j) of $(k)") 
         end
     end
-    out = ifelse(burnin==0, temp, temp[burnin+1:end])
     if average
-        return sum(out.==hi,dims=2)/(k-burnin)
+        return (temp .- (k-burnin)*lo) ./ ((k-burnin)*(hi-lo))
     else
-        return out
+        return temp
     end
 end
 
