@@ -179,5 +179,5 @@ end
     out1 = sample(M5, 10000, average=false)
     @test all(x->isapprox(x,0.5,atol=0.05), sum(out1.==1, dims=2)/10000)
     out2 = sample(M5, 10000, average=true, burnin=100, start=rand([1,2], 16))
-    @test all(x->isapprox(x,0.0,atol=0.05), out2)
+    @test all(x->isapprox(x,0.5,atol=0.05), out2)
 end

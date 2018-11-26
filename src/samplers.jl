@@ -16,17 +16,17 @@ function sample(M::ALmodel, k::Int = 1; method::SamplingMethods = Gibbs, replica
     end
     lo = Float64(M.coding[1])
     hi = Float64(M.coding[2])
-    Y = Vector{Float64}(vec(makecoded(M, M.responses[:,replicate])))
-    Λ = M.pairwise[:,:,replicate]   #**TODO*** figure out Λ structure
-    α = vec(M.unary[:,replicate])
-    μ = vec(centering_adjustment(M)[:,replicate])
+    Y = vec(makecoded(M, M.responses[:,replicate]))  #TODO: be cetain M isn't mutated.
+    Λ = M.pairwise[:,:,replicate]   
+    α = M.unary[:,replicate]
+    μ = centering_adjustment(M)[:,replicate]
     n = length(α)
     adjlist = M.pairwise.G.fadjlist  #**TODO: decide on what bits of G to pass**
     if method == Gibbs
         if start == nothing
-            start = Vector{Float64}(rand([M.coding[1] M.coding[2]], size(M.unary, 1)))
+            start = rand([lo, hi], n)
         else
-            start = Vector{Float64}(vec(makecoded(M, makebool(start))))
+            start = vec(makecoded(M, makebool(start)))
         end
         return gibbssample(lo, hi, Y, Λ, adjlist, α, μ, n, k, average, start, burnin, verbose)
     elseif method == perfect
@@ -34,6 +34,34 @@ function sample(M::ALmodel, k::Int = 1; method::SamplingMethods = Gibbs, replica
     end
 end
 
+# Performance tip: writing the neighbor sum as a loop rather than an inner product
+# saved lots of memory allocations.
+function nbrsum(Λ, Y, μ, row, nbr)::Float64
+    out = 0.0
+    for ix in nbr
+        out += Λ[row,ix] * (Y[ix] - μ[ix])
+    end
+    return out
+end
+function condprob(α, ns, lo, hi, ix)::Float64
+    loval = exp(lo*(α[ix] + ns))
+    hival = exp(hi*(α[ix] + ns))
+    if hival==Inf
+        return 1.0
+    end
+    return hival / (loval + hival)
+end
+function gibbsstep!(Y, lo, hi, Λ, adjlist, α, μ, n)
+    for i = 1:n
+        ns = nbrsum(Λ, Y, μ, i, adjlist[i])
+        p_i = condprob(α, ns, lo, hi, i)
+        if rand() < p_i
+            Y[i] = hi
+        else
+            Y[i] = lo
+        end
+    end
+end
 
 function gibbssample(lo::Float64, hi::Float64, Y::Vector{Float64}, 
                      Λ::SparseMatrixCSC{Float64,Int}, adjlist::Array{Array{Int64,1},1},
@@ -41,52 +69,27 @@ function gibbssample(lo::Float64, hi::Float64, Y::Vector{Float64},
                      start::Vector{Float64}, burnin::Int, verbose::Bool)
 
     temp = average ? zeros(Float64, n) : zeros(Float64, n, k-burnin)
-
-    # To try: pull out the .fadjlist from pairwise ahead of time and keep it so that 
-    # we don't have to create nb over and over (or: just access .fadjlist in-place...)
-    # (use a macro to do in-place access succinctly?)
-    # Maybe try mapping type functions? map over all vertices...
-    # TODO: pre-calc all the rand() values for one sample?.
+    ns = p_i = 0.0
 
     for j = 1:k
-        #*** TODO: profile this code and figure out what's going on to be slow! *** 
-        # maybe use @views or view()?
-        # This version seems to make more allocations but be faster
-        for i in 1:length(adjlist)
-            #nb = neighbors(G, i)
-            #nb = view(G.fadjlist, i)
-
-            #This doesn't help???
-            nbrsum = sum(Λ[adjlist[i],i] .* (Y[adjlist[i]] - μ[adjlist[i]]))
-
-            etalo = exp(lo*(α[i] + nbrsum))
-            etahi = exp(hi*(α[i] + nbrsum))
-            p_i = ifelse(etahi==Inf, 1.0, etahi/(etalo + etahi))   #-handle rare overflows.
-            Y[i] = ifelse(rand()<p_i, hi, lo)
-        end
-        #=
-        # This version seems to make half the allocations but be a bit slower.
-        for i = 1:n
-            nbrsum = Λ[:,i]'*(Y-μ)
-            etalo = exp(lo*(α[i] + nbrsum))
-            etahi = exp(hi*(α[i] + nbrsum))
-            p_i = ifelse(etahi==Inf, 1.0, etahi/(etalo + etahi))   #-handle rare overflows.
-            Y[i] = ifelse(rand()<p_i, hi, lo)
-        end
-        =#
-
+        gibbsstep!(Y, lo, hi, Λ, adjlist, α, μ, n)
         if average 
-            temp += Y
+            # Performance tip: looping here saves memory allocations. (perhaps until we get
+            # an operator like .+=)
+            for i in 1:n
+                temp[i] += Y[i]
+            end
         elseif j > burnin
-            temp[:,j-burnin] = Y
+            for i in 1:n
+                temp[i,j-burnin] = Y[i]
+            end
         end
-
         if verbose 
             println("finished draw $(j) of $(k)") 
         end
     end
     if average
-        return (temp .- (k-burnin)*lo) ./ ((k-burnin)*(hi-lo))
+        return map(x -> (x - (k-burnin)*lo)/((k-burnin)*(hi-lo)), temp)
     else
         return temp
     end
