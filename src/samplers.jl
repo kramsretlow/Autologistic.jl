@@ -30,7 +30,7 @@ function sample(M::ALmodel, k::Int = 1; method::SamplingMethods = Gibbs, replica
         end
         return gibbssample(lo, hi, Y, Λ, adjlist, α, μ, n, k, average, start, burnin, verbose)
     elseif method == perfect
-        return perfectsample(lo, hi, Y, Λ, α, μ, n, k, average, verbose)
+        return perfectsample(lo, hi, Y, Λ, adjlist, α, μ, n, k, average, verbose)
     end
 end
 
@@ -51,11 +51,11 @@ function condprob(α, ns, lo, hi, ix)::Float64
     end
     return hival / (loval + hival)
 end
-function gibbsstep!(Y, lo, hi, Λ, adjlist, α, μ, n)
+function gibbsstep!(Y, lo, hi, Λ, adjlist, α, μ, n, rng=Random.GLOBAL_RNG)
     for i = 1:n
         ns = nbrsum(Λ, Y, μ, i, adjlist[i])
         p_i = condprob(α, ns, lo, hi, i)
-        if rand() < p_i
+        if rand(rng) < p_i
             Y[i] = hi
         else
             Y[i] = lo
@@ -77,7 +77,7 @@ function gibbssample(lo::Float64, hi::Float64, Y::Vector{Float64},
             # Performance tip: looping here saves memory allocations. (perhaps until we get
             # an operator like .+=)
             for i in 1:n
-                temp[i] += Y[i]
+                temp[i] = temp[i] + Y[i]
             end
         elseif j > burnin
             for i in 1:n
@@ -95,10 +95,76 @@ function gibbssample(lo::Float64, hi::Float64, Y::Vector{Float64},
     end
 end
 
-#=
-function perfectsample(lo::Float64, hi::Float64, Y::Vector{Float64}, Λ::T, 
-                       α::Vector{Float64}, μ::Vector{Float64}, n::Int, k::Int, 
-                       average::Bool, verbose::Bool) where T<:AbstractMatrix
 
+function runepochs!(j, T, L, H, rngL, rngH, seeds, lo, hi, Λ, adjlist, α, μ, n)
+    Random.seed!(rngL, seeds[j])
+    Random.seed!(rngH, seeds[j])
+    if j==1
+        for t = -T:0
+            gibbsstep!(L, lo, hi, Λ, adjlist, α, μ, n, rngL)
+            gibbsstep!(H, lo, hi, Λ, adjlist, α, μ, n, rngH)
+        end
+    else
+        for t = -T*2^(j-1) : -T*2^(j-2)-1
+            gibbsstep!(L, lo, hi, Λ, adjlist, α, μ, n, rngL)
+            gibbsstep!(H, lo, hi, Λ, adjlist, α, μ, n, rngH)
+        end
+        runepochs!(j-1, T, L, H, rngL, rngH, seeds, lo, hi, Λ, adjlist, α, μ, n)
+    end
 end
-=##
+
+function perfectsample(lo::Float64, hi::Float64, Y::Vector{Float64}, 
+                       Λ::SparseMatrixCSC{Float64,Int}, adjlist::Array{Array{Int64,1},1},
+                       α::Vector{Float64}, μ::Vector{Float64}, n::Int, k::Int, 
+                       average::Bool, verbose::Bool)
+
+    temp = average ? zeros(Float64, n) : zeros(Float64, n, k)
+    T = 2      #-Initial number of time steps to go back.
+    maxepochs = 101  #TODO: magic constant
+    seeds = ones(UInt32,maxepochs)
+    rngL = MersenneTwister()
+    rngH = MersenneTwister()
+    L = H = zeros(n)
+
+    for rep = 1:k
+        seeds .= rand(UInt32, maxepochs)
+        coalesce = false    
+
+        # Keep track of the seeds used.  seeds(j) will hold the seed used to generate samples
+        # from time -2^(j-1)T to -2^(j-2)+1.  We'll cap j at 100 as T*2^100 is a huge number
+        # of time steps. We'll call j the "epoch index." It tells us how far back in time we
+        # need to start (specifically, we start at time -T*2^(j-1)).
+        j = 0
+        while ~coalesce
+            j = j + 1
+            L .= lo
+            H .= hi
+            runepochs!(j, T, L, H, rngL, rngH, seeds, lo, hi, Λ, adjlist, α, μ, n)
+            coalesce = L==H
+            if verbose 
+                println("Started from $(-T*2^(j-1)): $(sum(H != L)) elements different.") 
+            end
+        end
+        if !coalesce
+            warning("Sampler did not coalesce. Returning NaNs.")  #TODO: fix for average case
+            L .= fill(NaN, n)
+        end
+        if average && coalesce
+            for i in 1:n
+                temp[i] = temp[i] + L[i]
+            end
+        else
+            for i in 1:n
+                temp[i,rep] = L[i]
+            end
+        end
+        if verbose 
+            println("finished draw $(j) of $(k)") 
+        end
+    end
+    if average
+        return map(x -> (x - k*lo)/(k*(hi-lo)), temp)
+    else
+        return temp
+    end
+end

@@ -49,7 +49,7 @@ function Base.getindex(u::LinPredUnary, ::Colon, ::Colon)
     for r = 1:m
         for i = 1:n
             for j = 1:p
-                out[i,r] += u.X[i,j,r] * u.β[j]
+                out[i,r] = out[i,r] + u.X[i,j,r] * u.β[j]
             end
         end
     end
@@ -68,7 +68,7 @@ function Base.getindex(u::LinPredUnary, ::Colon, r::Int)
     out = zeros(n)
     for i = 1:n
         for j = 1:p
-            out[i] += u.X[i,j,r] * u.β[j]
+            out[i] = out[i] + u.X[i,j,r] * u.β[j]
         end
     end
     return out
@@ -79,7 +79,7 @@ function Base.getindex(u::LinPredUnary, I::AbstractVector, R::AbstractVector)
     for r in 1:length(R)
         for i in 1:length(I)
             for j = 1:size(u.X,2)
-                out[i,r] += u.X[I[i],j,R[r]] * u.β[j]
+                out[i,r] = out[i,r] + u.X[I[i],j,R[r]] * u.β[j]
             end
         end
     end
