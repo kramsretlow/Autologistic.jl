@@ -35,7 +35,7 @@ function centering_adjustment(M::ALmodel, kind::Union{Nothing,CenteringKinds}=no
         return fill(0.5, size(M.unary))
     elseif k == expectation
         lo, hi = M.coding
-        α = Base.values(M.unary)  #TODO: fix for Base.values() or [:,1] to get Vector{Float64}?
+        α = M.unary[:,:] 
         num = lo*exp.(lo*α) + hi*exp.(hi*α)
         denom = exp.(lo*α) + exp.(hi*α)
         return num./denom
@@ -73,15 +73,17 @@ end
 # === negpotential function ====================================================
 # negpotential(M) returns an m-vector of Float64 negpotential values, where 
 # m is the number of replicate observations found in M.responses.
+# TODO: clean up for allocations/speed. Based on experience with sample(), might
+#       want to loop explicitly.
 function negpotential(M::ALmodel)
     Y = makecoded(M)
     m = size(Y,2)
     out = Array{Float64}(undef, m)
-    α = Base.values(M.unary)
-    Λ = Base.values(M.pairwise)
+    α = M.unary[:,:]
     μ = centering_adjustment(M)
     for j = 1:m
-        out[j] = Y[:,j]'*α[:,j] - Y[:,j]'*Λ[:,:,j]*μ[:,j]  + Y[:,j]'*Λ[:,:,j]*Y[:,j]/2
+        Λ = M.pairwise[:,:,j]
+        out[j] = Y[:,j]'*α[:,j] - Y[:,j]'*Λ*μ[:,j]  + Y[:,j]'*Λ*Y[:,j]/2
     end
     return out
 end

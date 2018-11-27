@@ -11,12 +11,32 @@ end
 FullUnary(n::Int) = FullUnary(Array{Float64,2}(undef,n,1))
 FullUnary(n::Int,m::Int) = FullUnary(Array{Float64,2}(undef,n,m))
 
-# Methods required for AbstractArray interface
+#---- AbstractArray methods ----
+
 Base.size(u::FullUnary) = size(u.α)
-Base.getindex(u::FullUnary, I::Vararg{Int,2}) = u.α[CartesianIndex(I)]
-Base.values(u::FullUnary) = u.α  #TODO: determine if can delete this.
+
+# getindex - implementations
+Base.getindex(u::FullUnary, I::AbstractArray) = u.α[I]
+Base.getindex(u::FullUnary, i::Int, j::Int) = u.α[i,j]
+Base.getindex(u::FullUnary, ::Colon, ::Colon) = u.α
+Base.getindex(u::FullUnary, I::AbstractVector, J::AbstractVector) = u.α[I,J]
+
+# getindex - translations
+Base.getindex(u::FullUnary, I::Tuple{Integer, Integer}) = u[I[1], I[2]]
+Base.getindex(u::FullUnary, ::Colon, j::Int) = u[1:size(u.α,1), j]
+Base.getindex(u::FullUnary, i::Int, ::Colon) = u[i, 1:size(u.α,2)]
+Base.getindex(u::FullUnary, I::AbstractRange{<:Integer}, J::AbstractVector{Bool}) = u[I,findall(J)]
+Base.getindex(u::FullUnary, I::AbstractVector{Bool}, J::AbstractRange{<:Integer}) = u[findall(I),J]
+Base.getindex(u::FullUnary, I::Integer, J::AbstractVector{Bool}) = u[I,findall(J)]
+Base.getindex(u::FullUnary, I::AbstractVector{Bool}, J::Integer) = u[findall(I),J]
+Base.getindex(u::FullUnary, I::AbstractVector{Bool}, J::AbstractVector{Bool}) = u[findall(I),findall(J)]
+Base.getindex(u::FullUnary, I::AbstractVector{<:Integer}, J::AbstractVector{Bool}) = u[I,findall(J)]
+Base.getindex(u::FullUnary, I::AbstractVector{Bool}, J::AbstractVector{<:Integer}) = u[findall(I),J]
+
+# setindex!
 Base.setindex!(u::FullUnary, v::Real, I::Vararg{Int,2}) = (u.α[CartesianIndex(I)] = v)
-# Methods required for AbstractUnary interface
+
+#---- AbstractUnary interface ----
 getparameters(u::FullUnary) = dropdims(reshape(values(u), length(u), 1), dims=2)
 function setparameters!(u::FullUnary, newpars::Vector{Float64})
     # Note, should check dimension match?...

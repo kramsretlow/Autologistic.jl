@@ -33,7 +33,6 @@ function makebool(v::V) where V<:VecOrMat
 end
 
 
-
 # A function to produce a graph with a 4-connected 2D grid structure, having r 
 # rows and c columns.  Returns a tuple containing the graph, and an array of 
 # vertex spatial coordinates.
@@ -115,4 +114,18 @@ function spatialgraph(coords::C, δ::Real) where C<:CoordType
         end
     end
     return (G=G, locs=coords)
+end
+
+
+# Helper function to compute an inner product between two vectors.
+# Doing this way seems to reduce memory allocations vs. a' * b way.
+# Assume dimensions are correct.
+# TODO: later, try @inline, @inbounds, @boundscheck, etc. for speed.
+# TODO: later, verify if this function is needed!!!
+function innerprod(a, b)::Float64
+    out = 0.0
+    for i in eachindex(a)
+        out += a[i] * b[i]
+    end
+    return out
 end
