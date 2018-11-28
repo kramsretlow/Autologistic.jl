@@ -88,7 +88,6 @@ end
 
 # getindex- translations
 Base.getindex(u::LinPredUnary, I::Tuple{Integer, Integer}) = u[I[1], I[2]]
-Base.getindex(u::LinPredUnary, ::Colon, j::Int) = u[1:size(u.X,1), j]
 Base.getindex(u::LinPredUnary, i::Int, ::Colon) = u[i, 1:size(u.X,3)]
 Base.getindex(u::LinPredUnary, I::AbstractRange{<:Integer}, J::AbstractVector{Bool}) = u[I,findall(J)]
 Base.getindex(u::LinPredUnary, I::AbstractVector{Bool}, J::AbstractRange{<:Integer}) = u[findall(I),J]

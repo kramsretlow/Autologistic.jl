@@ -39,7 +39,7 @@ end
 function nbrsum(Λ, Y, μ, row, nbr)::Float64
     out = 0.0
     for ix in nbr
-        out += Λ[row,ix] * (Y[ix] - μ[ix])
+        out = out + Λ[row,ix] * (Y[ix] - μ[ix])
     end
     return out
 end
@@ -52,6 +52,7 @@ function condprob(α, ns, lo, hi, ix)::Float64
     return hival / (loval + hival)
 end
 function gibbsstep!(Y, lo, hi, Λ, adjlist, α, μ, n, rng=Random.GLOBAL_RNG)
+    ns = p_i = 0.0
     for i = 1:n
         ns = nbrsum(Λ, Y, μ, i, adjlist[i])
         p_i = condprob(α, ns, lo, hi, i)
@@ -69,7 +70,6 @@ function gibbssample(lo::Float64, hi::Float64, Y::Vector{Float64},
                      start::Vector{Float64}, burnin::Int, verbose::Bool)
 
     temp = average ? zeros(Float64, n) : zeros(Float64, n, k-burnin)
-    ns = p_i = 0.0
 
     for j = 1:k
         gibbsstep!(Y, lo, hi, Λ, adjlist, α, μ, n)
@@ -95,7 +95,7 @@ function gibbssample(lo::Float64, hi::Float64, Y::Vector{Float64},
     end
 end
 
-
+#=
 function runepochs!(j, T, L, H, rngL, rngH, seeds, lo, hi, Λ, adjlist, α, μ, n)
     Random.seed!(rngL, seeds[j])
     Random.seed!(rngH, seeds[j])
@@ -104,14 +104,30 @@ function runepochs!(j, T, L, H, rngL, rngH, seeds, lo, hi, Λ, adjlist, α, μ, 
             gibbsstep!(L, lo, hi, Λ, adjlist, α, μ, n, rngL)
             gibbsstep!(H, lo, hi, Λ, adjlist, α, μ, n, rngH)
         end
+        println(j)
     else
         for t = -T*2^(j-1) : -T*2^(j-2)-1
             gibbsstep!(L, lo, hi, Λ, adjlist, α, μ, n, rngL)
             gibbsstep!(H, lo, hi, Λ, adjlist, α, μ, n, rngH)
         end
+        println(j)
         runepochs!(j-1, T, L, H, rngL, rngH, seeds, lo, hi, Λ, adjlist, α, μ, n)
     end
 end
+=#
+
+function runepochs!(j, times, L, H, rngL, rngH, seeds, lo, hi, Λ, adjlist, α, μ, n)
+    # Run epochs from the jth one forward to time zero.
+    for epoch = j:-1:0
+        Random.seed!(rngL, seeds[j+1])
+        Random.seed!(rngH, seeds[j+1])
+        for t = times[j+1,1] : times[j+1,2]
+            gibbsstep!(L, lo, hi, Λ, adjlist, α, μ, n, rngL)
+            gibbsstep!(H, lo, hi, Λ, adjlist, α, μ, n, rngH)
+        end
+    end
+end
+
 
 function perfectsample(lo::Float64, hi::Float64, Y::Vector{Float64}, 
                        Λ::SparseMatrixCSC{Float64,Int}, adjlist::Array{Array{Int64,1},1},
@@ -120,30 +136,32 @@ function perfectsample(lo::Float64, hi::Float64, Y::Vector{Float64},
 
     temp = average ? zeros(Float64, n) : zeros(Float64, n, k)
     T = 2      #-Initial number of time steps to go back.
-    maxepochs = 101  #TODO: magic constant
-    seeds = ones(UInt32,maxepochs)
+    maxepoch = 40  #TODO: magic constant
+    seeds = ones(UInt32,maxepoch+1)
+    times = [-T * 2 .^(0:maxepoch) .+ 1  [0; -T * 2 .^(0:maxepoch-1)]]
     rngL = MersenneTwister()
     rngH = MersenneTwister()
-    L = H = zeros(n)
+    L = zeros(n)
+    H = zeros(n)
 
     for rep = 1:k
-        seeds .= rand(UInt32, maxepochs)
+        seeds .= rand(UInt32, maxepoch + 1)
         coalesce = false    
 
         # Keep track of the seeds used.  seeds(j) will hold the seed used to generate samples
-        # from time -2^(j-1)T to -2^(j-2)+1.  We'll cap j at 100 as T*2^100 is a huge number
-        # of time steps. We'll call j the "epoch index." It tells us how far back in time we
-        # need to start (specifically, we start at time -T*2^(j-1)).
+        # in "epochs" j = 0, 1, 2, ... going backwards in time from time zero. The 0th epoch
+        # covers time steps -T + 1 to 0, and the jth epoch covers steps -(2^j)T+1 to -2^(j-1)T.
+        # We'll cap j at 40 as T*2^40 is over a trillion time steps. 
         j = 0
         while ~coalesce
-            j = j + 1
             L .= lo
             H .= hi
-            runepochs!(j, T, L, H, rngL, rngH, seeds, lo, hi, Λ, adjlist, α, μ, n)
+            runepochs!(j, times, L, H, rngL, rngH, seeds, lo, hi, Λ, adjlist, α, μ, n)
             coalesce = L==H
             if verbose 
-                println("Started from $(-T*2^(j-1)): $(sum(H != L)) elements different.") 
+                println("Started from $(times[j+1,1]): $(sum(H .!= L)) elements different.") 
             end
+            j = j + 1
         end
         if !coalesce
             warning("Sampler did not coalesce. Returning NaNs.")  #TODO: fix for average case
@@ -159,7 +177,7 @@ function perfectsample(lo::Float64, hi::Float64, Y::Vector{Float64},
             end
         end
         if verbose 
-            println("finished draw $(j) of $(k)") 
+            println("finished draw $(rep) of $(k)") 
         end
     end
     if average

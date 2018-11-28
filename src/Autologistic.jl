@@ -1,7 +1,7 @@
 module Autologistic
 
 # TODO: import only needed functions?
-using Statistics, LightGraphs, LinearAlgebra, SparseArrays, Random
+using LightGraphs, LinearAlgebra, SparseArrays, Statistics, Random
 
 # ***TODO*** 
 # [x] Make and export concrete Centering types (or let the types be an enumeration)
