@@ -51,12 +51,13 @@ function condprob(α, ns, lo, hi, ix)::Float64
     end
     return hival / (loval + hival)
 end
-function gibbsstep!(Y, lo, hi, Λ, adjlist, α, μ, n, rng=Random.GLOBAL_RNG)
-    ns = p_i = 0.0
+function gibbsstep!(Y, lo, hi, Λ, adjlist, α, μ, n)
+    ns = 0.0
+    p_i = 0.0
     for i = 1:n
         ns = nbrsum(Λ, Y, μ, i, adjlist[i])
         p_i = condprob(α, ns, lo, hi, i)
-        if rand(rng) < p_i
+        if rand() < p_i
             Y[i] = hi
         else
             Y[i] = lo
@@ -95,39 +96,15 @@ function gibbssample(lo::Float64, hi::Float64, Y::Vector{Float64},
     end
 end
 
-#=
-function runepochs!(j, T, L, H, rngL, rngH, seeds, lo, hi, Λ, adjlist, α, μ, n)
-    Random.seed!(rngL, seeds[j])
-    Random.seed!(rngH, seeds[j])
-    if j==1
-        for t = -T:0
-            gibbsstep!(L, lo, hi, Λ, adjlist, α, μ, n, rngL)
-            gibbsstep!(H, lo, hi, Λ, adjlist, α, μ, n, rngH)
-        end
-        println(j)
-    else
-        for t = -T*2^(j-1) : -T*2^(j-2)-1
-            gibbsstep!(L, lo, hi, Λ, adjlist, α, μ, n, rngL)
-            gibbsstep!(H, lo, hi, Λ, adjlist, α, μ, n, rngH)
-        end
-        println(j)
-        runepochs!(j-1, T, L, H, rngL, rngH, seeds, lo, hi, Λ, adjlist, α, μ, n)
-    end
-end
-=#
-
-function runepochs!(j, times, L, H, rngL, rngH, seeds, lo, hi, Λ, adjlist, α, μ, n)
+function runepochs!(j, times, Y, seeds, lo, hi, Λ, adjlist, α, μ, n)
     # Run epochs from the jth one forward to time zero.
     for epoch = j:-1:0
-        Random.seed!(rngL, seeds[j+1])
-        Random.seed!(rngH, seeds[j+1])
+        Random.seed!(seeds[j+1])
         for t = times[j+1,1] : times[j+1,2]
-            gibbsstep!(L, lo, hi, Λ, adjlist, α, μ, n, rngL)
-            gibbsstep!(H, lo, hi, Λ, adjlist, α, μ, n, rngH)
+            gibbsstep!(Y, lo, hi, Λ, adjlist, α, μ, n)
         end
     end
 end
-
 
 function perfectsample(lo::Float64, hi::Float64, Y::Vector{Float64}, 
                        Λ::SparseMatrixCSC{Float64,Int}, adjlist::Array{Array{Int64,1},1},
@@ -139,8 +116,6 @@ function perfectsample(lo::Float64, hi::Float64, Y::Vector{Float64},
     maxepoch = 40  #TODO: magic constant
     seeds = ones(UInt32,maxepoch+1)
     times = [-T * 2 .^(0:maxepoch) .+ 1  [0; -T * 2 .^(0:maxepoch-1)]]
-    rngL = MersenneTwister()
-    rngH = MersenneTwister()
     L = zeros(n)
     H = zeros(n)
 
@@ -156,10 +131,11 @@ function perfectsample(lo::Float64, hi::Float64, Y::Vector{Float64},
         while ~coalesce
             L .= lo
             H .= hi
-            runepochs!(j, times, L, H, rngL, rngH, seeds, lo, hi, Λ, adjlist, α, μ, n)
+            runepochs!(j, times, L, seeds, lo, hi, Λ, adjlist, α, μ, n)
+            runepochs!(j, times, H, seeds, lo, hi, Λ, adjlist, α, μ, n)
             coalesce = L==H
             if verbose 
-                println("Started from $(times[j+1,1]): $(sum(H .!= L)) elements different.") 
+                println("Started from $(times[j+1,1]): $(sum(H .!= L)) elements different.")
             end
             j = j + 1
         end
@@ -186,3 +162,8 @@ function perfectsample(lo::Float64, hi::Float64, Y::Vector{Float64},
         return temp
     end
 end
+
+
+
+
+
