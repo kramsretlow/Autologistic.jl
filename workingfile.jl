@@ -31,7 +31,7 @@ M = ALRsimple(G[1], rand(n1^2,3))
 # TODO: allocations and run time go up inordinately with 
 # the number of samples...
 setparameters!(M, [-2, 1, 1, 0.5])
-@btime sample($M, 1, method=perfect, average=true);
+@btime sample($M, 100, method=perfect, average=true);
 
 
 # === Test out perfect sampling (plot) ===

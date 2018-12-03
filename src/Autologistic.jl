@@ -5,7 +5,7 @@ using LightGraphs, LinearAlgebra, SparseArrays, Statistics, Random
 
 # ***TODO*** 
 # [x] Make and export concrete Centering types (or let the types be an enumeration)
-# [ ] Consider how to include spatial/spatiotemporal locations of the vertices
+# [x] Consider how to include spatial/spatiotemporal locations of the vertices
 #     in our types, so they can be used, e.g., for plotting.
 
 # ***Question: how to decide which abstract types to export?***

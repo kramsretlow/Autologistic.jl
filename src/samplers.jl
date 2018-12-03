@@ -96,6 +96,76 @@ function gibbssample(lo::Float64, hi::Float64, Y::Vector{Float64},
     end
 end
 
+
+function perfectsample(lo::Float64, hi::Float64, Y::Vector{Float64}, 
+    Λ::SparseMatrixCSC{Float64,Int}, adjlist::Array{Array{Int64,1},1},
+    α::Vector{Float64}, μ::Vector{Float64}, n::Int, k::Int, 
+    average::Bool, verbose::Bool)
+
+    # Sampling will be done in "epochs" j = 0, 1, 2, ... going backwards in time from time
+    # zero. The 0th epoch covers time steps -T + 1 to 0, and the jth epoch covers steps 
+    # -(2^j)T+1 to -2^(j-1)T. We'll cap j at 40 as T*2^40 is over a trillion time steps. 
+    # In this implementation, use a sparse matrix to hold the common random variables
+    # used in the upper and lower chains.  Add columns to the matrix to fill in the RVs
+    # needed in each epoch as we get there.
+
+
+    temp = average ? zeros(Float64, n) : zeros(Float64, n, k)
+    T = 2      #-Initial number of time steps to go back.
+    maxepoch = 40  #TODO: magic constant
+    seeds = [UInt32[1] for i = 1:maxepoch+1]
+    times = [-T * 2 .^(0:maxepoch) .+ 1  [0; -T * 2 .^(0:maxepoch-1)]]
+    L = zeros(n)
+    H = zeros(n)
+
+    for rep = 1:k 
+        seeds .= [[rand(UInt32)] for i = 1:maxepoch+1]
+        coalesce = false    
+
+        # Keep track of the seeds used.  seeds(j) will hold the seed used to generate samples
+        # in "epochs" j = 0, 1, 2, ... going backwards in time from time zero. The 0th epoch
+        # covers time steps -T + 1 to 0, and the jth epoch covers steps -(2^j)T+1 to -2^(j-1)T.
+        # We'll cap j at 40 as T*2^40 is over a trillion time steps. 
+        j = 0
+        while ~coalesce
+            L .= lo
+            H .= hi
+            runepochs!(j, times, L, seeds, lo, hi, Λ, adjlist, α, μ, n)
+            runepochs!(j, times, H, seeds, lo, hi, Λ, adjlist, α, μ, n)
+            coalesce = L==H
+            if verbose 
+                println("Started from $(times[j+1,1]): $(sum(H .!= L)) elements different.")
+            end
+            j = j + 1
+        end
+        if !coalesce
+            warning("Sampler did not coalesce. Returning NaNs.")  #TODO: fix for average case
+            L .= fill(NaN, n)
+        end
+        if average && coalesce
+            for i in 1:n
+                temp[i] = temp[i] + L[i]
+            end
+        else
+            for i in 1:n
+                temp[i,rep] = L[i]
+            end
+        end
+        if verbose 
+            println("finished draw $(rep) of $(k)") 
+        end
+    end
+    if average
+        return map(x -> (x - k*lo)/(k*(hi-lo)), temp)
+    else
+        return temp
+    end
+
+
+end
+
+#= OLD WAY OF DOING PERFECT SAMPLING BY STORING SEEDS ==========================
+
 function runepochs!(j, times, Y, seeds, lo, hi, Λ, adjlist, α, μ, n)
     # Run epochs from the jth one forward to time zero.
     for epoch = j:-1:0
@@ -114,13 +184,13 @@ function perfectsample(lo::Float64, hi::Float64, Y::Vector{Float64},
     temp = average ? zeros(Float64, n) : zeros(Float64, n, k)
     T = 2      #-Initial number of time steps to go back.
     maxepoch = 40  #TODO: magic constant
-    seeds = ones(UInt32,maxepoch+1)
+    seeds = [UInt32[1] for i = 1:maxepoch+1]
     times = [-T * 2 .^(0:maxepoch) .+ 1  [0; -T * 2 .^(0:maxepoch-1)]]
     L = zeros(n)
     H = zeros(n)
 
-    for rep = 1:k
-        seeds .= rand(UInt32, maxepoch + 1)
+    for rep = 1:k 
+        seeds .= [[rand(UInt32)] for i = 1:maxepoch+1]
         coalesce = false    
 
         # Keep track of the seeds used.  seeds(j) will hold the seed used to generate samples
@@ -162,6 +232,7 @@ function perfectsample(lo::Float64, hi::Float64, Y::Vector{Float64},
         return temp
     end
 end
+===============================================================================#
 
 
 
