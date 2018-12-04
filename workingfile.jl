@@ -31,12 +31,14 @@ M = ALRsimple(G[1], rand(n1^2,3))
 # TODO: allocations and run time go up inordinately with 
 # the number of samples...
 setparameters!(M, [-2, 1, 1, 0.5])
-@btime sample($M, 100, method=perfect, average=true);
+@btime sample($M, 200, method=CFTPlarge, average=true);
+@btime sample($M, 200, method=CFTPsmall, average=true);
+@btime sample($M, 200, method=ROCFTP, average=true);
 
 
 # === Test out perfect sampling (plot) ===
 setparameters!(M, [-2, 1, 1, 0.5])
-S = sample(M, method=perfect, verbose=true);
+S = sample(M, method=CFTPlarge, verbose=true);
 using GraphPlot
 gplot(G.G, [G.locs[i][1] for i=1:n1^2], [G.locs[i][2] for i=1:n1^2],
       NODESIZE=0.02, nodefillc = map(x -> x==-1 ? "red" : "green", S[:]))
@@ -60,10 +62,18 @@ rngL = MersenneTwister()
 rngH = MersenneTwister()
 L = zeros(n)
 H = zeros(n)
-seeds .= rand(UInt32, maxepoch + 1)
+seeds = rand(UInt32, maxepoch + 1)
 
 @btime Autologistic.runepochs!(8, $times, $L, $H, $rngL, $rngH, $seeds, $lo, $hi, 
                                $Λ, $adjlist, $α, $μ, $n)
+
+
+Z = rand([lo, hi], n);
+U = rand(n,100);
+@btime Autologistic.gibbsstep_block!($Z, $U, $lo, $hi, $Λ, $adjlist, $α, $μ)
+@btime Autologistic.blocksize_estimate($lo, $hi, $Λ, $adjlist, $α, $μ, $n)
+
+
 
 
 

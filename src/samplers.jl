@@ -2,6 +2,8 @@
 # argument method<:SamplingMethods (an enum).  Use the enum to do argument 
 # checking and submit the work to the specialized functions (currently gibbssample()
 # and perfectsample()).
+# 
+# TODO: explore how to use @inbounds, @inline, etc. to optimize performance in these fcns.
 
 function sample(M::ALmodel, k::Int = 1; method::SamplingMethods = Gibbs, replicate::Int = 1, 
                 average::Bool = false, start = nothing, burnin::Int = 0, verbose::Bool = false)
@@ -29,8 +31,12 @@ function sample(M::ALmodel, k::Int = 1; method::SamplingMethods = Gibbs, replica
             start = vec(makecoded(M, makebool(start)))
         end
         return gibbssample(lo, hi, Y, Λ, adjlist, α, μ, n, k, average, start, burnin, verbose)
-    elseif method == perfect
-        return perfectsample(lo, hi, Y, Λ, adjlist, α, μ, n, k, average, verbose)
+    elseif method == CFTPsmall
+        return cftp_small(lo, hi, Λ, adjlist, α, μ, n, k, average, verbose)
+    elseif method == CFTPlarge
+        return cftp_large(lo, hi, Λ, adjlist, α, μ, n, k, average, verbose)
+    elseif method == ROCFTP
+        return rocftp(lo, hi, Λ, adjlist, α, μ, n, k, average, verbose)
     end
 end
 
@@ -43,6 +49,7 @@ function nbrsum(Λ, Y, μ, row, nbr)::Float64
     end
     return out
 end
+
 function condprob(α, ns, lo, hi, ix)::Float64
     loval = exp(lo*(α[ix] + ns))
     hival = exp(hi*(α[ix] + ns))
@@ -51,6 +58,7 @@ function condprob(α, ns, lo, hi, ix)::Float64
     end
     return hival / (loval + hival)
 end
+
 function gibbsstep!(Y, lo, hi, Λ, adjlist, α, μ, n)
     ns = 0.0
     p_i = 0.0
@@ -97,75 +105,6 @@ function gibbssample(lo::Float64, hi::Float64, Y::Vector{Float64},
 end
 
 
-function perfectsample(lo::Float64, hi::Float64, Y::Vector{Float64}, 
-    Λ::SparseMatrixCSC{Float64,Int}, adjlist::Array{Array{Int64,1},1},
-    α::Vector{Float64}, μ::Vector{Float64}, n::Int, k::Int, 
-    average::Bool, verbose::Bool)
-
-    # Sampling will be done in "epochs" j = 0, 1, 2, ... going backwards in time from time
-    # zero. The 0th epoch covers time steps -T + 1 to 0, and the jth epoch covers steps 
-    # -(2^j)T+1 to -2^(j-1)T. We'll cap j at 40 as T*2^40 is over a trillion time steps. 
-    # In this implementation, use a sparse matrix to hold the common random variables
-    # used in the upper and lower chains.  Add columns to the matrix to fill in the RVs
-    # needed in each epoch as we get there.
-
-
-    temp = average ? zeros(Float64, n) : zeros(Float64, n, k)
-    T = 2      #-Initial number of time steps to go back.
-    maxepoch = 40  #TODO: magic constant
-    seeds = [UInt32[1] for i = 1:maxepoch+1]
-    times = [-T * 2 .^(0:maxepoch) .+ 1  [0; -T * 2 .^(0:maxepoch-1)]]
-    L = zeros(n)
-    H = zeros(n)
-
-    for rep = 1:k 
-        seeds .= [[rand(UInt32)] for i = 1:maxepoch+1]
-        coalesce = false    
-
-        # Keep track of the seeds used.  seeds(j) will hold the seed used to generate samples
-        # in "epochs" j = 0, 1, 2, ... going backwards in time from time zero. The 0th epoch
-        # covers time steps -T + 1 to 0, and the jth epoch covers steps -(2^j)T+1 to -2^(j-1)T.
-        # We'll cap j at 40 as T*2^40 is over a trillion time steps. 
-        j = 0
-        while ~coalesce
-            L .= lo
-            H .= hi
-            runepochs!(j, times, L, seeds, lo, hi, Λ, adjlist, α, μ, n)
-            runepochs!(j, times, H, seeds, lo, hi, Λ, adjlist, α, μ, n)
-            coalesce = L==H
-            if verbose 
-                println("Started from $(times[j+1,1]): $(sum(H .!= L)) elements different.")
-            end
-            j = j + 1
-        end
-        if !coalesce
-            warning("Sampler did not coalesce. Returning NaNs.")  #TODO: fix for average case
-            L .= fill(NaN, n)
-        end
-        if average && coalesce
-            for i in 1:n
-                temp[i] = temp[i] + L[i]
-            end
-        else
-            for i in 1:n
-                temp[i,rep] = L[i]
-            end
-        end
-        if verbose 
-            println("finished draw $(rep) of $(k)") 
-        end
-    end
-    if average
-        return map(x -> (x - k*lo)/(k*(hi-lo)), temp)
-    else
-        return temp
-    end
-
-
-end
-
-#= OLD WAY OF DOING PERFECT SAMPLING BY STORING SEEDS ==========================
-
 function runepochs!(j, times, Y, seeds, lo, hi, Λ, adjlist, α, μ, n)
     # Run epochs from the jth one forward to time zero.
     for epoch = j:-1:0
@@ -176,10 +115,10 @@ function runepochs!(j, times, Y, seeds, lo, hi, Λ, adjlist, α, μ, n)
     end
 end
 
-function perfectsample(lo::Float64, hi::Float64, Y::Vector{Float64}, 
-                       Λ::SparseMatrixCSC{Float64,Int}, adjlist::Array{Array{Int64,1},1},
-                       α::Vector{Float64}, μ::Vector{Float64}, n::Int, k::Int, 
-                       average::Bool, verbose::Bool)
+function cftp_large(lo::Float64, hi::Float64, 
+                    Λ::SparseMatrixCSC{Float64,Int}, adjlist::Array{Array{Int64,1},1},
+                    α::Vector{Float64}, μ::Vector{Float64}, n::Int, k::Int, 
+                    average::Bool, verbose::Bool)
 
     temp = average ? zeros(Float64, n) : zeros(Float64, n, k)
     T = 2      #-Initial number of time steps to go back.
@@ -199,13 +138,13 @@ function perfectsample(lo::Float64, hi::Float64, Y::Vector{Float64},
         # We'll cap j at 40 as T*2^40 is over a trillion time steps. 
         j = 0
         while ~coalesce
-            L .= lo
-            H .= hi
+            reset_state!(L, lo)
+            reset_state!(H, hi)
             runepochs!(j, times, L, seeds, lo, hi, Λ, adjlist, α, μ, n)
             runepochs!(j, times, H, seeds, lo, hi, Λ, adjlist, α, μ, n)
             coalesce = L==H
             if verbose 
-                println("Started from $(times[j+1,1]): $(sum(H .!= L)) elements different.")
+                println("Started from -$(times[j+1,1]): $(sum(H .!= L)) elements different.")
             end
             j = j + 1
         end
@@ -232,9 +171,176 @@ function perfectsample(lo::Float64, hi::Float64, Y::Vector{Float64},
         return temp
     end
 end
-===============================================================================#
 
 
+function cftp_small(lo::Float64, hi::Float64, 
+                    Λ::SparseMatrixCSC{Float64,Int}, adjlist::Array{Array{Int64,1},1},
+                    α::Vector{Float64}, μ::Vector{Float64}, n::Int, k::Int, 
+                    average::Bool, verbose::Bool)
+
+    temp = average ? zeros(Float64, n) : zeros(Float64, n, k)
+    L = zeros(n)
+    H = zeros(n)
+    ns = 0.0
+    p_i = 0.0
+
+    # We use matrix U to hold all the uniform random numbers needed to compute the
+    # lower and upper chains as stochastic recursive sequences. In this matrix each column
+    # holds the n random variates needed to do a full Gibbs sampling update of the
+    # variables in the graph. We think of the columns as going backwards in time to the
+    # right: column one is time 0, column 2 is time -1, ... column T+1 is time -T.  So to
+    # run the chains in forward time we go from right to left.
+    for rep = 1:k 
+        T = 2           #-T tracks how far back in time we start. Our sample is from time 0.
+        U = rand(n,1)   #-Holds needed random numbers (this matrix will grow)
+        coalesce = false    
+        while ~coalesce
+            reset_state!(L, lo)
+            reset_state!(H, hi)
+            U = [U rand(n,T)]
+            for t = T+1:-1:1                          #-Column t corresponds to time -(t-1).
+                for i = 1:n
+                    # The lower chain
+                    ns = nbrsum(Λ, L, μ, i, adjlist[i])
+                    p_i = condprob(α, ns, lo, hi, i)
+                    if U[i,t] < p_i
+                        L[i] = hi
+                    else
+                        L[i] = lo
+                    end
+                    # The upper chain
+                    ns = nbrsum(Λ, H, μ, i, adjlist[i])
+                    p_i = condprob(α, ns, lo, hi, i)
+                    if U[i,t] < p_i
+                        H[i] = hi
+                    else
+                        H[i] = lo
+                    end
+                end
+            end
+            coalesce = L==H
+            if verbose 
+                println("Started from -$(T): $(sum(H .!= L)) elements different.")
+            end
+            T = 2*T
+        end
+        if average
+            for i in 1:n
+                temp[i] = temp[i] + L[i]
+            end
+        else
+            for i in 1:n
+                temp[i,rep] = L[i]
+            end
+        end
+        if verbose 
+            println("finished draw $(rep) of $(k)") 
+        end
+    end
+    if average
+        return map(x -> (x - k*lo)/(k*(hi-lo)), temp)
+    else
+        return temp
+    end   
+end
+
+function rocftp(lo::Float64, hi::Float64,  
+                Λ::SparseMatrixCSC{Float64,Int}, adjlist::Array{Array{Int64,1},1},
+                α::Vector{Float64}, μ::Vector{Float64}, n::Int, k::Int, 
+                average::Bool, verbose::Bool)
+
+    blocksize = blocksize_estimate(lo, hi, Λ, adjlist, α, μ, n)
+    temp = average ? zeros(Float64, n) : zeros(Float64, n, k)
+    L = zeros(n)
+    H = zeros(n)
+    Y = rand([lo, hi], n)
+    U = zeros(n, blocksize)
+  
+    for rep = 0:k                      #-Run from zero because 1st coalescence is discarded.
+        coalesce = false    
+        while ~coalesce
+            reset_state!(L, lo)
+            reset_state!(H, hi)
+            for i = 1:n          #-Performance: assigning to U in a loop uses 0 allocations.
+                for j = 1:blocksize
+                    U[i,j] = rand()
+                end
+            end
+            gibbsstep_block!(Y, U, lo, hi, Λ, adjlist, α, μ)
+            gibbsstep_block!(L, U, lo, hi, Λ, adjlist, α, μ)
+            gibbsstep_block!(H, U, lo, hi, Λ, adjlist, α, μ)
+            coalesce = L==H
+            if verbose 
+                println("Sample $(rep) coalesced? $(coalesce).")
+            end
+        end
+        if rep > 0
+            if average
+                for i in 1:n
+                    temp[i] = temp[i] + Y[i]
+                end
+            else
+                for i in 1:n
+                    temp[i,rep] = Y[i]
+                end
+            end
+        end
+    end
+    if average
+        return map(x -> (x - k*lo)/(k*(hi-lo)), temp)
+    else
+        return temp
+    end   
 
 
+end
 
+function gibbsstep_block!(Z, U, lo, hi, Λ, adjlist, α, μ)
+    ns = 0.0
+    p_i = 0.0
+    n, T = size(U)
+    for t = 1:T
+        for i = 1:n
+            ns = nbrsum(Λ, Z, μ, i, adjlist[i])
+            p_i = condprob(α, ns, lo, hi, i)
+            if U[i,t] < p_i
+                Z[i] = hi
+            else
+                Z[i] = lo
+            end
+        end
+    end
+end
+
+function blocksize_estimate(lo, hi, Λ, adjlist, α, μ, n)
+    nrep = 15   #TODO: magic constant
+    coalesce_times = zeros(Int, nrep)
+    L = zeros(n)
+    H = zeros(n)
+    U = zeros(n,1)
+    for rep = 1:nrep
+        coalesce = false
+        reset_state!(L, lo)
+        reset_state!(H, hi)
+        count = one(Int)    
+        while ~coalesce
+            # Performance note: for filling U with random numbers, could i) loop through U
+            # and fill each element; ii) assign with rand(n,1) on the RHS; or iii) use 
+            # copyto!.  Option i) uses no allocations, but empirically seems slower.  Option
+            # iii) seems fastest but requires allocation to produce the rand(n,1).
+            copyto!(U, rand(n,1))
+            gibbsstep_block!(L, U, lo, hi, Λ, adjlist, α, μ)
+            gibbsstep_block!(H, U, lo, hi, Λ, adjlist, α, μ)
+            coalesce = L==H
+            count = count + 1
+        end
+        coalesce_times[rep] = count
+    end
+    return Int(round(quantile(coalesce_times, 0.6)))
+end
+
+function reset_state!(Y::Array{Float64, 1}, value::Float64)
+    for i = 1:length(Y)
+        Y[i] = value
+    end
+end
