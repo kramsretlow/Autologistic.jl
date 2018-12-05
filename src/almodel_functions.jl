@@ -166,3 +166,33 @@ function fullPMF(M::ALmodel; replicates=nothing, force::Bool=false)
     return (table=T, partition=partition)
 end
 
+# ***TODO: tests and documentation***
+#Returns an n-by-m array (or an n-vector if  m==1). The [i,j]th element is the 
+#marginal probability of the high state in the ith variable at the jth replciate.
+function marginalprobabilities(M::ALmodel; replicates=nothing, force::Bool=false)
+    n, m = size(M.unary)
+    nc = 2^n
+    if n>20 && !force
+        error("Attempting to tabulate a PMF with more than 2^20 configurations."
+              * "\nIf you really want to do this, set force=true.")
+    end
+    if replicates == nothing
+        replicates = 1:m
+    elseif minimum(replicates)<1 || maximum(replicates)>m 
+        error("replicate index out of bounds")
+    end
+    hi = M.coding[2]
+    out = zeros(n,m)
+
+    tbl = fullPMF(M).table
+
+    for r = 1:m
+        for i = 1:n
+            out[i,r] = sum(mapslices(x -> x[i]==hi ? x[n+1] : 0.0, tbl, dims=2))
+        end
+    end
+    if m==1
+        return vec(out)
+    end
+    return out
+end

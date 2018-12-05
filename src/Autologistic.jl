@@ -32,6 +32,7 @@ export
     grid8,
     makebool,
     makecoded,
+    marginalprobabilities,
     negpotential,
     pseudolikelihood,
     sample,

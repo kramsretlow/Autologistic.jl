@@ -19,7 +19,7 @@ end
 
 # === Trying to speed things up ===
 using BenchmarkTools
-n1 = 35
+n1 = 100
 G = grid4(n1,n1)
 M = ALRsimple(G[1], rand(n1^2,3))
 
@@ -31,17 +31,32 @@ M = ALRsimple(G[1], rand(n1^2,3))
 # TODO: allocations and run time go up inordinately with 
 # the number of samples...
 setparameters!(M, [-2, 1, 1, 0.5])
-@btime sample($M, 200, method=CFTPlarge, average=true);
-@btime sample($M, 200, method=CFTPsmall, average=true);
-@btime sample($M, 200, method=ROCFTP, average=true);
+@btime sample($M, 100, method=CFTPlarge, average=true);
+@btime sample($M, 100, method=CFTPsmall, average=true);
+@btime sample($M, 100, method=ROCFTP, average=true);
 
 
 # === Test out perfect sampling (plot) ===
 setparameters!(M, [-2, 1, 1, 0.5])
-S = sample(M, method=CFTPlarge, verbose=true);
+S = sample(M, method=ROCFTP, verbose=true);
 using GraphPlot
+#In VS Code, running gplot causes left/right arrow keys to be siezed bythe 
+# plot window, not usable in editor...
 gplot(G.G, [G.locs[i][1] for i=1:n1^2], [G.locs[i][2] for i=1:n1^2],
       NODESIZE=0.02, nodefillc = map(x -> x==-1 ? "red" : "green", S[:]))
+
+
+
+#Check pefect sampling averages are consistent with the truth in small cases.
+n = 10
+maxedges = n*(n-1)/2
+our_edge_range = 0:Int(floor(maxedges/2))
+G = Graph(n, rand(our_edge_range))
+M = ALmodel(FullUnary(randn(n)), SimplePairwise(0.25, G))
+truemarg = marginalprobabilities(M);
+sampmarg = sample(M, 1000, method=ROCFTP, average=true);
+round.([truemarg sampmarg abs.(truemarg .- sampmarg)], digits=4)
+
 
 
 

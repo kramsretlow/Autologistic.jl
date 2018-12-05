@@ -138,8 +138,8 @@ function cftp_large(lo::Float64, hi::Float64,
         # We'll cap j at 40 as T*2^40 is over a trillion time steps. 
         j = 0
         while ~coalesce
-            reset_state!(L, lo)
-            reset_state!(H, hi)
+            fill!(L, lo)
+            fill!(H, hi)
             runepochs!(j, times, L, seeds, lo, hi, Λ, adjlist, α, μ, n)
             runepochs!(j, times, H, seeds, lo, hi, Λ, adjlist, α, μ, n)
             coalesce = L==H
@@ -195,8 +195,8 @@ function cftp_small(lo::Float64, hi::Float64,
         U = rand(n,1)   #-Holds needed random numbers (this matrix will grow)
         coalesce = false    
         while ~coalesce
-            reset_state!(L, lo)
-            reset_state!(H, hi)
+            fill!(L, lo)
+            fill!(H, hi)
             U = [U rand(n,T)]
             for t = T+1:-1:1                          #-Column t corresponds to time -(t-1).
                 for i = 1:n
@@ -255,12 +255,14 @@ function rocftp(lo::Float64, hi::Float64,
     H = zeros(n)
     Y = rand([lo, hi], n)
     U = zeros(n, blocksize)
+    oldY = zeros(n)
   
-    for rep = 0:k                      #-Run from zero because 1st coalescence is discarded.
+    for rep = 0:k                      #-Run from zero because 1st draw is discarded.
         coalesce = false    
         while ~coalesce
-            reset_state!(L, lo)
-            reset_state!(H, hi)
+            copyto!(oldY, Y)
+            fill!(L, lo)
+            fill!(H, hi)
             for i = 1:n          #-Performance: assigning to U in a loop uses 0 allocations.
                 for j = 1:blocksize
                     U[i,j] = rand()
@@ -277,11 +279,11 @@ function rocftp(lo::Float64, hi::Float64,
         if rep > 0
             if average
                 for i in 1:n
-                    temp[i] = temp[i] + Y[i]
+                    temp[i] = temp[i] + oldY[i]
                 end
             else
                 for i in 1:n
-                    temp[i,rep] = Y[i]
+                    temp[i,rep] = oldY[i]
                 end
             end
         end
@@ -320,8 +322,8 @@ function blocksize_estimate(lo, hi, Λ, adjlist, α, μ, n)
     U = zeros(n,1)
     for rep = 1:nrep
         coalesce = false
-        reset_state!(L, lo)
-        reset_state!(H, hi)
+        fill!(L, lo)
+        fill!(H, hi)
         count = one(Int)    
         while ~coalesce
             # Performance note: for filling U with random numbers, could i) loop through U
@@ -339,8 +341,3 @@ function blocksize_estimate(lo, hi, Λ, adjlist, α, μ, n)
     return Int(round(quantile(coalesce_times, 0.6)))
 end
 
-function reset_state!(Y::Array{Float64, 1}, value::Float64)
-    for i = 1:length(Y)
-        Y[i] = value
-    end
-end
