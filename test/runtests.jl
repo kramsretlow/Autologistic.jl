@@ -172,6 +172,12 @@ end
     @test pmf.partition ≈ 19.04878276433453 * ones(2)
     @test pmf.table[:,4,1] == pmf.table[:,4,2] 
     @test isapprox(pmf.table[:,4,1], probs, atol=1e-6)
+
+    # --- marginalprobabilities() --- 
+    truemp = [0.1192029 0.1192029; 0.5 0.5; 0.8807971 0.8807971]
+    @test isapprox(marginalprobabilities(M4), truemp, atol=1e-6)
+    @test isapprox(marginalprobabilities(M4,replicates=2), truemp[:,2], atol=1e-6)
+
 end
 
 @testset "samplers" begin
@@ -180,4 +186,28 @@ end
     @test all(x->isapprox(x,0.5,atol=0.05), sum(out1.==1, dims=2)/10000)
     out2 = sample(M5, 10000, average=true, burnin=100, start=rand([1,2], 16))
     @test all(x->isapprox(x,0.5,atol=0.05), out2)
+
+    M6 = ALRsimple(grid4(3,3)[1], rand(9,2))
+    setparameters!(M6, [-0.5, 0.5, 0.2])
+    marg = marginalprobabilities(M6)
+    out3 = sample(M6, 10000, method=ROCFTP, average=true)
+    out4 = sample(M6, 10000, method=CFTPsmall, average=true)
+    out5 = sample(M6, 10000, method=CFTPlarge, average=true)
+    @test isapprox(out3, marg, atol=0.03, norm=x->norm(x,Inf))
+    @test isapprox(out4, marg, atol=0.03, norm=x->norm(x,Inf))
+    @test isapprox(out5, marg, atol=0.03, norm=x->norm(x,Inf))
+
+    tbl = fullPMF(M6).table
+    checkthree(x) = all(x[1:3] .== -1.0)
+    threelow = sum(mapslices(x -> checkthree(x) ? x[10] : 0.0, tbl, dims=2))
+    out6 = sample(M6, 10000, method=ROCFTP, average=false)
+    est6 = sum(mapslices(x -> checkthree(x) ? 1.0/10000.0 : 0.0, out6, dims=1))
+    out7 = sample(M6, 10000, method=CFTPsmall, average=false)
+    est7 = sum(mapslices(x -> checkthree(x) ? 1.0/10000.0 : 0.0, out7, dims=1))
+    out8 = sample(M6, 10000, method=CFTPlarge, average=false)
+    est8 = sum(mapslices(x -> checkthree(x) ? 1.0/10000.0 : 0.0, out8, dims=1))
+    @test isapprox(est6, threelow, atol=0.03)
+    @test isapprox(est7, threelow, atol=0.03)
+    @test isapprox(est8, threelow, atol=0.03)
+
 end

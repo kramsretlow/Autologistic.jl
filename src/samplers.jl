@@ -1,7 +1,7 @@
 # Take the strategy of using a single user-facing function sample() that has an
 # argument method<:SamplingMethods (an enum).  Use the enum to do argument 
-# checking and submit the work to the specialized functions (currently gibbssample()
-# and perfectsample()).
+# checking and submit the work to the specialized functions (currently gibbssample(),
+# and and three perfect sampling implementations, ROCFTP(), CFTPsmall(), CFTPlarge()).
 # 
 # TODO: explore how to use @inbounds, @inline, etc. to optimize performance in these fcns.
 

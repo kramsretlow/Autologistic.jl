@@ -61,59 +61,5 @@ round.([truemarg sampmarg abs.(truemarg .- sampmarg)], digits=4)
 
 
 
-replicate = 1
-lo = Float64(M.coding[1])
-hi = Float64(M.coding[2])
-Y = vec(makecoded(M, M.responses[:,replicate]))  
-Λ = M.pairwise[:,:,replicate]   
-α = M.unary[:,replicate]
-μ = centering_adjustment(M)[:,replicate]
-n = length(α)
-adjlist = M.pairwise.G.fadjlist  
-T = 2
-maxepoch = 40
-times = [-T * 2 .^(0:maxepoch) .+ 1  [0; -T * 2 .^(0:maxepoch-1)]]
-rngL = MersenneTwister()
-rngH = MersenneTwister()
-L = zeros(n)
-H = zeros(n)
-seeds = rand(UInt32, maxepoch + 1)
-
-@btime Autologistic.runepochs!(8, $times, $L, $H, $rngL, $rngH, $seeds, $lo, $hi, 
-                               $Λ, $adjlist, $α, $μ, $n)
-
-
-Z = rand([lo, hi], n);
-U = rand(n,100);
-@btime Autologistic.gibbsstep_block!($Z, $U, $lo, $hi, $Λ, $adjlist, $α, $μ)
-@btime Autologistic.blocksize_estimate($lo, $hi, $Λ, $adjlist, $α, $μ, $n)
-
-
-
-
-
-
-function wrap2(k, avg=true)
-    n1 = 35
-    M = ALRsimple(grid4(n1,n1)[1], rand(n1^2,3))
-    @time S = sample(M,k,average=avg);
-end
-
-
-# === Playing with allocations
-function foo(n)
-    A = rand(n,n)
-    A[A .< 0.5] .= 0
-    B = sparse(A)
-
-    v = rand(n)
-    @time A[:,1]' * v
-    tot = 0.0
-    @time begin
-        for i = 1:n
-            tot += A[i,1]*v[i]
-        end
-    end
-end
 
 

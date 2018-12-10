@@ -182,16 +182,17 @@ function marginalprobabilities(M::ALmodel; replicates=nothing, force::Bool=false
         error("replicate index out of bounds")
     end
     hi = M.coding[2]
-    out = zeros(n,m)
+    out = zeros(n,length(replicates))
 
     tbl = fullPMF(M).table
 
-    for r = 1:m
+    for j = 1:length(replicates)
+        r = replicates[j]
         for i = 1:n
-            out[i,r] = sum(mapslices(x -> x[i]==hi ? x[n+1] : 0.0, tbl, dims=2))
+            out[i,j] = sum(mapslices(x -> x[i]==hi ? x[n+1] : 0.0, tbl[:,:,r], dims=2))
         end
     end
-    if m==1
+    if length(replicates) == 1
         return vec(out)
     end
     return out
