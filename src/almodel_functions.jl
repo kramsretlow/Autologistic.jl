@@ -166,7 +166,7 @@ function fullPMF(M::ALmodel; replicates=nothing, force::Bool=false)
     return (table=T, partition=partition)
 end
 
-# ***TODO: tests and documentation***
+# ***TODO: documentation***
 #Returns an n-by-m array (or an n-vector if  m==1). The [i,j]th element is the 
 #marginal probability of the high state in the ith variable at the jth replciate.
 function marginalprobabilities(M::ALmodel; replicates=nothing, force::Bool=false)
@@ -197,3 +197,45 @@ function marginalprobabilities(M::ALmodel; replicates=nothing, force::Bool=false
     end
     return out
 end
+
+# Compute the conditional probability that variables take the high state, given the
+# current values of all of their neighbors. If vertices or replicates are provided,
+# the results are only computed for the desired variables & replicates.  Otherwise
+# results are computed for all variables and replicates.
+# TODO: optimize for speed/efficiency
+function conditionalprobabilities(M::ALmodel; vertices=nothing, replicates=nothing)
+    n, m = size(M.unary)
+    if vertices==nothing
+        vertices = 1:n
+    end
+    if replicates==nothing
+        replicates = 1:m
+    end
+    out = zeros(Float64, length(vertices), length(replicates))
+    Y = makecoded(M)
+    μ = centering_adjustment(M)
+    lo, hi = M.coding
+    adjlist = M.pairwise.G.fadjlist
+
+    for j = 1:length(replicates)
+        r = replicates[j]
+        for i = 1:length(vertices)
+            v = vertices[i]
+            # get neighbor sum
+            ns = 0.0
+            for ix in adjlist[v]
+                ns = ns + M.pairwise[v,ix,r] * (Y[ix,r] - μ[ix,r])
+            end
+            # get cond prob
+            loval = exp(lo*(M.unary[v,r] + ns))
+            hival = exp(hi*(M.unary[v,r] + ns))
+            if hival == Inf
+                out[i,r] = 1.0
+            else
+                out[i,r] = hival / (loval + hival)
+            end
+        end
+    end
+    return out
+end
+

@@ -11,7 +11,7 @@ begin #-Setup tasks
     
     using Revise
     using Autologistic
-    using Plots, Profile, ProfileView
+    using Plots, Profile, ProfileView, LinearAlgebra
 
     include("test\\runtests.jl")
 end

@@ -178,6 +178,17 @@ end
     @test isapprox(marginalprobabilities(M4), truemp, atol=1e-6)
     @test isapprox(marginalprobabilities(M4,replicates=2), truemp[:,2], atol=1e-6)
 
+    # --- conditionalprobabilities() --- 
+    lam = 0.5
+    a, b, c = (-1.2, 0.25, 1.5)
+    y1, y2, y3 = (-1.0, 1.0, 1.0)
+    ns1, ns2, ns3 = lam .* (y2+y3, y1+y3, y1+y2)
+    cp1 = exp(a+ns1) / (exp(-(a+ns1)) + exp(a+ns1))
+    cp2 = exp(b+ns2) / (exp(-(b+ns2)) + exp(b+ns2))
+    cp3 = exp(c+ns3) / (exp(-(c+ns3)) + exp(c+ns3))
+    M = ALmodel(FullUnary([a, b, c]), SimplePairwise(lam, Graph(3,3)), Y=[y1,y2,y3])
+    @test isapprox(conditionalprobabilities(M), [cp1, cp2, cp3])
+    @test isapprox(conditionalprobabilities(M, vertices=[1,3]), [cp1, cp3])
 end
 
 @testset "samplers" begin

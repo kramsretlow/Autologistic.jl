@@ -24,6 +24,7 @@ export
     #----- functions -----
     ALRsimple,
     centering_adjustment,
+    conditionalprobabilities,
     fullPMF,
     getparameters,
     getpairwiseparameters,

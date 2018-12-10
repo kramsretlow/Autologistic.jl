@@ -23,7 +23,7 @@ function sample(M::ALmodel, k::Int = 1; method::SamplingMethods = Gibbs, replica
     α = M.unary[:,replicate]
     μ = centering_adjustment(M)[:,replicate]
     n = length(α)
-    adjlist = M.pairwise.G.fadjlist  #**TODO: decide on what bits of G to pass**
+    adjlist = M.pairwise.G.fadjlist
     if method == Gibbs
         if start == nothing
             start = rand([lo, hi], n)
