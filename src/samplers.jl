@@ -3,7 +3,21 @@
 # checking and submit the work to the specialized functions (currently gibbssample(),
 # and and three perfect sampling implementations, ROCFTP(), CFTPsmall(), CFTPlarge()).
 # 
+# TODO (everywhere): instead of computing loval/(loval+hival), use 
+#       1/(1+exp((lo-hi)*(alpha_i + ns_i)))
 # TODO: explore how to use @inbounds, @inline, etc. to optimize performance in these fcns.
+# TODO: for CFTP implementations, put in warnings that appear whenever any elements of Λ 
+#       are negative.  In this case samples might still be useful if mixing time is similar
+#       to the CFTP coalescence time, but exact sampling isn't guaranteed because the 
+#       monotonicity property is lost.  Could also direct the user to a "CFTPsafe" method
+#       that uses a bounding chain to guarantee exact sampling, with higher computational
+#       cost.  
+#       ***CHECK: bounding chain method should work better for strong association case!!!*** 
+#       ***CHECK: make sure my understanding of bounding chain construction is right!!!***
+# TODO: Implement Swendsen-Wang (either as a MC sampler or bounding chain-type perfect
+#       sampler (see Huber16))
+# TODO: at the end, try to specify a highest-level function that considers the situation
+#       and chooses an algorithm.
 
 function sample(M::ALmodel, k::Int = 1; method::SamplingMethods = Gibbs, replicate::Int = 1, 
                 average::Bool = false, start = nothing, burnin::Int = 0, verbose::Bool = false)

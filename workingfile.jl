@@ -52,7 +52,7 @@ n = 10
 maxedges = n*(n-1)/2
 our_edge_range = 0:Int(floor(maxedges/2))
 G = Graph(n, rand(our_edge_range))
-M = ALmodel(FullUnary(randn(n)), SimplePairwise(0.25, G))
+M = ALmodel(FullUnary(randn(n)), SimplePairwise(-0.75, G))
 truemarg = marginalprobabilities(M);
 sampmarg = sample(M, 1000, method=ROCFTP, average=true);
 round.([truemarg sampmarg abs.(truemarg .- sampmarg)], digits=4)
