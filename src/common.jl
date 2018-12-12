@@ -6,7 +6,7 @@ const CoordType = Union{Nothing, Array{NTuple{2,T},1},Array{NTuple{3,T},1}} wher
 
 # Enumerations
 @enum CenteringKinds none expectation onehalf
-@enum SamplingMethods Gibbs CFTPsmall CFTPlarge ROCFTP
+@enum SamplingMethods Gibbs CFTPsmall CFTPlarge ROCFTP CFTPbound
 
 # A function to make a 2D array of Booleans out of a 1- or 2-D input.
 function makebool(v::V) where V<:VecOrMat

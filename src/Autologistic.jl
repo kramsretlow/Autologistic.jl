@@ -19,7 +19,7 @@ export
     CoordType,
     FullUnary,
     LinPredUnary,
-    SamplingMethods, Gibbs, CFTPsmall, CFTPlarge, ROCFTP,
+    SamplingMethods, Gibbs, CFTPsmall, CFTPlarge, ROCFTP, CFTPbound,
     SimplePairwise,
     #----- functions -----
     ALRsimple,

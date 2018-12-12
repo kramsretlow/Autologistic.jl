@@ -19,7 +19,7 @@ end
 
 # === Trying to speed things up ===
 using BenchmarkTools
-n1 = 100
+n1 = 25
 G = grid4(n1,n1)
 M = ALRsimple(G[1], rand(n1^2,3))
 
@@ -34,6 +34,7 @@ setparameters!(M, [-2, 1, 1, 0.5])
 @btime sample($M, 100, method=CFTPlarge, average=true);
 @btime sample($M, 100, method=CFTPsmall, average=true);
 @btime sample($M, 100, method=ROCFTP, average=true);
+@btime sample($M, 100, method=CFTPbound, average=true);
 
 
 # === Test out perfect sampling (plot) ===
@@ -52,11 +53,15 @@ n = 10
 maxedges = n*(n-1)/2
 our_edge_range = 0:Int(floor(maxedges/2))
 G = Graph(n, rand(our_edge_range))
-M = ALmodel(FullUnary(randn(n)), SimplePairwise(-0.75, G))
+M = ALmodel(FullUnary(randn(n)), SimplePairwise(0.75, G))
 truemarg = marginalprobabilities(M);
-sampmarg = sample(M, 1000, method=ROCFTP, average=true);
-round.([truemarg sampmarg abs.(truemarg .- sampmarg)], digits=4)
 
+setpairwiseparameters!(M, [2.0])
+sample(M, method=CFTPbound, verbose=true)
+sample(M, method=CFTPsmall, verbose=true)
+
+sampmarg = sample(M, 1000, method=CFTPbound, average=true);
+round.([truemarg sampmarg abs.(truemarg .- sampmarg)], digits=4)
 
 
 

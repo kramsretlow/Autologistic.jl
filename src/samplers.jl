@@ -9,15 +9,23 @@
 # TODO: for CFTP implementations, put in warnings that appear whenever any elements of Λ 
 #       are negative.  In this case samples might still be useful if mixing time is similar
 #       to the CFTP coalescence time, but exact sampling isn't guaranteed because the 
-#       monotonicity property is lost.  Could also direct the user to a "CFTPsafe" method
-#       that uses a bounding chain to guarantee exact sampling, with higher computational
-#       cost.  
+#       monotonicity property is lost.  Could also direct the user to cftp_bound()
 #       ***CHECK: bounding chain method should work better for strong association case!!!*** 
-#       ***CHECK: make sure my understanding of bounding chain construction is right!!!***
+#           --> It still can take very long, but initial trials suggest it might be a little
+#               better at handling strong association.
+#       ***CHECK: make sure my understanding of bounding chain construction is right***
+#           --> Yes, we need to consider all configurations allowed by the bounding chain. 
+#               But see my 2018-12-12 notes for how I implementeted it in cftp_bound()
 # TODO: Implement Swendsen-Wang (either as a MC sampler or bounding chain-type perfect
 #       sampler (see Huber16))
 # TODO: at the end, try to specify a highest-level function that considers the situation
 #       and chooses an algorithm.
+# TODO: put in an optional "fudge factor" in cftp_bound, to tweak the local bounds to 
+#       encourage convergence in large-association cases.  Need to think through what 
+#       would be sensible to do here.  But since we do only a "local" bound based on 
+#       the neighbor sums, we should have some hope of doing something useful with that
+#       method. 
+# TODO: Tests and checks for cftp_bound()
 
 function sample(M::ALmodel, k::Int = 1; method::SamplingMethods = Gibbs, replicate::Int = 1, 
                 average::Bool = false, start = nothing, burnin::Int = 0, verbose::Bool = false)
@@ -49,6 +57,8 @@ function sample(M::ALmodel, k::Int = 1; method::SamplingMethods = Gibbs, replica
         return cftp_small(lo, hi, Λ, adjlist, α, μ, n, k, average, verbose)
     elseif method == CFTPlarge
         return cftp_large(lo, hi, Λ, adjlist, α, μ, n, k, average, verbose)
+    elseif method == CFTPbound
+        return cftp_bound(lo, hi, Λ, adjlist, α, μ, n, k, average, verbose)
     elseif method == ROCFTP
         return rocftp(lo, hi, Λ, adjlist, α, μ, n, k, average, verbose)
     end
@@ -354,4 +364,97 @@ function blocksize_estimate(lo, hi, Λ, adjlist, α, μ, n)
     end
     return Int(round(quantile(coalesce_times, 0.6)))
 end
+
+
+function cftp_bound(lo::Float64, hi::Float64, 
+                    Λ::SparseMatrixCSC{Float64,Int}, adjlist::Array{Array{Int64,1},1},
+                    α::Vector{Float64}, μ::Vector{Float64}, n::Int, k::Int, 
+                    average::Bool, verbose::Bool)
+
+    temp = average ? zeros(Float64, n) : zeros(Float64, n, k)
+    BC = Vector{Int}(undef,n)
+
+    # We use matrix U to hold all the uniform random numbers needed to compute the
+    # updates to the bounding chain. In this matrix each column
+    # holds the n random variates needed to do a full Gibbs sampling update of the
+    # variables in the graph. We think of the columns as going backwards in time to the
+    # right: column one is time 0, column 2 is time -1, ... column T+1 is time -T.  So to
+    # run the chains in forward time we go from right to left.
+    for rep = 1:k 
+        T = 2           #-T tracks how far back in time we start. Our sample is from time 0.
+        U = rand(n,1)   #-Holds needed random numbers (this matrix will grow)
+        coalesce = false    
+        while ~coalesce
+            # Initialize the bounding chain.  The state of the chain is represented by a vector of
+            # length n, where each element can take values in the set {0, 1, 2}, where:
+            #   - 0 inidicates that the single label "lo" is in the bounding chain for that vertex.
+            #   - 1 indicates that the single label "hi" is in the bounding chain for that vertex.
+            #   - 2 indicates that both labels {"lo", "hi"} are in the bounding chain.
+            BC = fill(2,n)
+            U = [U rand(n,T)]
+            for t = T+1:-1:1                          #-Column t corresponds to time -(t-1).
+                for i = 1:n
+                    ss = 0.0  #"as small as possible" neighbor sum
+                    sl = 0.0  #"as large as possible" neighbor sum
+                    for j in adjlist[i]
+                        λij = Λ[i,j]
+                        if BC[j] == 2
+                            if λij < 0
+                                ss = ss + λij * (hi - μ[j])
+                                sl = sl + λij * (lo - μ[j])
+                            else
+                                ss = ss + λij * (lo - μ[j])
+                                sl = sl + λij * (hi - μ[j])
+                            end
+                        elseif BC[j] == 1
+                            ss = ss + λij * (hi - μ[j])
+                            sl = sl + λij * (hi - μ[j])
+                        else
+                            ss = ss + λij * (lo - μ[j])
+                            sl = sl + λij * (lo - μ[j])
+                        end
+                    end
+                    
+                    pss = 1 / ( 1 + exp((lo-hi)*(α[i] + ss)) )
+                    psl = 1 / ( 1 + exp((lo-hi)*(α[i] + sl)) )
+
+                    check1 = U[i,t] < pss
+                    check2 = U[i,t] < psl
+                    if check1 && check2
+                        BC[i] = 1
+                    elseif check1 || check2 
+                        BC[i] = 2
+                    else
+                        BC[i] = 0
+                    end
+                end
+            end
+            coalesce = all(BC .!= 2)
+            if verbose 
+                println("Started from -$(T): $(sum(BC .== 2)) elements not coalesced.")
+            end
+            T = 2*T
+        end
+        vals = [lo, hi]
+        if average
+            for i in 1:n
+                temp[i] = temp[i] + vals[BC[i] + 1]
+            end
+        else
+            for i in 1:n
+                temp[i,rep] = vals[BC[i] + 1]
+            end
+        end
+        if verbose 
+            println("finished draw $(rep) of $(k)") 
+        end
+    end
+    if average
+        return map(x -> (x - k*lo)/(k*(hi-lo)), temp)
+    else
+        return temp
+    end   
+end
+
+
 
