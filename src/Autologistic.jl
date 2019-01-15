@@ -7,6 +7,8 @@ using LightGraphs, LinearAlgebra, SparseArrays, Statistics, Random
 # [x] Make and export concrete Centering types (or let the types be an enumeration)
 # [x] Consider how to include spatial/spatiotemporal locations of the vertices
 #     in our types, so they can be used, e.g., for plotting.
+# [ ] Be aware of rmul!, lmul!, mul!, and accumulate! methods in LinearAlgebra, for
+#     doing matrix/vector operations and storing results in-place.  Look for speedups.
 
 # ***Question: how to decide which abstract types to export?***
 export
