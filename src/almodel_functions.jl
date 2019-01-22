@@ -105,7 +105,7 @@ In the ``m=1`` case, it is a scalar `Float64`.
 
 # Arguments
 - `M::ALmodel`: an autologistic model.
-- `replicates=nothing`: indices of specific replicates from wich to obtain the output. By 
+- `replicates=nothing`: indices of specific replicates from which to obtain the output. By 
   default, all replicates are used.
 - `force::Bool=false`: calling the function with ``n>20`` will throw an error unless 
   `force=true`. 
