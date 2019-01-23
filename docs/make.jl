@@ -7,3 +7,6 @@ makedocs(
         "api.md"
     ]
 )
+deploydocs(
+    repo = "github.com/kramsretlow/Autologistic.jl.git",
+)
