@@ -7,7 +7,7 @@
 # [ ] Add more tests for getindex() with simplepairwise (many methods)
 
 using Test
-using LightGraphs
+using LightGraphs, LinearAlgebra
 using Autologistic
 
 println("Running tests:")

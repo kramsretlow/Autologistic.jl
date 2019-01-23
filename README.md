@@ -2,6 +2,7 @@
 
 [![](https://img.shields.io/badge/docs-stable-blue.svg)](https://kramsretlow.github.io/Autologistic.jl/stable)
 [![](https://img.shields.io/badge/docs-dev-blue.svg)](https://kramsretlow.github.io/Autologistic.jl/dev)
+[![Coverage Status](https://coveralls.io/repos/github/kramsretlow/Autologistic/badge.svg?branch=master)](https://coveralls.io/github/kramsretlow/Autologistic?branch=master)
 
 A Julia package for computing with the autologistic (Ising) probability model
 and performing autologistic regression.
