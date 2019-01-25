@@ -72,23 +72,6 @@ function makeALRsimple(graph::SimpleGraph{Int}, X::Float2D3D;
 end
 #TODO: ALRadaptive() (requires an appropriate pairwise type)
 
-# === Methods: getting/setting parameters ======================================
-getparameters(M::AutologisticModel) = [getparameters(M.unary); getparameters(M.pairwise)]
-getunaryparameters(M::AutologisticModel) = getparameters(M.unary)
-getpairwiseparameters(M::AutologisticModel) = getparameters(M.pairwise)
-function setparameters!(M::AutologisticModel, newpars::Vector{Float64})
-    p, q = (length(getunaryparameters(M)), length(getpairwiseparameters(M)))
-    @assert length(newpars) == p + q "newpars has wrong length"
-    setparameters!(M.unary, newpars[1:p])
-    setparameters!(M.pairwise, newpars[p+1:p+q])
-    return newpars
-end
-function setunaryparameters!(M::AutologisticModel, newpars::Vector{Float64})
-    setparameters!(M.unary, newpars)
-end
-function setpairwiseparameters!(M::AutologisticModel, newpars::Vector{Float64})
-    setparameters!(M.pairwise, newpars)
-end
 
 
 
