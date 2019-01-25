@@ -1,7 +1,7 @@
 # Take the strategy of using a single user-facing function sample() that has an
 # argument method<:SamplingMethods (an enum).  Use the enum to do argument 
 # checking and submit the work to the specialized functions (currently gibbssample(),
-# and and three perfect sampling implementations, ROCFTP(), CFTPsmall(), CFTPlarge()).
+# and and three perfect sampling implementations, perfect_read_once(), perfect_reuse_samples(), perfect_reuse_seeds()).
 # 
 # TODO (everywhere): instead of computing loval/(loval+hival), use 
 #       1/(1+exp((lo-hi)*(alpha_i + ns_i)))
@@ -9,25 +9,25 @@
 # TODO: for CFTP implementations, put in warnings that appear whenever any elements of Λ 
 #       are negative.  In this case samples might still be useful if mixing time is similar
 #       to the CFTP coalescence time, but exact sampling isn't guaranteed because the 
-#       monotonicity property is lost.  Could also direct the user to cftp_bound()
+#       monotonicity property is lost.  Could also direct the user to cftp_bounding_chain()
 #       ***CHECK: bounding chain method should work better for strong association case!!!*** 
 #           --> It still can take very long, but initial trials suggest it might be a little
 #               better at handling strong association.
 #       ***CHECK: make sure my understanding of bounding chain construction is right***
 #           --> Yes, we need to consider all configurations allowed by the bounding chain. 
-#               But see my 2018-12-12 notes for how I implementeted it in cftp_bound()
+#               But see my 2018-12-12 notes for how I implementeted it in cftp_bounding_chain()
 # TODO: Implement Swendsen-Wang (either as a MC sampler or bounding chain-type perfect
 #       sampler (see Huber16))
 # TODO: at the end, try to specify a highest-level function that considers the situation
 #       and chooses an algorithm.
-# TODO: put in an optional "fudge factor" in cftp_bound, to tweak the local bounds to 
+# TODO: put in an optional "fudge factor" in cftp_bounding_chain, to tweak the local bounds to 
 #       encourage convergence in large-association cases.  Need to think through what 
 #       would be sensible to do here.  But since we do only a "local" bound based on 
 #       the neighbor sums, we should have some hope of doing something useful with that
 #       method. 
-# TODO: Tests and checks for cftp_bound()
+# TODO: Tests and checks for cftp_bounding_chain()
 
-function sample(M::ALmodel, k::Int = 1; method::SamplingMethods = Gibbs, replicate::Int = 1, 
+function sample(M::AutologisticModel, k::Int = 1; method::SamplingMethods = Gibbs, replicate::Int = 1, 
                 average::Bool = false, start = nothing, burnin::Int = 0, verbose::Bool = false)
     if k < 1 
         error("k must be positive") 
@@ -43,7 +43,7 @@ function sample(M::ALmodel, k::Int = 1; method::SamplingMethods = Gibbs, replica
     Y = vec(makecoded(M, M.responses[:,replicate]))  #TODO: be cetain M isn't mutated.
     Λ = M.pairwise[:,:,replicate]   
     α = M.unary[:,replicate]
-    μ = centering_adjustment(M)[:,replicate]
+    μ = centeringterms(M)[:,replicate]
     n = length(α)
     adjlist = M.pairwise.G.fadjlist
     if method == Gibbs
@@ -53,14 +53,14 @@ function sample(M::ALmodel, k::Int = 1; method::SamplingMethods = Gibbs, replica
             start = vec(makecoded(M, makebool(start)))
         end
         return gibbssample(lo, hi, Y, Λ, adjlist, α, μ, n, k, average, start, burnin, verbose)
-    elseif method == CFTPsmall
-        return cftp_small(lo, hi, Λ, adjlist, α, μ, n, k, average, verbose)
-    elseif method == CFTPlarge
-        return cftp_large(lo, hi, Λ, adjlist, α, μ, n, k, average, verbose)
-    elseif method == CFTPbound
-        return cftp_bound(lo, hi, Λ, adjlist, α, μ, n, k, average, verbose)
-    elseif method == ROCFTP
-        return rocftp(lo, hi, Λ, adjlist, α, μ, n, k, average, verbose)
+    elseif method == perfect_reuse_samples
+        return cftp_reuse_samples(lo, hi, Λ, adjlist, α, μ, n, k, average, verbose)
+    elseif method == perfect_reuse_seeds
+        return cftp_reuse_seeds(lo, hi, Λ, adjlist, α, μ, n, k, average, verbose)
+    elseif method == perfect_bounding_chain
+        return cftp_bounding_chain(lo, hi, Λ, adjlist, α, μ, n, k, average, verbose)
+    elseif method == perfect_read_once
+        return cftp_read_once(lo, hi, Λ, adjlist, α, μ, n, k, average, verbose)
     end
 end
 
@@ -139,7 +139,7 @@ function runepochs!(j, times, Y, seeds, lo, hi, Λ, adjlist, α, μ, n)
     end
 end
 
-function cftp_large(lo::Float64, hi::Float64, 
+function cftp_reuse_seeds(lo::Float64, hi::Float64, 
                     Λ::SparseMatrixCSC{Float64,Int}, adjlist::Array{Array{Int64,1},1},
                     α::Vector{Float64}, μ::Vector{Float64}, n::Int, k::Int, 
                     average::Bool, verbose::Bool)
@@ -197,7 +197,7 @@ function cftp_large(lo::Float64, hi::Float64,
 end
 
 
-function cftp_small(lo::Float64, hi::Float64, 
+function cftp_reuse_samples(lo::Float64, hi::Float64, 
                     Λ::SparseMatrixCSC{Float64,Int}, adjlist::Array{Array{Int64,1},1},
                     α::Vector{Float64}, μ::Vector{Float64}, n::Int, k::Int, 
                     average::Bool, verbose::Bool)
@@ -268,7 +268,7 @@ function cftp_small(lo::Float64, hi::Float64,
     end   
 end
 
-function rocftp(lo::Float64, hi::Float64,  
+function cftp_read_once(lo::Float64, hi::Float64,  
                 Λ::SparseMatrixCSC{Float64,Int}, adjlist::Array{Array{Int64,1},1},
                 α::Vector{Float64}, μ::Vector{Float64}, n::Int, k::Int, 
                 average::Bool, verbose::Bool)
@@ -366,7 +366,7 @@ function blocksize_estimate(lo, hi, Λ, adjlist, α, μ, n)
 end
 
 
-function cftp_bound(lo::Float64, hi::Float64, 
+function cftp_bounding_chain(lo::Float64, hi::Float64, 
                     Λ::SparseMatrixCSC{Float64,Int}, adjlist::Array{Array{Int64,1},1},
                     α::Vector{Float64}, μ::Vector{Float64}, n::Int, k::Int, 
                     average::Bool, verbose::Bool)

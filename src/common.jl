@@ -2,11 +2,11 @@
 const VecOrMat = Union{Array{T,1}, Array{T,2}} where T
 const Float1D2D = Union{Array{Float64,1},Array{Float64,2}}
 const Float2D3D = Union{Array{Float64,2},Array{Float64,3}}
-const CoordType = Union{Nothing, Array{NTuple{2,T},1},Array{NTuple{3,T},1}} where T<:Real
+const SpatialCoordinates = Union{Nothing, Array{NTuple{2,T},1},Array{NTuple{3,T},1}} where T<:Real
 
 # Enumerations
 @enum CenteringKinds none expectation onehalf
-@enum SamplingMethods Gibbs CFTPsmall CFTPlarge ROCFTP CFTPbound
+@enum SamplingMethods Gibbs perfect_reuse_samples perfect_reuse_seeds perfect_read_once perfect_bounding_chain
 
 # A function to make a 2D array of Booleans out of a 1- or 2-D input.
 function makebool(v::V) where V<:VecOrMat
@@ -38,7 +38,7 @@ end
 # vertex spatial coordinates.
 # NB: LightGraphs has a function Grid() for this case.
 # TODO: write tests
-function grid4(r::Int, c::Int, xlim::Tuple{Real,Real}=(0.0,1.0), 
+function makegrid4(r::Int, c::Int, xlim::Tuple{Real,Real}=(0.0,1.0), 
                ylim::Tuple{Real,Real}=(0.0,1.0))
 
     # Create graph with r*c vertices, no edges
@@ -72,11 +72,11 @@ end
 # rows and c columns.  Returns a tuple containing the graph, and an array of 
 # vertex spatial coordinates.
 # TODO: write tests
-function grid8(r::Int, c::Int, xlim::Tuple{Real,Real}=(0.0,1.0), 
+function makegrid8(r::Int, c::Int, xlim::Tuple{Real,Real}=(0.0,1.0), 
                ylim::Tuple{Real,Real}=(0.0,1.0))
 
     # Create the 4-connected graph
-    G, locs = grid4(r, c, xlim, ylim)
+    G, locs = makegrid4(r, c, xlim, ylim)
 
     # loop through vertices and add the diagonal edges.
     for i in 1:r*c
@@ -102,7 +102,7 @@ end
 # creating edges between all points within a certain Euclidean distance of 
 # one another.
 # TODO: write tests
-function spatialgraph(coords::C, δ::Real) where C<:CoordType
+function makespatialgraph(coords::C, δ::Real) where C<:SpatialCoordinates
     @assert coords !== nothing 
     n = length(coords)
     G = Graph(n)

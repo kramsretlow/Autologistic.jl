@@ -3,7 +3,7 @@
 # The unary part containing a regression linear predictor.
 # X is an n-by-p-by-m matrix (n obs, p predictors, m replicates)
 # β is a p-vector of parameters (same for all replicates)
-struct LinPredUnary <: AbstractUnary
+struct LinPredUnary <: AbstractUnaryParameter
     X::Array{Float64, 3}
     β::Vector{Float64}
 
@@ -101,7 +101,7 @@ Base.getindex(u::LinPredUnary, I::AbstractVector{Bool}, J::AbstractVector{<:Inte
 Base.setindex!(u::LinPredUnary, v::Real, i::Int, j::Int) =
     error("Values of $(typeof(u)) must be set using setparameters!().")
 
-#---- AbstractUnary interface ----
+#---- AbstractUnaryParameter interface ----
 getparameters(u::LinPredUnary) = u.β
 function setparameters!(u::LinPredUnary, newpars::Vector{Float64})
     u.β[:] = newpars

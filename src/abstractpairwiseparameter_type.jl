@@ -1,10 +1,10 @@
-#AbstractPairwise is the Λ (which could be parametrized)
+#AbstractPairwiseParameter is the Λ (which could be parametrized)
 # We make it a 3D AbstractArray for maximum flexibility, so that in the
 # case of replicates with e.g. adaptive pairwise paramettrization, we can 
 # have separate Λ values for each replicate.
 # ***TODO***
 # [x] Should this type be a subtype of a sparse array?  And a symmetric type? 
-#    Or should we allow subtypes of AbstractPairwise to decide if they should be 
+#    Or should we allow subtypes of AbstractPairwiseParameter to decide if they should be 
 #    sparse or not? This is especially important if we make it a 3D array with 
 #    replicates.
 #      ==> Decided, keep it just a subtype of AbstractArray{Float64,3}, and let
@@ -15,7 +15,7 @@
 #     be efficiently calculated by each concrete type.
 
 """
-    AbstractPairwise
+    AbstractPairwiseParameter
 
 Abstract type representing the pairwise part of an autologistic regression model.
 
@@ -25,7 +25,7 @@ All concrete subtypes should have the following fields:
 *   `replicates::Int`  -- The number of replicate observations.
 *   `A::SparseMatrixCSC{Float64,Int64}`  -- The adjacency matrix of the graph.
 
-In addition to `getindex()` and `setindex!()`, any concrete subtype `P<:AbstractPairwise` 
+In addition to `getindex()` and `setindex!()`, any concrete subtype `P<:AbstractPairwiseParameter` 
 should also have the following methods defined:
 
 *   `getparameters(P)`, returning a Vector{Float64}
@@ -44,16 +44,16 @@ replicate in an appropriate subtype of AbstractMatrix.  It is not intended that 
 index will be used for range or vector indexing like P[:,:,1:5] (though this may work 
 due to AbstractArray fallbacks). 
 """
-abstract type AbstractPairwise <: AbstractArray{Float64, 3} end
+abstract type AbstractPairwiseParameter <: AbstractArray{Float64, 3} end
 
-Base.IndexStyle(::Type{<:AbstractPairwise}) = IndexCartesian()
+Base.IndexStyle(::Type{<:AbstractPairwiseParameter}) = IndexCartesian()
 
-Base.summary(p::AbstractPairwise) = "**TODO**"
+Base.summary(p::AbstractPairwiseParameter) = "**TODO**"
 
 #---- fallback methods --------------
-Base.size(p::AbstractPairwise) = (nv(p.G), nv(p.G), p.replicates)
+Base.size(p::AbstractPairwiseParameter) = (nv(p.G), nv(p.G), p.replicates)
 
-function Base.getindex(p::AbstractPairwise, I::AbstractVector, J::AbstractVector)
+function Base.getindex(p::AbstractPairwiseParameter, I::AbstractVector, J::AbstractVector)
     error("getindex not implemented for $(typeof(p))")
 end
 

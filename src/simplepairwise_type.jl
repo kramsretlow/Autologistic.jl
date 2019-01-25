@@ -12,7 +12,7 @@
 #    Note: made this mutable so I could set λ.  Not sure how best to handle.
 #    Note: decided that *all parameters should be Vector{Float64}* for type 
 #          stability (even though here λ is scalar).
-mutable struct SimplePairwise <: AbstractPairwise
+mutable struct SimplePairwise <: AbstractPairwiseParameter
 	λ::Vector{Float64}
 	G::SimpleGraph{Int}
 	replicates::Int
@@ -75,7 +75,7 @@ Base.setindex!(p::SimplePairwise, i::Int) =
 	error("Pairwise values cannot be set directly. Use setparameters! instead.")
 
 
-#---- AbstractPairwise interface methods ----
+#---- AbstractPairwiseParameter interface methods ----
 getparameters(p::SimplePairwise) = p.λ
 function setparameters!(p::SimplePairwise, newpar::Vector{Float64})
     p.λ = newpar

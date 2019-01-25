@@ -1,7 +1,7 @@
 # A fcn to convert Boolean responses into coded values.
 # Returns a 2D array of Float64.  If Y is not supplied, use the responses stored
 # in the 1st argument.
-function makecoded(M::ALmodel, Y=nothing)
+function makecoded(M::AutologisticModel, Y=nothing)
     if Y==nothing
         Y = M.responses
     else
@@ -21,13 +21,13 @@ end
 
 
 # === centering adjustment =====================================================
-# centering_adjustment(M) returns an Array{Float64,2} of the same dimension as 
-# M.unary, giving the centering adjustments for ALmodel M.
-# centering_adjustment(M,kind) returns the centering adjustment that would be 
+# centeringterms(M) returns an Array{Float64,2} of the same dimension as 
+# M.unary, giving the centering adjustments for AutologisticModel M.
+# centeringterms(M,kind) returns the centering adjustment that would be 
 #   if centering were of type kind.
 # TODO: consider performance implications of calculating this each time instead
 # of storing the value.
-function centering_adjustment(M::ALmodel, kind::Union{Nothing,CenteringKinds}=nothing) 
+function centeringterms(M::AutologisticModel, kind::Union{Nothing,CenteringKinds}=nothing) 
     k = kind==nothing ? M.centering : kind
     if k == none
         return fill(0.0, size(M.unary))
@@ -47,11 +47,11 @@ end
 
 # === pseudolikelihood =========================================================
 # pseudolikelihood(M) computes the negative log pseudolikelihood for the given 
-# ALmodel with its responses.  Returns a Float64.
-function pseudolikelihood(M::ALmodel)
+# AutologisticModel with its responses.  Returns a Float64.
+function pseudolikelihood(M::AutologisticModel)
     out = 0.0
     Y = makecoded(M)
-    mu = centering_adjustment(M)
+    mu = centeringterms(M)
     lo, hi = M.coding
 
     # Loop through replicates
@@ -75,12 +75,12 @@ end
 # m is the number of replicate observations found in M.responses.
 # TODO: clean up for allocations/speed. Based on experience with sample(), might
 #       want to loop explicitly.
-function negpotential(M::ALmodel)
+function negpotential(M::AutologisticModel)
     Y = makecoded(M)
     m = size(Y,2)
     out = Array{Float64}(undef, m)
     α = M.unary[:,:]
-    μ = centering_adjustment(M)
+    μ = centeringterms(M)
     for j = 1:m
         Λ = M.pairwise[:,:,j]
         out[j] = Y[:,j]'*α[:,j] - Y[:,j]'*Λ*μ[:,j]  + Y[:,j]'*Λ*Y[:,j]/2
@@ -91,11 +91,11 @@ end
 
 # === fullPMF ==================================================================
 """
-    fullPMF(M::ALmodel; replicates=nothing, force::Bool=false)
+    fullPMF(M::AutologisticModel; replicates=nothing, force::Bool=false)
 
-Compute the PMF of an ALmodel, and return a `NamedTuple` `(:table, :partition)`.
+Compute the PMF of an AutologisticModel, and return a `NamedTuple` `(:table, :partition)`.
 
-For an ALmodel with ``n`` observations and ``m`` replicates, `:table` is a ``2^n×(n+1)×m`` 
+For an AutologisticModel with ``n`` observations and ``m`` replicates, `:table` is a ``2^n×(n+1)×m`` 
 array of `Float64`. Each page of the 3D array holds a probability table for a replicate.  
 Each row of the table holds a specific configuration of the responses, with the 
 corresponding probability in the last column.  In the ``m=1`` case,  `:table` is a 2D array.
@@ -104,7 +104,7 @@ Output `:partition` is a vector of normalizing constant (a.k.a. partition functi
 In the ``m=1`` case, it is a scalar `Float64`.
 
 # Arguments
-- `M::ALmodel`: an autologistic model.
+- `M::AutologisticModel`: an autologistic model.
 - `replicates=nothing`: indices of specific replicates from which to obtain the output. By 
   default, all replicates are used.
 - `force::Bool=false`: calling the function with ``n>20`` will throw an error unless 
@@ -112,7 +112,7 @@ In the ``m=1`` case, it is a scalar `Float64`.
 
 # Examples
 ```jldoctest
-julia> M = ALRsimple(Graph(3,0),ones(3,1));
+julia> M = makeALRsimple(Graph(3,0),ones(3,1));
 julia> pmf = fullPMF(M);
 julia> pmf.table
 8×4 Array{Float64,2}:
@@ -128,7 +128,7 @@ julia> pmf.partition
  8.0
 ```
 """
-function fullPMF(M::ALmodel; replicates=nothing, force::Bool=false)
+function fullPMF(M::AutologisticModel; replicates=nothing, force::Bool=false)
     n, m = size(M.unary)
     nc = 2^n
     if n>20 && !force
@@ -154,7 +154,7 @@ function fullPMF(M::ALmodel; replicates=nothing, force::Bool=false)
         T[:,1:n,i] = configs
         α = M.unary[:,r]
         Λ = M.pairwise[:,:,r]
-        μ = centering_adjustment(M)[:,r]
+        μ = centeringterms(M)[:,r]
         unnormalized = mapslices(v -> exp.(v'*α - v'*Λ*μ + v'*Λ*v/2), configs, dims=2)
         partition[i] = sum(unnormalized)
         T[:,n+1,i] = unnormalized / partition[i]
@@ -169,7 +169,7 @@ end
 # ***TODO: documentation***
 #Returns an n-by-m array (or an n-vector if  m==1). The [i,j]th element is the 
 #marginal probability of the high state in the ith variable at the jth replciate.
-function marginalprobabilities(M::ALmodel; replicates=nothing, force::Bool=false)
+function marginalprobabilities(M::AutologisticModel; replicates=nothing, force::Bool=false)
     n, m = size(M.unary)
     nc = 2^n
     if n>20 && !force
@@ -203,7 +203,7 @@ end
 # the results are only computed for the desired variables & replicates.  Otherwise
 # results are computed for all variables and replicates.
 # TODO: optimize for speed/efficiency
-function conditionalprobabilities(M::ALmodel; vertices=nothing, replicates=nothing)
+function conditionalprobabilities(M::AutologisticModel; vertices=nothing, replicates=nothing)
     n, m = size(M.unary)
     if vertices==nothing
         vertices = 1:n
@@ -213,7 +213,7 @@ function conditionalprobabilities(M::ALmodel; vertices=nothing, replicates=nothi
     end
     out = zeros(Float64, length(vertices), length(replicates))
     Y = makecoded(M)
-    μ = centering_adjustment(M)
+    μ = centeringterms(M)
     lo, hi = M.coding
     adjlist = M.pairwise.G.fadjlist
 

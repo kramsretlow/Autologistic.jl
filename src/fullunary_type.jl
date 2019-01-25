@@ -1,6 +1,6 @@
 #----- FullUnary ---------------------------------------------------------------
 # A unary part with one parameter per variable per replicate.
-struct FullUnary <: AbstractUnary
+struct FullUnary <: AbstractUnaryParameter
     α::Array{Float64,2}
 end
 
@@ -36,7 +36,7 @@ Base.getindex(u::FullUnary, I::AbstractVector{Bool}, J::AbstractVector{<:Integer
 # setindex!
 Base.setindex!(u::FullUnary, v::Real, I::Vararg{Int,2}) = (u.α[CartesianIndex(I)] = v)
 
-#---- AbstractUnary interface ----
+#---- AbstractUnaryParameter interface ----
 getparameters(u::FullUnary) = dropdims(reshape(values(u), length(u), 1), dims=2)
 function setparameters!(u::FullUnary, newpars::Vector{Float64})
     # Note, should check dimension match?...

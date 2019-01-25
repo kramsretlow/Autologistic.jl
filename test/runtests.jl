@@ -99,7 +99,7 @@ end
     @test getparameters(p1) == [2.0]
 end
 
-@testset "ALmodel constructors" begin
+@testset "AutologisticModel constructors" begin
     for r in [1 5]
         (n, p, m) = (100, 4, r)
         X = rand(n,p,m)
@@ -108,9 +108,9 @@ end
         unary = LinPredUnary(X, β)
         pairwise = SimplePairwise(n, m)
         coords = [(rand(),rand()) for i=1:n]
-        m1 = ALmodel(Y, unary, pairwise, none, (-1.0,1.0), ("low","high"), coords)
-        m2 = ALmodel(unary, pairwise)
-        m3 = ALRsimple(Graph(n, Int(floor(n*(n-1)/4))), X, Y=Y, β=β, λ = 1.0)
+        m1 = AutologisticModel(Y, unary, pairwise, none, (-1.0,1.0), ("low","high"), coords)
+        m2 = AutologisticModel(unary, pairwise)
+        m3 = makeALRsimple(Graph(n, Int(floor(n*(n-1)/4))), X, Y=Y, β=β, λ = 1.0)
 
         @test getparameters(m3) == [β; 1.0]
         @test getunaryparameters(m3) == β
@@ -137,18 +137,18 @@ end
 
 @testset "almodel_functions" begin
     # --- makecoded() ---
-    M1 = ALRsimple(Graph(4,3), rand(4,2), 
+    M1 = makeALRsimple(Graph(4,3), rand(4,2), 
                   Y=[true, false, false, true], coding=(-1,1))
     @test makecoded(M1) == reshape([1, -1, -1, 1], (4,1))
     @test makecoded(M1,[4, 3, 3, 4]) == reshape([1, -1, -1, 1], (4,1))
 
-    # --- centering_adjustment() ---
-    @test centering_adjustment(M1) == zeros(4,1)
-    @test centering_adjustment(M1, onehalf) == ones(4,1)./2
-    @test centering_adjustment(M1, expectation) == zeros(4,1)
-    M2 = ALRsimple(grid4(2,2)[1], ones(4,2,3), β = [1.0, 1.0], centering = expectation,
+    # --- centeringterms() ---
+    @test centeringterms(M1) == zeros(4,1)
+    @test centeringterms(M1, onehalf) == ones(4,1)./2
+    @test centeringterms(M1, expectation) == zeros(4,1)
+    M2 = makeALRsimple(makegrid4(2,2)[1], ones(4,2,3), β = [1.0, 1.0], centering = expectation,
                    coding = (0,1), Y = repeat([true, true, false, false],1,3))
-    @test centering_adjustment(M2) ≈ ℯ^2/(1+ℯ^2) .* ones(4,3)
+    @test centeringterms(M2) ≈ ℯ^2/(1+ℯ^2) .* ones(4,3)
 
     # --- negpotential() ---
     setpairwiseparameters!(M2, [1.0])
@@ -160,12 +160,12 @@ end
          2.1 1.2
          3.0 0.3]
     Y = reshape([0, 0, 1, 0],(4,1))
-    M3 = ALRsimple(grid4(2,2)[1], cat(X,X,dims=3), Y=cat(Y,Y,dims=2), 
+    M3 = makeALRsimple(makegrid4(2,2)[1], cat(X,X,dims=3), Y=cat(Y,Y,dims=2), 
                    β=[-0.5, 1.5], λ=1.25, centering=expectation)
     @test pseudolikelihood(M3) ≈ 12.333549445795818
     
     # --- fullPMF() ---
-    M4 = ALRsimple(Graph(3,0), reshape([-1. 0. 1. -1. 0. 1.],(3,1,2)), β=[1.0])
+    M4 = makeALRsimple(Graph(3,0), reshape([-1. 0. 1. -1. 0. 1.],(3,1,2)), β=[1.0])
     pmf = fullPMF(M4)
     probs = [0.0524968; 0.387902; 0.0524968; 0.387902; 0.00710467; 0.0524968;
              0.00710467; 0.0524968]
@@ -186,24 +186,24 @@ end
     cp1 = exp(a+ns1) / (exp(-(a+ns1)) + exp(a+ns1))
     cp2 = exp(b+ns2) / (exp(-(b+ns2)) + exp(b+ns2))
     cp3 = exp(c+ns3) / (exp(-(c+ns3)) + exp(c+ns3))
-    M = ALmodel(FullUnary([a, b, c]), SimplePairwise(lam, Graph(3,3)), Y=[y1,y2,y3])
+    M = AutologisticModel(FullUnary([a, b, c]), SimplePairwise(lam, Graph(3,3)), Y=[y1,y2,y3])
     @test isapprox(conditionalprobabilities(M), [cp1, cp2, cp3])
     @test isapprox(conditionalprobabilities(M, vertices=[1,3]), [cp1, cp3])
 end
 
 @testset "samplers" begin
-    M5 = ALRsimple(grid4(4,4)[1], rand(16,1))
+    M5 = makeALRsimple(makegrid4(4,4)[1], rand(16,1))
     out1 = sample(M5, 10000, average=false)
     @test all(x->isapprox(x,0.5,atol=0.05), sum(out1.==1, dims=2)/10000)
     out2 = sample(M5, 10000, average=true, burnin=100, start=rand([1,2], 16))
     @test all(x->isapprox(x,0.5,atol=0.05), out2)
 
-    M6 = ALRsimple(grid4(3,3)[1], rand(9,2))
+    M6 = makeALRsimple(makegrid4(3,3)[1], rand(9,2))
     setparameters!(M6, [-0.5, 0.5, 0.2])
     marg = marginalprobabilities(M6)
-    out3 = sample(M6, 10000, method=ROCFTP, average=true)
-    out4 = sample(M6, 10000, method=CFTPsmall, average=true)
-    out5 = sample(M6, 10000, method=CFTPlarge, average=true)
+    out3 = sample(M6, 10000, method=perfect_read_once, average=true)
+    out4 = sample(M6, 10000, method=perfect_reuse_samples, average=true)
+    out5 = sample(M6, 10000, method=perfect_reuse_seeds, average=true)
     @test isapprox(out3, marg, atol=0.03, norm=x->norm(x,Inf))
     @test isapprox(out4, marg, atol=0.03, norm=x->norm(x,Inf))
     @test isapprox(out5, marg, atol=0.03, norm=x->norm(x,Inf))
@@ -211,11 +211,11 @@ end
     tbl = fullPMF(M6).table
     checkthree(x) = all(x[1:3] .== -1.0)
     threelow = sum(mapslices(x -> checkthree(x) ? x[10] : 0.0, tbl, dims=2))
-    out6 = sample(M6, 10000, method=ROCFTP, average=false)
+    out6 = sample(M6, 10000, method=perfect_read_once, average=false)
     est6 = sum(mapslices(x -> checkthree(x) ? 1.0/10000.0 : 0.0, out6, dims=1))
-    out7 = sample(M6, 10000, method=CFTPsmall, average=false)
+    out7 = sample(M6, 10000, method=perfect_reuse_samples, average=false)
     est7 = sum(mapslices(x -> checkthree(x) ? 1.0/10000.0 : 0.0, out7, dims=1))
-    out8 = sample(M6, 10000, method=CFTPlarge, average=false)
+    out8 = sample(M6, 10000, method=perfect_reuse_seeds, average=false)
     est8 = sum(mapslices(x -> checkthree(x) ? 1.0/10000.0 : 0.0, out8, dims=1))
     @test isapprox(est6, threelow, atol=0.03)
     @test isapprox(est7, threelow, atol=0.03)
