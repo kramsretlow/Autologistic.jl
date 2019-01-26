@@ -26,19 +26,18 @@ type's interface. If `M<:AbstractAutologisticModel`:
 *   `getunaryparameters(M)` and `setunaryparameters!(M, newpars::Vector{Float64})`
 *   `getpairwiseparameters(M)` and `setpairwiseparameters!(M, newpars::Vector{Float64})`
 *   `makecoded(M, Y)`
-*   `centeringterms(M, kind::Union{Nothing,CenteringKinds}=nothing)`
+*   `centeringterms(M, kind::Union{Nothing,CenteringKinds})`
 *   `pseudolikelihood(M)`
 *   `negpotential(M)`
-*   `fullPMF(M); replicates=nothing, force::Bool=false)`
-*   `marginalprobabilities(M; replicates=nothing, force::Bool=false)`
-*   `conditionalprobabilities(M; vertices=nothing, replicates=nothing)`
+*   `fullPMF(M); replicates=nothing, force::Bool)`
+*   `marginalprobabilities(M; replicates, force::Bool)`
+*   `conditionalprobabilities(M; vertices, replicates)`
+*   `sample(M, k::Int, method::SamplingMethods, replicate::Int, average::Bool, 
+    start, burnin::Int, verbose::Bool)`
+
+The `sample()` function is a wrapper for a variety of random sampling algorithms enumerated
+in `SamplingMethods`.
 """
-
-#**** TODO *****
-# deal with samplers
-# tests...
-
-
 abstract type AbstractAutologisticModel end
 
 # === Getting/setting parameters ===============================================
@@ -174,7 +173,7 @@ In the ``m=1`` case, it is a scalar `Float64`.
 
 # Examples
 ```jldoctest
-julia> M = makeALRsimple(Graph(3,0),ones(3,1));
+julia> M = ALRsimple(Graph(3,0),ones(3,1));
 julia> pmf = fullPMF(M);
 julia> pmf.table
 8×4 Array{Float64,2}:
@@ -304,3 +303,45 @@ function conditionalprobabilities(M::AbstractAutologisticModel; vertices=nothing
 end
 
 
+# Take the strategy of using a single user-facing function sample() that has an
+# argument method<:SamplingMethods (an enum).  Use the enum to do argument 
+# checking and submit the work to the specialized functions (currently gibbssample()
+# and four perfect sampling implementations, perfect_read_once(), perfect_reuse_samples(), 
+# perfect_reuse_seeds(), and perfect_bounding_chain()).
+function sample(M::AbstractAutologisticModel, k::Int = 1; method::SamplingMethods = Gibbs, 
+                replicate::Int = 1, average::Bool = false, start = nothing, burnin::Int = 0,
+                verbose::Bool = false)
+    if k < 1 
+        error("k must be positive") 
+    end
+    if replicate < 1 || replicate > size(M.unary, 2) 
+        error("replicate must be between 1 and the number of replicates")
+    end
+    if burnin < 0 
+        error("burnin must be nonnegative") 
+    end
+    lo = Float64(M.coding[1])
+    hi = Float64(M.coding[2])
+    Y = vec(makecoded(M, M.responses[:,replicate]))  #TODO: be cetain M isn't mutated.
+    Λ = M.pairwise[:,:,replicate]   
+    α = M.unary[:,replicate]
+    μ = centeringterms(M)[:,replicate]
+    n = length(α)
+    adjlist = M.pairwise.G.fadjlist
+    if method == Gibbs
+        if start == nothing
+            start = rand([lo, hi], n)
+        else
+            start = vec(makecoded(M, makebool(start)))
+        end
+        return gibbssample(lo, hi, Y, Λ, adjlist, α, μ, n, k, average, start, burnin, verbose)
+    elseif method == perfect_reuse_samples
+        return cftp_reuse_samples(lo, hi, Λ, adjlist, α, μ, n, k, average, verbose)
+    elseif method == perfect_reuse_seeds
+        return cftp_reuse_seeds(lo, hi, Λ, adjlist, α, μ, n, k, average, verbose)
+    elseif method == perfect_bounding_chain
+        return cftp_bounding_chain(lo, hi, Λ, adjlist, α, μ, n, k, average, verbose)
+    elseif method == perfect_read_once
+        return cftp_read_once(lo, hi, Λ, adjlist, α, μ, n, k, average, verbose)
+    end
+end

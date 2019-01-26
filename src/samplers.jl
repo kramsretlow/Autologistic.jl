@@ -1,8 +1,3 @@
-# Take the strategy of using a single user-facing function sample() that has an
-# argument method<:SamplingMethods (an enum).  Use the enum to do argument 
-# checking and submit the work to the specialized functions (currently gibbssample(),
-# and and three perfect sampling implementations, perfect_read_once(), perfect_reuse_samples(), perfect_reuse_seeds()).
-# 
 # TODO (everywhere): instead of computing loval/(loval+hival), use 
 #       1/(1+exp((lo-hi)*(alpha_i + ns_i)))
 # TODO: explore how to use @inbounds, @inline, etc. to optimize performance in these fcns.
@@ -27,42 +22,6 @@
 #       method. 
 # TODO: Tests and checks for cftp_bounding_chain()
 
-function sample(M::AutologisticModel, k::Int = 1; method::SamplingMethods = Gibbs, replicate::Int = 1, 
-                average::Bool = false, start = nothing, burnin::Int = 0, verbose::Bool = false)
-    if k < 1 
-        error("k must be positive") 
-    end
-    if replicate < 1 || replicate > size(M.unary, 2) 
-        error("replicate must be between 1 and the number of replicates")
-    end
-    if burnin < 0 
-        error("burnin must be nonnegative") 
-    end
-    lo = Float64(M.coding[1])
-    hi = Float64(M.coding[2])
-    Y = vec(makecoded(M, M.responses[:,replicate]))  #TODO: be cetain M isn't mutated.
-    Λ = M.pairwise[:,:,replicate]   
-    α = M.unary[:,replicate]
-    μ = centeringterms(M)[:,replicate]
-    n = length(α)
-    adjlist = M.pairwise.G.fadjlist
-    if method == Gibbs
-        if start == nothing
-            start = rand([lo, hi], n)
-        else
-            start = vec(makecoded(M, makebool(start)))
-        end
-        return gibbssample(lo, hi, Y, Λ, adjlist, α, μ, n, k, average, start, burnin, verbose)
-    elseif method == perfect_reuse_samples
-        return cftp_reuse_samples(lo, hi, Λ, adjlist, α, μ, n, k, average, verbose)
-    elseif method == perfect_reuse_seeds
-        return cftp_reuse_seeds(lo, hi, Λ, adjlist, α, μ, n, k, average, verbose)
-    elseif method == perfect_bounding_chain
-        return cftp_bounding_chain(lo, hi, Λ, adjlist, α, μ, n, k, average, verbose)
-    elseif method == perfect_read_once
-        return cftp_read_once(lo, hi, Λ, adjlist, α, μ, n, k, average, verbose)
-    end
-end
 
 # Performance tip: writing the neighbor sum as a loop rather than an inner product
 # saved lots of memory allocations.
