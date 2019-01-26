@@ -19,8 +19,6 @@ println("Running tests:")
     u1 = FullUnary(M[:,1])
     u2 = FullUnary(M)
     
-    #@test values(u1) == reshape([1.1; 2.2; 3.3], (3,1))
-    #@test values(u2) == M
     @test u1[2] == 2.2
     @test u2[2,3] == 8.8
     @test size(u1) == (3,1)
@@ -31,11 +29,6 @@ println("Running tests:")
     setparameters!(u2, [0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9])
     u1[2] = 2.22
     u2[2,3] = 8.88    
-
-    #@test values(u1) == reshape([0.1, 2.22, 0.3], (3,1))
-    #@test values(u2) == [0.1 0.4 0.7
-    #                     0.2 0.5 8.88
-    #                     0.3 0.6 0.9] 
 
     u3 = FullUnary(10)
     u4 = FullUnary(10,4)
@@ -125,7 +118,32 @@ end
 end
 
 @testset "ALsimple constructors" begin
-# TODO
+    for r in [1 5]
+        (n, m) = (100, r)
+        alpha = rand(n, m)
+        Y = makebool(round.(rand(n, m)))
+        unary = FullUnary(alpha)
+        pairwise = SimplePairwise(n, m)
+        coords = [(rand(), rand()) for i=1:n]
+        G = Graph(n, Int(floor(n*(n-1)/4)))
+        m1 = ALsimple(Y, unary, pairwise, none, (-1.0,1.0), ("low","high"), coords)
+        m2 = ALsimple(unary, pairwise)
+        m3 = ALsimple(G, alpha, λ=1.0)
+        m4 = ALsimple(G, m=m)
+
+        @test getparameters(m1) == [alpha[:]; 0.0]
+        @test getparameters(m2) == [alpha[:]; 0.0]
+        @test getparameters(m3) == [alpha[:]; 1.0]
+        @test size(m4.unary) == (n, m)
+        @test getunaryparameters(m1) == alpha[:]
+        @test getpairwiseparameters(m3) == [1.0]
+
+        setunaryparameters!(m3, 2*alpha[:])
+        setpairwiseparameters!(m3, [2.0])
+        setparameters!(m4, [2*alpha[:]; 2.0]) 
+
+        @test getparameters(m3) == getparameters(m4) == [2*alpha[:]; 2.0]
+    end
 end
 
 @testset "Helper functions" begin
@@ -190,7 +208,7 @@ end
     cp1 = exp(a+ns1) / (exp(-(a+ns1)) + exp(a+ns1))
     cp2 = exp(b+ns2) / (exp(-(b+ns2)) + exp(b+ns2))
     cp3 = exp(c+ns3) / (exp(-(c+ns3)) + exp(c+ns3))
-    M = AutologisticModel(FullUnary([a, b, c]), SimplePairwise(lam, Graph(3,3)), Y=[y1,y2,y3])
+    M = ALsimple(FullUnary([a, b, c]), SimplePairwise(lam, Graph(3,3)), Y=[y1,y2,y3])
     @test isapprox(conditionalprobabilities(M), [cp1, cp2, cp3])
     @test isapprox(conditionalprobabilities(M, vertices=[1,3]), [cp1, cp3])
 end
