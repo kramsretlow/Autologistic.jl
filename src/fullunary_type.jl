@@ -1,6 +1,6 @@
 #----- FullUnary ---------------------------------------------------------------
 # A unary part with one parameter per variable per replicate.
-struct FullUnary <: AbstractUnaryParameter
+mutable struct FullUnary <: AbstractUnaryParameter
     α::Array{Float64,2}
 end
 
@@ -14,6 +14,7 @@ FullUnary(n::Int,m::Int) = FullUnary(Array{Float64,2}(undef,n,m))
 #---- AbstractArray methods ----
 
 Base.size(u::FullUnary) = size(u.α)
+Base.length(u::FullUnary) = length(u.α)
 
 # getindex - implementations
 Base.getindex(u::FullUnary, I::AbstractArray) = u.α[I]
@@ -39,8 +40,10 @@ Base.setindex!(u::FullUnary, v::Real, I::Vararg{Int,2}) = (u.α[CartesianIndex(I
 #---- AbstractUnaryParameter interface ----
 getparameters(u::FullUnary) = dropdims(reshape(values(u), length(u), 1), dims=2)
 function setparameters!(u::FullUnary, newpars::Vector{Float64})
-    # Note, should check dimension match?...
     # Note, not implementing subsetting etc., can only replace the whole vector.
-    u[:] = newpars  
+    if length(newpars) != length(u)
+        error("incorrect parameter vector length")
+    end
+    u.α = reshape(newpars, size(u))
 end
 

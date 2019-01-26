@@ -19,8 +19,6 @@ println("Running tests:")
     u1 = FullUnary(M[:,1])
     u2 = FullUnary(M)
     
-    #@test values(u1) == reshape([1.1; 2.2; 3.3], (3,1))
-    #@test values(u2) == M
     @test u1[2] == 2.2
     @test u2[2,3] == 8.8
     @test size(u1) == (3,1)
@@ -31,11 +29,6 @@ println("Running tests:")
     setparameters!(u2, [0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9])
     u1[2] = 2.22
     u2[2,3] = 8.88    
-
-    #@test values(u1) == reshape([0.1, 2.22, 0.3], (3,1))
-    #@test values(u2) == [0.1 0.4 0.7
-    #                     0.2 0.5 8.88
-    #                     0.3 0.6 0.9] 
 
     u3 = FullUnary(10)
     u4 = FullUnary(10,4)
@@ -99,7 +92,7 @@ end
     @test getparameters(p1) == [2.0]
 end
 
-@testset "AutologisticModel constructors" begin
+@testset "ALRsimple constructors" begin
     for r in [1 5]
         (n, p, m) = (100, 4, r)
         X = rand(n,p,m)
@@ -108,9 +101,9 @@ end
         unary = LinPredUnary(X, β)
         pairwise = SimplePairwise(n, m)
         coords = [(rand(),rand()) for i=1:n]
-        m1 = AutologisticModel(Y, unary, pairwise, none, (-1.0,1.0), ("low","high"), coords)
-        m2 = AutologisticModel(unary, pairwise)
-        m3 = makeALRsimple(Graph(n, Int(floor(n*(n-1)/4))), X, Y=Y, β=β, λ = 1.0)
+        m1 = ALRsimple(Y, unary, pairwise, none, (-1.0,1.0), ("low","high"), coords)
+        m2 = ALRsimple(unary, pairwise)
+        m3 = ALRsimple(Graph(n, Int(floor(n*(n-1)/4))), X, Y=Y, β=β, λ = 1.0)
 
         @test getparameters(m3) == [β; 1.0]
         @test getunaryparameters(m3) == β
@@ -121,6 +114,35 @@ end
         setpairwiseparameters!(m2, [-1.0])
 
         @test getparameters(m1) == getparameters(m2) == [1.1, 2.2, 3.3, 4.4, -1.0]
+    end
+end
+
+@testset "ALsimple constructors" begin
+    for r in [1 5]
+        (n, m) = (100, r)
+        alpha = rand(n, m)
+        Y = makebool(round.(rand(n, m)))
+        unary = FullUnary(alpha)
+        pairwise = SimplePairwise(n, m)
+        coords = [(rand(), rand()) for i=1:n]
+        G = Graph(n, Int(floor(n*(n-1)/4)))
+        m1 = ALsimple(Y, unary, pairwise, none, (-1.0,1.0), ("low","high"), coords)
+        m2 = ALsimple(unary, pairwise)
+        m3 = ALsimple(G, alpha, λ=1.0)
+        m4 = ALsimple(G, m=m)
+
+        @test getparameters(m1) == [alpha[:]; 0.0]
+        @test getparameters(m2) == [alpha[:]; 0.0]
+        @test getparameters(m3) == [alpha[:]; 1.0]
+        @test size(m4.unary) == (n, m)
+        @test getunaryparameters(m1) == alpha[:]
+        @test getpairwiseparameters(m3) == [1.0]
+
+        setunaryparameters!(m3, 2*alpha[:])
+        setpairwiseparameters!(m3, [2.0])
+        setparameters!(m4, [2*alpha[:]; 2.0]) 
+
+        @test getparameters(m3) == getparameters(m4) == [2*alpha[:]; 2.0]
     end
 end
 
@@ -137,7 +159,7 @@ end
 
 @testset "almodel_functions" begin
     # --- makecoded() ---
-    M1 = makeALRsimple(Graph(4,3), rand(4,2), 
+    M1 = ALRsimple(Graph(4,3), rand(4,2), 
                   Y=[true, false, false, true], coding=(-1,1))
     @test makecoded(M1) == reshape([1, -1, -1, 1], (4,1))
     @test makecoded(M1,[4, 3, 3, 4]) == reshape([1, -1, -1, 1], (4,1))
@@ -146,7 +168,7 @@ end
     @test centeringterms(M1) == zeros(4,1)
     @test centeringterms(M1, onehalf) == ones(4,1)./2
     @test centeringterms(M1, expectation) == zeros(4,1)
-    M2 = makeALRsimple(makegrid4(2,2)[1], ones(4,2,3), β = [1.0, 1.0], centering = expectation,
+    M2 = ALRsimple(makegrid4(2,2)[1], ones(4,2,3), β = [1.0, 1.0], centering = expectation,
                    coding = (0,1), Y = repeat([true, true, false, false],1,3))
     @test centeringterms(M2) ≈ ℯ^2/(1+ℯ^2) .* ones(4,3)
 
@@ -160,12 +182,12 @@ end
          2.1 1.2
          3.0 0.3]
     Y = reshape([0, 0, 1, 0],(4,1))
-    M3 = makeALRsimple(makegrid4(2,2)[1], cat(X,X,dims=3), Y=cat(Y,Y,dims=2), 
+    M3 = ALRsimple(makegrid4(2,2)[1], cat(X,X,dims=3), Y=cat(Y,Y,dims=2), 
                    β=[-0.5, 1.5], λ=1.25, centering=expectation)
     @test pseudolikelihood(M3) ≈ 12.333549445795818
     
     # --- fullPMF() ---
-    M4 = makeALRsimple(Graph(3,0), reshape([-1. 0. 1. -1. 0. 1.],(3,1,2)), β=[1.0])
+    M4 = ALRsimple(Graph(3,0), reshape([-1. 0. 1. -1. 0. 1.],(3,1,2)), β=[1.0])
     pmf = fullPMF(M4)
     probs = [0.0524968; 0.387902; 0.0524968; 0.387902; 0.00710467; 0.0524968;
              0.00710467; 0.0524968]
@@ -186,19 +208,19 @@ end
     cp1 = exp(a+ns1) / (exp(-(a+ns1)) + exp(a+ns1))
     cp2 = exp(b+ns2) / (exp(-(b+ns2)) + exp(b+ns2))
     cp3 = exp(c+ns3) / (exp(-(c+ns3)) + exp(c+ns3))
-    M = AutologisticModel(FullUnary([a, b, c]), SimplePairwise(lam, Graph(3,3)), Y=[y1,y2,y3])
+    M = ALsimple(FullUnary([a, b, c]), SimplePairwise(lam, Graph(3,3)), Y=[y1,y2,y3])
     @test isapprox(conditionalprobabilities(M), [cp1, cp2, cp3])
     @test isapprox(conditionalprobabilities(M, vertices=[1,3]), [cp1, cp3])
 end
 
 @testset "samplers" begin
-    M5 = makeALRsimple(makegrid4(4,4)[1], rand(16,1))
+    M5 = ALRsimple(makegrid4(4,4)[1], rand(16,1))
     out1 = sample(M5, 10000, average=false)
     @test all(x->isapprox(x,0.5,atol=0.05), sum(out1.==1, dims=2)/10000)
     out2 = sample(M5, 10000, average=true, burnin=100, start=rand([1,2], 16))
     @test all(x->isapprox(x,0.5,atol=0.05), out2)
 
-    M6 = makeALRsimple(makegrid4(3,3)[1], rand(9,2))
+    M6 = ALRsimple(makegrid4(3,3)[1], rand(9,2))
     setparameters!(M6, [-0.5, 0.5, 0.2])
     marg = marginalprobabilities(M6)
     out3 = sample(M6, 10000, method=perfect_read_once, average=true)
