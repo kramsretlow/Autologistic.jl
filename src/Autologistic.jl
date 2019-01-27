@@ -17,6 +17,8 @@ export
     AbstractPairwiseParameter,
     AbstractUnaryParameter,
     AutologisticModel,
+    ALRsimple,
+    ALsimple,
     SpatialCoordinates,
     FullUnary,
     LinPredUnary,
@@ -25,7 +27,6 @@ export
     CenteringKinds, none, expectation, onehalf,
     SamplingMethods, Gibbs, perfect_reuse_samples, perfect_reuse_seeds, perfect_read_once, perfect_bounding_chain,
     #----- functions -----
-    makeALRsimple,
     centeringterms,
     conditionalprobabilities,
     fullPMF,
@@ -45,15 +46,15 @@ export
     setpairwiseparameters!,
     makespatialgraph
 
+include("common.jl")
 include("abstractautologisticmodel_type.jl")
 include("abstractunaryparameter_type.jl")
 include("abstractpairwiseparameter_type.jl")
-include("common.jl")
-include("autologisticmodel_type.jl")
-include("autologisticmodel_functions.jl")
 include("fullunary_type.jl")
 include("linpredunary_type.jl")
 include("simplepairwise_type.jl")
+include("ALsimple_type.jl")
+include("ALRsimple_type.jl")
 include("samplers.jl")
 
 
