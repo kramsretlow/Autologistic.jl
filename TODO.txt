@@ -1,0 +1,12 @@
+For next release:
+
+[ ] Finalize API.  Should the Unary, Pairwise types be removed from the API?
+[ ] Pseudolikelihood estimation + inference
+[ ] Bayesian estimation?
+[ ] Full likelihood estimation + inference for small-n cases.
+
+For future:
+
+[ ] Think about how partially-observed graphs (missing responses) could be handled.
+[ ] Implement Swendsen-Wang (either as a MC sampler or bounding chain-type perfect
+    sampler) (see Huber, 2016 book).

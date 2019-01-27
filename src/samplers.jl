@@ -1,71 +1,12 @@
-# Take the strategy of using a single user-facing function sample() that has an
-# argument method<:SamplingMethods (an enum).  Use the enum to do argument 
-# checking and submit the work to the specialized functions (currently gibbssample(),
-# and and three perfect sampling implementations, perfect_read_once(), perfect_reuse_samples(), perfect_reuse_seeds()).
-# 
-# TODO (everywhere): instead of computing loval/(loval+hival), use 
-#       1/(1+exp((lo-hi)*(alpha_i + ns_i)))
 # TODO: explore how to use @inbounds, @inline, etc. to optimize performance in these fcns.
 # TODO: for CFTP implementations, put in warnings that appear whenever any elements of Λ 
 #       are negative.  In this case samples might still be useful if mixing time is similar
 #       to the CFTP coalescence time, but exact sampling isn't guaranteed because the 
 #       monotonicity property is lost.  Could also direct the user to cftp_bounding_chain()
-#       ***CHECK: bounding chain method should work better for strong association case!!!*** 
-#           --> It still can take very long, but initial trials suggest it might be a little
-#               better at handling strong association.
-#       ***CHECK: make sure my understanding of bounding chain construction is right***
-#           --> Yes, we need to consider all configurations allowed by the bounding chain. 
-#               But see my 2018-12-12 notes for how I implementeted it in cftp_bounding_chain()
-# TODO: Implement Swendsen-Wang (either as a MC sampler or bounding chain-type perfect
-#       sampler (see Huber16))
-# TODO: at the end, try to specify a highest-level function that considers the situation
-#       and chooses an algorithm.
-# TODO: put in an optional "fudge factor" in cftp_bounding_chain, to tweak the local bounds to 
-#       encourage convergence in large-association cases.  Need to think through what 
-#       would be sensible to do here.  But since we do only a "local" bound based on 
-#       the neighbor sums, we should have some hope of doing something useful with that
-#       method. 
-# TODO: Tests and checks for cftp_bounding_chain()
 
-function sample(M::AutologisticModel, k::Int = 1; method::SamplingMethods = Gibbs, replicate::Int = 1, 
-                average::Bool = false, start = nothing, burnin::Int = 0, verbose::Bool = false)
-    if k < 1 
-        error("k must be positive") 
-    end
-    if replicate < 1 || replicate > size(M.unary, 2) 
-        error("replicate must be between 1 and the number of replicates")
-    end
-    if burnin < 0 
-        error("burnin must be nonnegative") 
-    end
-    lo = Float64(M.coding[1])
-    hi = Float64(M.coding[2])
-    Y = vec(makecoded(M, M.responses[:,replicate]))  #TODO: be cetain M isn't mutated.
-    Λ = M.pairwise[:,:,replicate]   
-    α = M.unary[:,replicate]
-    μ = centeringterms(M)[:,replicate]
-    n = length(α)
-    adjlist = M.pairwise.G.fadjlist
-    if method == Gibbs
-        if start == nothing
-            start = rand([lo, hi], n)
-        else
-            start = vec(makecoded(M, makebool(start)))
-        end
-        return gibbssample(lo, hi, Y, Λ, adjlist, α, μ, n, k, average, start, burnin, verbose)
-    elseif method == perfect_reuse_samples
-        return cftp_reuse_samples(lo, hi, Λ, adjlist, α, μ, n, k, average, verbose)
-    elseif method == perfect_reuse_seeds
-        return cftp_reuse_seeds(lo, hi, Λ, adjlist, α, μ, n, k, average, verbose)
-    elseif method == perfect_bounding_chain
-        return cftp_bounding_chain(lo, hi, Λ, adjlist, α, μ, n, k, average, verbose)
-    elseif method == perfect_read_once
-        return cftp_read_once(lo, hi, Λ, adjlist, α, μ, n, k, average, verbose)
-    end
-end
 
-# Performance tip: writing the neighbor sum as a loop rather than an inner product
-# saved lots of memory allocations.
+# Neighbor sum of a certain variable.  Note, writing the neighbor sum as a loop rather 
+# than an inner product saved lots of memory allocations.
 function nbrsum(Λ, Y, μ, row, nbr)::Float64
     out = 0.0
     for ix in nbr
@@ -74,15 +15,10 @@ function nbrsum(Λ, Y, μ, row, nbr)::Float64
     return out
 end
 
-function condprob(α, ns, lo, hi, ix)::Float64
-    loval = exp(lo*(α[ix] + ns))
-    hival = exp(hi*(α[ix] + ns))
-    if hival==Inf
-        return 1.0
-    end
-    return hival / (loval + hival)
-end
+# conditional probabilities of a certain variable
+condprob(α, ns, lo, hi, ix)::Float64 = 1 / (1 + exp((lo-hi)*(α[ix] + ns)))
 
+# Take a single step of Gibbs sampling, and update variables in-place.
 function gibbsstep!(Y, lo, hi, Λ, adjlist, α, μ, n)
     ns = 0.0
     p_i = 0.0
@@ -97,6 +33,7 @@ function gibbsstep!(Y, lo, hi, Λ, adjlist, α, μ, n)
     end
 end
 
+# Run Gibbs sampling.
 function gibbssample(lo::Float64, hi::Float64, Y::Vector{Float64}, 
                      Λ::SparseMatrixCSC{Float64,Int}, adjlist::Array{Array{Int64,1},1},
                      α::Vector{Float64}, μ::Vector{Float64}, n::Int, k::Int, average::Bool, 
@@ -128,9 +65,8 @@ function gibbssample(lo::Float64, hi::Float64, Y::Vector{Float64},
     end
 end
 
-
+# Run CFTP epochs from the jth one forward to time zero.
 function runepochs!(j, times, Y, seeds, lo, hi, Λ, adjlist, α, μ, n)
-    # Run epochs from the jth one forward to time zero.
     for epoch = j:-1:0
         Random.seed!(seeds[j+1])
         for t = times[j+1,1] : times[j+1,2]
@@ -338,6 +274,8 @@ function gibbsstep_block!(Z, U, lo, hi, Λ, adjlist, α, μ)
     end
 end
 
+# Estimate the block size to use for read-once CFTP. Run 15 chains forward until they 
+# coalesce. Return a quantile of the sample of run lengths as the recommended block size.
 function blocksize_estimate(lo, hi, Λ, adjlist, α, μ, n)
     nrep = 15   #TODO: magic constant
     coalesce_times = zeros(Int, nrep)
@@ -374,12 +312,9 @@ function cftp_bounding_chain(lo::Float64, hi::Float64,
     temp = average ? zeros(Float64, n) : zeros(Float64, n, k)
     BC = Vector{Int}(undef,n)
 
-    # We use matrix U to hold all the uniform random numbers needed to compute the
-    # updates to the bounding chain. In this matrix each column
-    # holds the n random variates needed to do a full Gibbs sampling update of the
-    # variables in the graph. We think of the columns as going backwards in time to the
-    # right: column one is time 0, column 2 is time -1, ... column T+1 is time -T.  So to
-    # run the chains in forward time we go from right to left.
+    # The algorithm is similar to cftp_reuse_samples in that we save the generated random 
+    # variates.  But in this method compute probability bounds on each variable to update
+    # a bounding chain until it coalesces.
     for rep = 1:k 
         T = 2           #-T tracks how far back in time we start. Our sample is from time 0.
         U = rand(n,1)   #-Holds needed random numbers (this matrix will grow)
