@@ -1,11 +1,33 @@
-# Autologistic Regression Modelling in Julia
+# Introduction
+
+The `Autologistic.jl` package provides tools for analyzing correlated binary data using
+autologistic (AL) or autologistic regression (ALR) models.  The AL model is best thought of
+as a probability distribution for correlated binary random variables, like an analogue of
+the multivariate normal distribution for binary responses. The ALR models incorporate
+covariate effects into this distribution and are therefore more useful for data analysis.
+
+The ALR model is potentially useful for any situation involving correlated binary responses.
+It can be described in a few ways.  It is:
+
+* An extension of logistic regression to handle non-independent responses.
+* A Markov random field model for dichotomous random variables, with covariates.
+* An extension of the Ising model to handle different graph structures and
+  to include covariate effects.
+* The quadratic exponential binary (QEB) distribution, incorporating
+  covariate effects.
+
+This package follows the treatment of this model given in the paper
+[Better Autologistic Regression](https://doi.org/10.3389/fams.2017.00024).  Please refer
+to that article for in-depth discussion of the model, and please cite it if you use this
+package in your research.  The [Background](@ref) section in this manual also provides an
+overview of the model.
+
+For quick navigation, here is a table of contents, followed by an index.
 
 ```@contents
-Pages = ["index.md", "api.md"]
+Pages = ["index.md", "Background.md", "Examples.md", "api.md"]
 Depth = 2
 ```
-
-This is sample documentation.  Here is a link to the [`fullPMF`](@ref) method, just to practice linking.
 
 ```@index
 ```

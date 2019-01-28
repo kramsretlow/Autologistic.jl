@@ -6,10 +6,14 @@ CurrentModule = Autologistic
 
 ## Types and Constructors
 
-TODO
+```@docs
+AbstractAutologisticModel
+SamplingMethods
+```
 
 ## Methods
 
 ```@docs
 fullPMF
+sample
 ```

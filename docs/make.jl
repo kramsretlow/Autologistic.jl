@@ -1,9 +1,12 @@
-using Documenter, Autologistic
+# TODO: figure out how to properly handle external dependencies.
+using Documenter, Autologistic, LightGraphs
 makedocs(
     sitename = "Autologistic.jl",
     modules = [Autologistic],
     pages = [
         "index.md",
+        "Background.md",
+        "Examples.md",
         "api.md"
     ]
 )

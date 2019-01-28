@@ -6,6 +6,18 @@ const SpatialCoordinates = Union{Nothing, Array{NTuple{2,T},1},Array{NTuple{3,T}
 
 # Enumerations
 @enum CenteringKinds none expectation onehalf
+
+"""
+    SamplingMethods
+
+An enumeration to facilitate choosing a method for sampling. Available choices are:
+
+*   `Gibbs`  TODO
+*   `perfect_bounding_chain`  TODO
+*   `perfect_reuse_samples`  TODO 
+*   `perfect_reuse_seeds`  TODO
+*   `perfect_read_once`  TODO
+"""
 @enum SamplingMethods Gibbs perfect_reuse_samples perfect_reuse_seeds perfect_read_once perfect_bounding_chain
 
 # A function to make a 2D array of Booleans out of a 1- or 2-D input.
