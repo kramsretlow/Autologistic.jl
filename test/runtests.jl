@@ -129,7 +129,7 @@ end
         m1 = ALsimple(Y, unary, pairwise, none, (-1.0,1.0), ("low","high"), coords)
         m2 = ALsimple(unary, pairwise)
         m3 = ALsimple(G, alpha, λ=1.0)
-        m4 = ALsimple(G, m=m)
+        m4 = ALsimple(G, m)
 
         @test getparameters(m1) == [alpha[:]; 0.0]
         @test getparameters(m2) == [alpha[:]; 0.0]

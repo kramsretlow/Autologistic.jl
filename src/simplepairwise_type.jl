@@ -32,10 +32,8 @@ end
 # - If provide only a graph, set λ = 0.
 # - If provide only an integer, set λ = 0 and make a totally disconnected graph.
 # - If provide a graph and a scalar, convert the scalar to a length-1 vector.
-SimplePairwise(G::SimpleGraph) = SimplePairwise([0.0], G, 1)
-SimplePairwise(G::SimpleGraph, m::Int) = SimplePairwise([0.0], G, m)
-SimplePairwise(n::Int) = SimplePairwise(0, SimpleGraph(n), 1)
-SimplePairwise(n::Int, m::Int) = SimplePairwise(0, SimpleGraph(n), m)
+SimplePairwise(G::SimpleGraph, m::Int=1) = SimplePairwise([0.0], G, m)
+SimplePairwise(n::Int, m::Int=1) = SimplePairwise(0, SimpleGraph(n), m)
 SimplePairwise(λ::Real, G::SimpleGraph) = SimplePairwise([(Float64)(λ)], G, 1)
 SimplePairwise(λ::Real, G::SimpleGraph, m::Int) = SimplePairwise([(Float64)(λ)], G, m)
 

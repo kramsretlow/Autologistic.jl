@@ -54,8 +54,7 @@ function ALsimple(graph::SimpleGraph{Int}, alpha::Float1D2D;
 end
 
 # include the number of replicates (can get n from the nv(graph))
-function ALsimple(graph::SimpleGraph{Int}; 
-                  m::Int=1,
+function ALsimple(graph::SimpleGraph{Int}, m::Int=1; 
                   Y::VecOrMat=Array{Bool,2}(undef,nv(graph),m), 
                   λ::Float64=0.0, 
                   centering::CenteringKinds=none, 

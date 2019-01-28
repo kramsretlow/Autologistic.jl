@@ -20,7 +20,7 @@ All concrete subtypes should have the following fields:
     the graph (or `nothing` if no coordinates).
 
 The following functions are defined for the abstract type, and are considered part of the 
-type's interface. If `M<:AbstractAutologisticModel`:
+type's interface (in this list, `M` of type inheriting from `AbstractAutologisticModel`).
 
 *   `getparameters(M)` and `setparameters!(M, newpars::Vector{Float64})`
 *   `getunaryparameters(M)` and `setunaryparameters!(M, newpars::Vector{Float64})`
@@ -29,14 +29,23 @@ type's interface. If `M<:AbstractAutologisticModel`:
 *   `centeringterms(M, kind::Union{Nothing,CenteringKinds})`
 *   `pseudolikelihood(M)`
 *   `negpotential(M)`
-*   `fullPMF(M); replicates=nothing, force::Bool)`
+*   `fullPMF(M; replicates=nothing, force::Bool)`
 *   `marginalprobabilities(M; replicates, force::Bool)`
 *   `conditionalprobabilities(M; vertices, replicates)`
-*   `sample(M, k::Int, method::SamplingMethods, replicate::Int, average::Bool, 
-    start, burnin::Int, verbose::Bool)`
+*   `sample(M, k::Int, method::SamplingMethods, replicate::Int, average::Bool, start, 
+    burnin::Int, verbose::Bool)`
 
 The `sample()` function is a wrapper for a variety of random sampling algorithms enumerated
 in `SamplingMethods`.
+
+# Examples
+```jldoctest
+julia> M = ALsimple(Graph(4,4));
+julia> typeof(M)
+ALsimple{CenteringKinds,Int64,Nothing}
+julia> isa(M, AbstractAutologisticModel)
+true
+```
 """
 abstract type AbstractAutologisticModel end
 
@@ -303,11 +312,57 @@ function conditionalprobabilities(M::AbstractAutologisticModel; vertices=nothing
 end
 
 
-# Take the strategy of using a single user-facing function sample() that has an
-# argument method<:SamplingMethods (an enum).  Use the enum to do argument 
-# checking and submit the work to the specialized functions (currently gibbssample()
-# and four perfect sampling implementations, perfect_read_once(), perfect_reuse_samples(), 
-# perfect_reuse_seeds(), and perfect_bounding_chain()).
+"""
+    sample(
+        M::AbstractAutologisticModel, 
+        k::Int = 1;
+        method::SamplingMethods = Gibbs,
+        replicate::Int = 1, 
+        average::Bool = false, 
+        start = nothing, 
+        burnin::Int = 0,
+        verbose::Bool = false
+    )
+
+Draws `k` random samples from autologistic model `M`. For a model `M` with `n` 
+vertices in its graph, the return value is an `Array{Float64,1}` of length `n` when 
+`average=true`, and an `n×k` `Array{Float64,2}` when `average=false`.
+
+# Keyword Arguments
+
+**`method`** is a member of the enum [`SamplingMethods`](@ref), specifying which sampling
+method will be used.  The default uses Gibbs sampling.  Where feasible, it is recommended 
+to use one of the perfect sampling alternatives. See [`SamplingMethods`](@ref) for more.
+
+**`replicate`** specifies which replicate of the model to use for sampling. 
+
+**`average`** controls whether the return value is the proportion of "high" samples at each 
+(when `average=true`) or the full set of samples (when `average=false`). Note that when the
+coding is not (0,1), the the return value is the estimated probability of getting a "high"
+outcome, **not** the arithmetic average of the samples.
+
+**`start`** allows a starting configuration of the random variables to be provided. Only
+used if `method=Gibbs`. Any vector with two unique values can be used as `start`.
+
+**`burnin`** specifies the number of initial samples to discard from the results.  Only used
+if `method=Gibbs`.
+
+**`verbose`** controls output to the console.  If `true`, intermediate information about 
+sampling progress is printed to the console. Otherwise no output is shown.
+
+# Examples
+```jldoctest
+julia> M = ALsimple(Graph(4,4));
+julia> M.coding = (-2,3);
+julia> r = sample(M,10);
+julia> size(r)
+(4, 10)
+julia> unique(r)
+2-element Array{Float64,1}:
+  3.0
+ -2.0
+```
+"""
 function sample(M::AbstractAutologisticModel, k::Int = 1; method::SamplingMethods = Gibbs, 
                 replicate::Int = 1, average::Bool = false, start = nothing, burnin::Int = 0,
                 verbose::Bool = false)
