@@ -1,8 +1,8 @@
 #----- LinPredUnary ------------------------------------------------------------
 
 # The unary part containing a regression linear predictor.
-# X is an n-by-p-by-m matrix (n obs, p predictors, m replicates)
-# β is a p-vector of parameters (same for all replicates)
+# X is an n-by-p-by-m matrix (n obs, p predictors, m observations)
+# β is a p-vector of parameters (same for all observations)
 struct LinPredUnary <: AbstractUnaryParameter
     X::Array{Float64, 3}
     β::Vector{Float64}

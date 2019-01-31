@@ -1,7 +1,7 @@
 #----- SimplePairwise ----------------------------------------------------------
 # Association matrix is a parameter times the adjacency matrix.
 # For this case, the association matrix Λ can not be different for different
-# replicates.  So while we internally treat it like an n-by-n-by-m matrix, just
+# observations.  So while we internally treat it like an n-by-n-by-m matrix, just
 # return a 2D n-by-n matrix to the user. 
 
 # ***TODO*** 
@@ -15,14 +15,14 @@
 mutable struct SimplePairwise <: AbstractPairwiseParameter
 	λ::Vector{Float64}
 	G::SimpleGraph{Int}
-	replicates::Int
+	count::Int
 	A::SparseMatrixCSC{Float64,Int64}
 	function SimplePairwise(lam, g, m)
 		if length(lam) !== 1
 			error("SimplePairwise: λ must have length 1")
 		end
 		if m < 1
-			error("SimplePairwise: replicates must be positive")
+			error("SimplePairwise: count must be positive")
 		end
 		new(lam, g, m, adjacency_matrix(g, Float64))
 	end
@@ -32,10 +32,10 @@ end
 # - If provide only a graph, set λ = 0.
 # - If provide only an integer, set λ = 0 and make a totally disconnected graph.
 # - If provide a graph and a scalar, convert the scalar to a length-1 vector.
-SimplePairwise(G::SimpleGraph, m::Int=1) = SimplePairwise([0.0], G, m)
-SimplePairwise(n::Int, m::Int=1) = SimplePairwise(0, SimpleGraph(n), m)
+SimplePairwise(G::SimpleGraph, count::Int=1) = SimplePairwise([0.0], G, count)
+SimplePairwise(n::Int, count::Int=1) = SimplePairwise(0, SimpleGraph(n), count)
 SimplePairwise(λ::Real, G::SimpleGraph) = SimplePairwise([(Float64)(λ)], G, 1)
-SimplePairwise(λ::Real, G::SimpleGraph, m::Int) = SimplePairwise([(Float64)(λ)], G, m)
+SimplePairwise(λ::Real, G::SimpleGraph, count::Int) = SimplePairwise([(Float64)(λ)], G, count)
 
 #---- AbstractArray methods ---- (following sparsematrix.jl)
 

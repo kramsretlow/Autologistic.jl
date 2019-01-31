@@ -1,12 +1,17 @@
 For next release:
 
 [ ] Finalize API.  Should the Unary, Pairwise types be removed from the API?
-[ ] Pseudolikelihood estimation + inference
-[ ] Bayesian estimation?
-[ ] Full likelihood estimation + inference for small-n cases.
+    [ ] more generally, understand imports/exports and get it right.
+[ ] Full likelihood estimation + inference for small-n cases. 
+    (use fullPMF/negpotential/pseudolikelhood code)
+[ ] Pseudolikelihood estimation + bootstrap inference (need parallel for bootstrap?)
+    (maybe better just to give an example of the bootstrap computation in the help, 
+    in practice one might want to use parallel, not sure I want to bake that in yet.)
 
 For future:
 
+[ ] Add MCML inference as described in Hughes, Haran, and Caragea (2011)?
+[ ] Add Bayesian inference as described in Hughes, Haran, and Caragea (2011)? (maybe not-it's impractically slow...)
 [ ] Think about how partially-observed graphs (missing responses) could be handled.
 [ ] Implement Swendsen-Wang (either as a MC sampler or bounding chain-type perfect
     sampler) (see Huber, 2016 book).

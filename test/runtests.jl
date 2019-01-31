@@ -71,7 +71,7 @@ end
 
 @testset "SimplePairwise constructors and interfaces" begin
     n = 10                                                       # length of y_i
-    m = 3                                                 # number of replicates
+    m = 3                                                 # number of observations
     λ = 1.0
     G = Graph(n, Int(floor(n*(n-1)/4)))
     p1 = SimplePairwise([λ], G, m)
@@ -198,7 +198,7 @@ end
     # --- marginalprobabilities() --- 
     truemp = [0.1192029 0.1192029; 0.5 0.5; 0.8807971 0.8807971]
     @test isapprox(marginalprobabilities(M4), truemp, atol=1e-6)
-    @test isapprox(marginalprobabilities(M4,replicates=2), truemp[:,2], atol=1e-6)
+    @test isapprox(marginalprobabilities(M4,indices=2), truemp[:,2], atol=1e-6)
 
     # --- conditionalprobabilities() --- 
     lam = 0.5

@@ -8,8 +8,8 @@ too many methods unless more specialized and efficient algorithms for the specif
 All concrete subtypes should have the following fields:
 
 *   `responses::Array{Bool,2}` -- The binary observations. Rows are for nodes in the 
-    graph, and columns are for replicate observations.  It is a 2D array even if only one 
-    set of responses is observed.
+    graph, and columns are for independent (vector) observations.  It is a 2D array even if 
+    there is only one observation.
 *   `unary<:AbstractUnaryParameter` -- Specifies the unary part of the model.
 *   `pairwise<:AbstractPairwiseParameter`  -- Specifies the pairwise part of the model 
     (including the graph).
@@ -29,10 +29,10 @@ type's interface (in this list, `M` of type inheriting from `AbstractAutologisti
 *   `centeringterms(M, kind::Union{Nothing,CenteringKinds})`
 *   `pseudolikelihood(M)`
 *   `negpotential(M)`
-*   `fullPMF(M; replicates=nothing, force::Bool)`
-*   `marginalprobabilities(M; replicates, force::Bool)`
-*   `conditionalprobabilities(M; vertices, replicates)`
-*   `sample(M, k::Int, method::SamplingMethods, replicate::Int, average::Bool, start, 
+*   `fullPMF(M; indices, force::Bool)`
+*   `marginalprobabilities(M; indices, force::Bool)`
+*   `conditionalprobabilities(M; vertices, indices)`
+*   `sample(M, k::Int, method::SamplingMethods, indices::Int, average::Bool, start, 
     burnin::Int, verbose::Bool)`
 
 The `sample()` function is a wrapper for a variety of random sampling algorithms enumerated
@@ -124,12 +124,12 @@ function pseudolikelihood(M::AbstractAutologisticModel)
     mu = centeringterms(M)
     lo, hi = M.coding
 
-    # Loop through replicates
+    # Loop through observations
     for j = 1:size(Y)[2]
-        y = Y[:,j];                     #-Current replicate's observations.
-        α = M.unary[:,j]                #-Current replicate's unary parameters.
-        μ = mu[:,j]                     #-Current replicate's centering terms.
-        Λ = M.pairwise[:,:,j]           #-Current replicate's assoc. matrix.
+        y = Y[:,j];                     #-Current observation's values.
+        α = M.unary[:,j]                #-Current observation's unary parameters.
+        μ = mu[:,j]                     #-Current observation's centering terms.
+        Λ = M.pairwise[:,:,j]           #-Current observation's assoc. matrix.
         s = α + Λ*(y - μ)               #-(λ-weighted) neighbour sums + unary.
         logPL = sum(y.*s - log.(exp.(lo*s) + exp.(hi*s)))
         out = out - logPL               #-Subtract this rep's log PL from total.
@@ -142,7 +142,7 @@ end
 
 # === negpotential function ====================================================
 # negpotential(M) returns an m-vector of Float64 negpotential values, where 
-# m is the number of replicate observations found in M.responses.
+# m is the number of observations found in M.responses.
 # TODO: clean up for allocations/speed. Based on experience with sample(), might
 #       want to loop explicitly.
 function negpotential(M::AbstractAutologisticModel)
@@ -161,12 +161,12 @@ end
 
 # === fullPMF ==================================================================
 """
-    fullPMF(M::AbstractAutologisticModel; replicates=nothing, force::Bool=false)
+    fullPMF(M::AbstractAutologisticModel; indices=1:size(M.unary)[2], force::Bool=false)
 
 Compute the PMF of an AbstractAutologisticModel, and return a `NamedTuple` `(:table, :partition)`.
 
-For an AutologisticModel with ``n`` observations and ``m`` replicates, `:table` is a ``2^n×(n+1)×m`` 
-array of `Float64`. Each page of the 3D array holds a probability table for a replicate.  
+For an AutologisticModel with ``n`` variables and ``m`` observations, `:table` is a ``2^n×(n+1)×m`` 
+array of `Float64`. Each page of the 3D array holds a probability table for an observation.  
 Each row of the table holds a specific configuration of the responses, with the 
 corresponding probability in the last column.  In the ``m=1`` case,  `:table` is a 2D array.
 
@@ -174,10 +174,10 @@ Output `:partition` is a vector of normalizing constant (a.k.a. partition functi
 In the ``m=1`` case, it is a scalar `Float64`.
 
 # Arguments
-- `M::AbstractAutologisticModel`: an autologistic model.
-- `replicates=nothing`: indices of specific replicates from which to obtain the output. By 
-  default, all replicates are used.
-- `force::Bool=false`: calling the function with ``n>20`` will throw an error unless 
+- `M`: an autologistic model.
+- `indices`: indices of specific observations from which to obtain the output. By 
+  default, all observations are used.
+- `force`: calling the function with ``n>20`` will throw an error unless 
   `force=true`. 
 
 # Examples
@@ -198,29 +198,28 @@ julia> pmf.partition
  8.0
 ```
 """
-function fullPMF(M::AbstractAutologisticModel; replicates=nothing, force::Bool=false)
+function fullPMF(M::AbstractAutologisticModel; indices=1:size(M.unary)[2], 
+                 force::Bool=false)
     n, m = size(M.unary)
     nc = 2^n
     if n>20 && !force
         error("Attempting to tabulate a PMF with more than 2^20 configurations."
               * "\nIf you really want to do this, set force=true.")
     end
-    if replicates == nothing
-        replicates = 1:m
-    elseif minimum(replicates)<1 || maximum(replicates)>m 
-        error("replicate index out of bounds")
+    if minimum(indices)<1 || maximum(indices)>m 
+        error("observation index out of bounds")
     end
     lo = M.coding[1]
     hi = M.coding[2]
-    T = zeros(nc, n+1, length(replicates))
+    T = zeros(nc, n+1, length(indices))
     configs = zeros(nc,n)
     partition = zeros(m)
     for i in 1:n
         inner = [repeat([lo],Int(nc/2^i)); repeat([hi],Int(nc/2^i))]
         configs[:,i] = repeat(inner , 2^(i-1) )
     end
-    for i in 1:length(replicates)
-        r = replicates[i]
+    for i in 1:length(indices)
+        r = indices[i]
         T[:,1:n,i] = configs
         α = M.unary[:,r]
         Λ = M.pairwise[:,:,r]
@@ -229,7 +228,7 @@ function fullPMF(M::AbstractAutologisticModel; replicates=nothing, force::Bool=f
         partition[i] = sum(unnormalized)
         T[:,n+1,i] = unnormalized / partition[i]
     end
-    if length(replicates)==1
+    if length(indices)==1
         T  = dropdims(T,dims=3)
         partition = partition[1]
     end
@@ -240,30 +239,29 @@ end
 # ***TODO: documentation***
 #Returns an n-by-m array (or an n-vector if  m==1). The [i,j]th element is the 
 #marginal probability of the high state in the ith variable at the jth replciate.
-function marginalprobabilities(M::AbstractAutologisticModel; replicates=nothing, force::Bool=false)
+function marginalprobabilities(M::AbstractAutologisticModel; indices=1:size(M.unary)[2], 
+                               force::Bool=false)
     n, m = size(M.unary)
     nc = 2^n
     if n>20 && !force
         error("Attempting to tabulate a PMF with more than 2^20 configurations."
               * "\nIf you really want to do this, set force=true.")
     end
-    if replicates == nothing
-        replicates = 1:m
-    elseif minimum(replicates)<1 || maximum(replicates)>m 
-        error("replicate index out of bounds")
+    if minimum(indices)<1 || maximum(indices)>m 
+        error("observation index out of bounds")
     end
     hi = M.coding[2]
-    out = zeros(n,length(replicates))
+    out = zeros(n,length(indices))
 
     tbl = fullPMF(M).table
 
-    for j = 1:length(replicates)
-        r = replicates[j]
+    for j = 1:length(indices)
+        r = indices[j]
         for i = 1:n
             out[i,j] = sum(mapslices(x -> x[i]==hi ? x[n+1] : 0.0, tbl[:,:,r], dims=2))
         end
     end
-    if length(replicates) == 1
+    if length(indices) == 1
         return vec(out)
     end
     return out
@@ -271,26 +269,27 @@ end
 
 
 # Compute the conditional probability that variables take the high state, given the
-# current values of all of their neighbors. If vertices or replicates are provided,
-# the results are only computed for the desired variables & replicates.  Otherwise
-# results are computed for all variables and replicates.
+# current values of all of their neighbors. If vertices or indices are provided,
+# the results are only computed for the desired variables & observations.  Otherwise
+# results are computed for all variables and observations.
 # TODO: optimize for speed/efficiency
-function conditionalprobabilities(M::AbstractAutologisticModel; vertices=nothing, replicates=nothing)
+function conditionalprobabilities(M::AbstractAutologisticModel; vertices=1:size(M.unary)[1], 
+                                  indices=1:size(M.unary)[2])
     n, m = size(M.unary)
-    if vertices==nothing
-        vertices = 1:n
+    if minimum(vertices)<1 || maximum(vertices)>n 
+        error("vertices index out of bounds")
     end
-    if replicates==nothing
-        replicates = 1:m
+    if minimum(indices)<1 || maximum(indices)>m 
+        error("observation index out of bounds")
     end
-    out = zeros(Float64, length(vertices), length(replicates))
+    out = zeros(Float64, length(vertices), length(indices))
     Y = makecoded(M)
     μ = centeringterms(M)
     lo, hi = M.coding
     adjlist = M.pairwise.G.fadjlist
 
-    for j = 1:length(replicates)
-        r = replicates[j]
+    for j = 1:length(indices)
+        r = indices[j]
         for i = 1:length(vertices)
             v = vertices[i]
             # get neighbor sum
@@ -317,7 +316,7 @@ end
         M::AbstractAutologisticModel, 
         k::Int = 1;
         method::SamplingMethods = Gibbs,
-        replicate::Int = 1, 
+        index::Int = 1, 
         average::Bool = false, 
         start = nothing, 
         burnin::Int = 0,
@@ -334,7 +333,7 @@ vertices in its graph, the return value is an `Array{Float64,1}` of length `n` w
 method will be used.  The default uses Gibbs sampling.  Where feasible, it is recommended 
 to use one of the perfect sampling alternatives. See [`SamplingMethods`](@ref) for more.
 
-**`replicate`** specifies which replicate of the model to use for sampling. 
+**`index`** gives the index of the observation to use for sampling. 
 
 **`average`** controls whether the return value is the proportion of "high" samples at each 
 (when `average=true`) or the full set of samples (when `average=false`). Note that when the
@@ -364,23 +363,23 @@ julia> unique(r)
 ```
 """
 function sample(M::AbstractAutologisticModel, k::Int = 1; method::SamplingMethods = Gibbs, 
-                replicate::Int = 1, average::Bool = false, start = nothing, burnin::Int = 0,
+                index::Int = 1, average::Bool = false, start = nothing, burnin::Int = 0,
                 verbose::Bool = false)
     if k < 1 
         error("k must be positive") 
     end
-    if replicate < 1 || replicate > size(M.unary, 2) 
-        error("replicate must be between 1 and the number of replicates")
+    if index < 1 || index > size(M.unary, 2) 
+        error("index must be between 1 and the number of observations")
     end
     if burnin < 0 
         error("burnin must be nonnegative") 
     end
     lo = Float64(M.coding[1])
     hi = Float64(M.coding[2])
-    Y = vec(makecoded(M, M.responses[:,replicate]))  #TODO: be cetain M isn't mutated.
-    Λ = M.pairwise[:,:,replicate]   
-    α = M.unary[:,replicate]
-    μ = centeringterms(M)[:,replicate]
+    Y = vec(makecoded(M, M.responses[:,index]))  #TODO: be cetain M isn't mutated.
+    Λ = M.pairwise[:,:,index]   
+    α = M.unary[:,index]
+    μ = centeringterms(M)[:,index]
     n = length(α)
     adjlist = M.pairwise.G.fadjlist
     if method == Gibbs

@@ -1,12 +1,12 @@
 #AbstractPairwiseParameter is the Λ (which could be parametrized)
 # We make it a 3D AbstractArray for maximum flexibility, so that in the
-# case of replicates with e.g. adaptive pairwise paramettrization, we can 
-# have separate Λ values for each replicate.
+# case of e.g. adaptive pairwise paramettrization with multiple observations, 
+# we can have separate Λ values for each observation.
 # ***TODO***
 # [x] Should this type be a subtype of a sparse array?  And a symmetric type? 
 #    Or should we allow subtypes of AbstractPairwiseParameter to decide if they should be 
 #    sparse or not? This is especially important if we make it a 3D array with 
-#    replicates.
+#    observations.
 #      ==> Decided, keep it just a subtype of AbstractArray{Float64,3}, and let
 #          concrete types decide how to handle their behavior.  Sparse arrays
 #          and symmetric matrices are subtypes  of AbstractArray, so no problems
@@ -22,11 +22,11 @@ Abstract type representing the pairwise part of an autologistic regression model
 All concrete subtypes should have the following fields:
 
 *   `G::SimpleGraph{Int}` -- The graph for the model.
-*   `replicates::Int`  -- The number of replicate observations.
+*   `count::Int`  -- The number of observations.
 *   `A::SparseMatrixCSC{Float64,Int64}`  -- The adjacency matrix of the graph.
 
-In addition to `getindex()` and `setindex!()`, any concrete subtype `P<:AbstractPairwiseParameter` 
-should also have the following methods defined:
+In addition to `getindex()` and `setindex!()`, any concrete subtype 
+`P<:AbstractPairwiseParameter` should also have the following methods defined:
 
 *   `getparameters(P)`, returning a Vector{Float64}
 *   `setparameters!(P, newpar::Vector{Float64})` for setting parameter values.
@@ -39,8 +39,8 @@ the association matrix. The way parameters are stored and values computed is up 
 subtypes. 
 
 This type inherits from `AbstractArray{Float64, 3}`.  The third index is to allow for 
-replicate observations.  P[:,:,r] should return the association matrix of the rth
-replicate in an appropriate subtype of AbstractMatrix.  It is not intended that the third 
+multiple observations.  P[:,:,r] should return the association matrix of the rth
+observation in an appropriate subtype of AbstractMatrix.  It is not intended that the third 
 index will be used for range or vector indexing like P[:,:,1:5] (though this may work 
 due to AbstractArray fallbacks). 
 """
@@ -51,7 +51,7 @@ Base.IndexStyle(::Type{<:AbstractPairwiseParameter}) = IndexCartesian()
 Base.summary(p::AbstractPairwiseParameter) = "**TODO**"
 
 #---- fallback methods --------------
-Base.size(p::AbstractPairwiseParameter) = (nv(p.G), nv(p.G), p.replicates)
+Base.size(p::AbstractPairwiseParameter) = (nv(p.G), nv(p.G), p.count)
 
 function Base.getindex(p::AbstractPairwiseParameter, I::AbstractVector, J::AbstractVector)
     error("getindex not implemented for $(typeof(p))")

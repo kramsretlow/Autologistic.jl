@@ -53,16 +53,16 @@ function ALsimple(graph::SimpleGraph{Int}, alpha::Float1D2D;
     return ALsimple(makebool(Y),u,p,centering,coding,labels,coordinates)
 end
 
-# include the number of replicates (can get n from the nv(graph))
-function ALsimple(graph::SimpleGraph{Int}, m::Int=1; 
-                  Y::VecOrMat=Array{Bool,2}(undef,nv(graph),m), 
+# include the observation count (can get n from the nv(graph))
+function ALsimple(graph::SimpleGraph{Int}, count::Int=1; 
+                  Y::VecOrMat=Array{Bool,2}(undef,nv(graph),count), 
                   λ::Float64=0.0, 
                   centering::CenteringKinds=none, 
                   coding::Tuple{Real,Real}=(-1,1),
                   labels::Tuple{String,String}=("low","high"),
                   coordinates::SpatialCoordinates=nothing)
-    u = FullUnary(nv(graph),m)
-    p = SimplePairwise(λ, graph, m)
+    u = FullUnary(nv(graph),count)
+    p = SimplePairwise(λ, graph, count)
     return ALsimple(makebool(Y),u,p,centering,coding,labels,coordinates)
 end
 
