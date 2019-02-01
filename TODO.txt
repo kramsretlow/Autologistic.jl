@@ -7,6 +7,7 @@ For next release:
 [ ] Pseudolikelihood estimation + bootstrap inference (need parallel for bootstrap?)
     (maybe better just to give an example of the bootstrap computation in the help, 
     in practice one might want to use parallel, not sure I want to bake that in yet.)
+[ ] Make Base.summary() methods for the main types
 
 For future:
 

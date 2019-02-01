@@ -161,7 +161,7 @@ end
 
 # === fullPMF ==================================================================
 """
-    fullPMF(M::AbstractAutologisticModel; indices=1:size(M.unary)[2], force::Bool=false)
+    fullPMF(M::AbstractAutologisticModel; indices=1:size(M.unary,2), force::Bool=false)
 
 Compute the PMF of an AbstractAutologisticModel, and return a `NamedTuple` `(:table, :partition)`.
 
@@ -198,7 +198,7 @@ julia> pmf.partition
  8.0
 ```
 """
-function fullPMF(M::AbstractAutologisticModel; indices=1:size(M.unary)[2], 
+function fullPMF(M::AbstractAutologisticModel; indices=1:size(M.unary,2), 
                  force::Bool=false)
     n, m = size(M.unary)
     nc = 2^n
@@ -239,7 +239,7 @@ end
 # ***TODO: documentation***
 #Returns an n-by-m array (or an n-vector if  m==1). The [i,j]th element is the 
 #marginal probability of the high state in the ith variable at the jth replciate.
-function marginalprobabilities(M::AbstractAutologisticModel; indices=1:size(M.unary)[2], 
+function marginalprobabilities(M::AbstractAutologisticModel; indices=1:size(M.unary,2), 
                                force::Bool=false)
     n, m = size(M.unary)
     nc = 2^n
@@ -274,7 +274,7 @@ end
 # results are computed for all variables and observations.
 # TODO: optimize for speed/efficiency
 function conditionalprobabilities(M::AbstractAutologisticModel; vertices=1:size(M.unary)[1], 
-                                  indices=1:size(M.unary)[2])
+                                  indices=1:size(M.unary,2))
     n, m = size(M.unary)
     if minimum(vertices)<1 || maximum(vertices)>n 
         error("vertices index out of bounds")
@@ -316,16 +316,25 @@ end
         M::AbstractAutologisticModel, 
         k::Int = 1;
         method::SamplingMethods = Gibbs,
-        index::Int = 1, 
+        indices = 1:size(M.unary,2), 
         average::Bool = false, 
         start = nothing, 
         burnin::Int = 0,
         verbose::Bool = false
     )
 
-Draws `k` random samples from autologistic model `M`. For a model `M` with `n` 
-vertices in its graph, the return value is an `Array{Float64,1}` of length `n` when 
-`average=true`, and an `n×k` `Array{Float64,2}` when `average=false`.
+Draws `k` random samples from autologistic model `M`, and either returns the samples 
+themselves, or the estimated probabilities of observing the "high" level at each vertex.
+
+If the model has more than one observation, then `k` samples are drawn for each observation.
+To restrict the samples to a subset of observations, use argument `indices`. 
+
+For a model `M` with `n` vertices in its graph:
+
+*   When `average=false`, the return value is `n` × `length(indices)` × `k`, with singleton
+    dimensions dropped. 
+*   When `average=true`, the return value is `n`  × `length(indices)`, with singleton
+    dimensions dropped.
 
 # Keyword Arguments
 
@@ -333,15 +342,18 @@ vertices in its graph, the return value is an `Array{Float64,1}` of length `n` w
 method will be used.  The default uses Gibbs sampling.  Where feasible, it is recommended 
 to use one of the perfect sampling alternatives. See [`SamplingMethods`](@ref) for more.
 
-**`index`** gives the index of the observation to use for sampling. 
+**`indices`** gives the indices of the observation to use for sampling. The default is all
+indices, in which case each sample is of the same size as `M.responses`. 
 
-**`average`** controls whether the return value is the proportion of "high" samples at each 
-(when `average=true`) or the full set of samples (when `average=false`). Note that when the
-coding is not (0,1), the the return value is the estimated probability of getting a "high"
-outcome, **not** the arithmetic average of the samples.
+**`average`** controls the form of the output. When `average=true`, the return value is the 
+proportion of "high" samples at each vertex. (Note that this is **not** actually the
+arithmetic average of the samples, unless the coding is (0,1). Rather, it is an estimate of 
+the probability of getting a "high" outcome.)  When `average=false`, the full set of samples
+is returned. 
 
 **`start`** allows a starting configuration of the random variables to be provided. Only
-used if `method=Gibbs`. Any vector with two unique values can be used as `start`.
+used if `method=Gibbs`. Any vector with two unique values can be used as `start`. By default
+a random configuration is used.
 
 **`burnin`** specifies the number of initial samples to discard from the results.  Only used
 if `method=Gibbs`.
@@ -356,24 +368,60 @@ julia> M.coding = (-2,3);
 julia> r = sample(M,10);
 julia> size(r)
 (4, 10)
-julia> unique(r)
+julia> sort(unique(r))
 2-element Array{Float64,1}:
-  3.0
  -2.0
+  3.0
 ```
 """
 function sample(M::AbstractAutologisticModel, k::Int = 1; method::SamplingMethods = Gibbs, 
-                index::Int = 1, average::Bool = false, start = nothing, burnin::Int = 0,
-                verbose::Bool = false)
+                indices=1:size(M.unary,2), average::Bool = false, start = nothing, 
+                burnin::Int = 0, verbose::Bool = false)
+    
+    # Create storage object 
+    n, m = size(M.unary)
+    nidx = length(indices)
     if k < 1 
         error("k must be positive") 
     end
-    if index < 1 || index > size(M.unary, 2) 
-        error("index must be between 1 and the number of observations")
+    if  minimum(indices) < 1 || maximum(indices) > m 
+        error("indices must be between 1 and the number of observations")
     end
     if burnin < 0 
         error("burnin must be nonnegative") 
     end
+    if average
+        out = zeros(Float64, n, nidx)
+    else
+        out = zeros(Float64, n, nidx, k)
+    end
+
+    # Call the sampling function for each index. Give details if verbose=true.
+    for i = 1:nidx
+        if verbose
+            println("== Sampling observation $(indices[i]) ==")
+        end
+        out[:,i,:] = sample_one_index(M, k, method=method, 
+                                      index=indices[i], average=average,
+                                      start=start, burnin=burnin, verbose=verbose)
+    end
+
+    # Return
+    if nidx==1 && !average
+        out = dropdims(out,dims=2)
+    end
+    if size(out,2) == size(out,3) == 1
+        return out[:]
+    else
+        return out
+    end
+
+    # Update tests
+end
+
+function sample_one_index(M::AbstractAutologisticModel, k::Int = 1; 
+                     method::SamplingMethods = Gibbs, index::Int = 1, average::Bool = false, 
+                     start = nothing, burnin::Int = 0, verbose::Bool = false)
     lo = Float64(M.coding[1])
     hi = Float64(M.coding[2])
     Y = vec(makecoded(M, M.responses[:,index]))  #TODO: be cetain M isn't mutated.
@@ -399,3 +447,44 @@ function sample(M::AbstractAutologisticModel, k::Int = 1; method::SamplingMethod
         return cftp_read_once(lo, hi, Λ, adjlist, α, μ, n, k, average, verbose)
     end
 end
+
+
+#= #****** OLD ******************************
+function sample(M::AbstractAutologisticModel, k::Int = 1; method::SamplingMethods = Gibbs, 
+    index::Int = 1, average::Bool = false, start = nothing, burnin::Int = 0,
+    verbose::Bool = false)
+if k < 1 
+error("k must be positive") 
+end
+if index < 1 || index > size(M.unary, 2) 
+error("index must be between 1 and the number of observations")
+end
+if burnin < 0 
+error("burnin must be nonnegative") 
+end
+lo = Float64(M.coding[1])
+hi = Float64(M.coding[2])
+Y = vec(makecoded(M, M.responses[:,index]))  #TODO: be cetain M isn't mutated.
+Λ = M.pairwise[:,:,index]   
+α = M.unary[:,index]
+μ = centeringterms(M)[:,index]
+n = length(α)
+adjlist = M.pairwise.G.fadjlist
+if method == Gibbs
+if start == nothing
+start = rand([lo, hi], n)
+else
+start = vec(makecoded(M, makebool(start)))
+end
+return gibbssample(lo, hi, Y, Λ, adjlist, α, μ, n, k, average, start, burnin, verbose)
+elseif method == perfect_reuse_samples
+return cftp_reuse_samples(lo, hi, Λ, adjlist, α, μ, n, k, average, verbose)
+elseif method == perfect_reuse_seeds
+return cftp_reuse_seeds(lo, hi, Λ, adjlist, α, μ, n, k, average, verbose)
+elseif method == perfect_bounding_chain
+return cftp_bounding_chain(lo, hi, Λ, adjlist, α, μ, n, k, average, verbose)
+elseif method == perfect_read_once
+return cftp_read_once(lo, hi, Λ, adjlist, α, μ, n, k, average, verbose)
+end
+end
+ =#

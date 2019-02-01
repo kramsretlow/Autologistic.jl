@@ -248,4 +248,15 @@ end
     @test isapprox(est9, threelow, atol=0.03)
     @test isapprox(est10, threelow, atol=0.03)
 
+    nobs = 4
+    M7 = ALRsimple(makegrid8(3,3)[1], rand(9,2,nobs))
+    setparameters!(M7, [-0.5, 0.5, 0.2])
+    out11 = sample(M7, 100)
+    @test size(out11) == (9, nobs, 100)
+    out12 = sample(M7, 100, average=true)
+    @test size(out12) == (9, nobs)
+    marg = marginalprobabilities(M7)
+    out13 = sample(M7, 10000, method=perfect_read_once, average=true)
+    @test isapprox(out13[:], marg[:], atol=0.03, norm=x->norm(x,Inf))
+
 end
