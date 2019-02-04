@@ -141,3 +141,15 @@ function innerprod(a, b)::Float64
     end
     return out
 end
+
+
+# Open data sets 
+function datasets(name::String)
+    if name=="pigmentosa"
+        dfpath = joinpath(dirname(pathof(Autologistic)), "..", "assets") * "\\pigmentosa.csv"
+    else
+        error("Name is not one of the available options.")
+    end
+    return CSV.read(dfpath)
+end
+
