@@ -69,7 +69,7 @@ var documenterSearchIndex = {"docs": [
     "page": "Examples",
     "title": "Examples",
     "category": "section",
-    "text": "TODO"
+    "text": "TODOWe will use the notation n for the number of variables, p for the number of predictors (including intercept), m for the number of (vector) observations."
 },
 
 {
@@ -81,17 +81,17 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
-    "location": "Examples/#Low-Dimensional-Correlated-Binary-Data-1",
+    "location": "Examples/#Clustered-Binary-Data-(Small-n)-1",
     "page": "Examples",
-    "title": "Low-Dimensional Correlated Binary Data",
+    "title": "Clustered Binary Data (Small n)",
     "category": "section",
-    "text": "TODO"
+    "text": "The retinitis pigmentosa data set obtained here is an opthalmology data set.  Both eyes of 444 patients were examined.   The response for each eye is va, an indicator of poor visual acuity (coded 0 = no, 1 = yes in the original source). Seven covariates were also recorded for each eye:aut_dom: autosomal dominant (0=no, 1=yes)\naut_rec: autosomal recessive (0=no, 1=yes)\nsex_link: sex-linked (0=no, 1=yes)\nage: age (years, range 6-80)\nsex: gender (0=female, 1=male)\npsc: posterior subscapsular cataract (0=no, 1=yes)\neye: which eye is it? (0=left, 1=right)The last four factors are relevant clinical observations, and the first three are genetic factors. The data set also includes an ID column with an ID number specific to each patient.  Eyes with the same ID come from the same person.The natural unit of analysis is the eye, but pairs of observations from the same patient are \"clustered\" because the occurrence of acuity loss in the left and right eye is probably correlated. We can model the dichotomous responses as a simple graph with two vertices and one edge, representing a single person.  We have 444 observations with this graph, each having its own set of covariates.If we include all seven predictors, plus intercept, in our model, we have (npm) = (28444). Because individual observations have only two correlated variables, we can compute the full likelihood and use standard maximum likelihood methods to do estimation and inference.using Autologistic, DataFrames, CSV, LightGraphs\r\ndf = Autologistic.datasets(\"pigmentosa\");\r\ndescribe(df)first(df,6)Which produces outputX = Array{Float64,3}(undef, 2, 8, 444)\r\nY = Array{Float64,2}(undef, 2, 444)\r\nfor i in 1:2:888\r\n    subject = Int((i+1)/2)\r\n    X[1,:,subject] = [1 permutedims(Vector(df[i,2:8]))]\r\n    X[2,:,subject] = [1 permutedims(Vector(df[i+1,2:8]))]\r\n    Y[:,subject] = convert(Array, df[i:i+1, 9])\r\nend\r\nG = Graph(2,1)\r\nLR = ALRsimple(G, X, Y=Y, coding=(0,1))  #-For logistic regression use\r\nSZO = ALRsimple(G, X, Y=Y, coding=(0,1))\r\nCZO = ALRsimple(G, X, Y=Y, coding=(0,1), centering=expectation)\r\nSPM = ALRsimple(G, X, Y=Y, coding=(-1,1))"
 },
 
 {
-    "location": "Examples/#High-Dimensional-Spatial-Binary-Data-1",
+    "location": "Examples/#Spatial-Binary-Regression-1",
     "page": "Examples",
-    "title": "High-Dimensional Spatial Binary Data",
+    "title": "Spatial Binary Regression",
     "category": "section",
     "text": "TODO"
 },
