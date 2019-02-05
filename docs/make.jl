@@ -1,5 +1,7 @@
-# TODO: figure out how to properly handle external dependencies.
-using Documenter, Autologistic, LightGraphs, DataFrames, CSV
+# TODO: figure out how to properly handle dependencies.
+using Documenter
+using Autologistic
+using LightGraphs, DataFrames, CSV
 makedocs(
     sitename = "Autologistic.jl",
     modules = [Autologistic],

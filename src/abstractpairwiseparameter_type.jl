@@ -43,6 +43,15 @@ multiple observations.  P[:,:,r] should return the association matrix of the rth
 observation in an appropriate subtype of AbstractMatrix.  It is not intended that the third 
 index will be used for range or vector indexing like P[:,:,1:5] (though this may work 
 due to AbstractArray fallbacks). 
+
+# Examples
+```jldoctest
+julia> M = ALsimple(Graph(4,4));
+julia> typeof(M.pairwise)
+SimplePairwise
+julia> isa(M.pairwise, AbstractPairwiseParameter)
+true
+```
 """
 abstract type AbstractPairwiseParameter <: AbstractArray{Float64, 3} end
 
