@@ -13,7 +13,7 @@ var documenterSearchIndex = {"docs": [
     "page": "Introduction",
     "title": "Introduction",
     "category": "section",
-    "text": "The Autologistic.jl package provides tools for analyzing correlated binary data using autologistic (AL) or autologistic regression (ALR) models.  The AL model is best thought of as a probability distribution for correlated binary random variables, like an analogue of the multivariate normal distribution for binary responses. The ALR models incorporate covariate effects into this distribution and are therefore more useful for data analysis.The ALR model is potentially useful for any situation involving correlated binary responses. It can be described in a few ways.  It is:An extension of logistic regression to handle non-independent responses.\nA Markov random field model for dichotomous random variables, with covariates.\nAn extension of the Ising model to handle different graph structures and to include covariate effects.\nThe quadratic exponential binary (QEB) distribution, incorporating covariate effects.This package follows the treatment of this model given in the paper Better Autologistic Regression.  Please refer to that article for in-depth discussion of the model, and please cite it if you use this package in your research.  The Background section in this manual also provides an overview of the model.For quick navigation, here is a table of contents, followed by an index.Pages = [\"index.md\", \"Background.md\", \"Examples.md\", \"api.md\"]\r\nDepth = 2"
+    "text": "The Autologistic.jl package provides tools for analyzing correlated binary data using autologistic (AL) or autologistic regression (ALR) models.  The AL model is a multivariate probability distribution, like an analogue of the multivariate normal distribution, except for dichotomous (two-valued) categorical responses. The ALR models incorporate covariate effects into this distribution and are therefore more useful for data analysis.The ALR model is potentially useful for any situation involving correlated binary responses. It can be described in a few ways.  It is:An extension of logistic regression to handle non-independent responses.\nA Markov random field model for dichotomous random variables, with covariates.\nAn extension of the Ising model to handle different graph structures and to include covariate effects.\nThe quadratic exponential binary (QEB) distribution, incorporating covariate effects.This package follows the treatment of this model given in the paper Better Autologistic Regression.  Please refer to that article for in-depth discussion of the model, and please cite it if you use this package in your research.  The Background section in this manual also provides an overview of the model.For quick navigation, here is a table of contents, followed by an index.Pages = [\"index.md\", \"Background.md\", \"Examples.md\", \"api.md\"]\r\nDepth = 2"
 },
 
 {
@@ -29,7 +29,7 @@ var documenterSearchIndex = {"docs": [
     "page": "Background",
     "title": "Background",
     "category": "section",
-    "text": "TODO"
+    "text": "Here we will provide a brief overview of the autologistic model, to establish some conventions and terminology that will help you to moake appropriate use of Autologistic.jl.While we refer to binary data, more generally and accurately we should call it dichotomous data: categorical observations with two possible values (low or high, alive or dead, present or absent, etc.).  It is commonplace to encode such data as 0 or 1, but other coding choices could be made, and in Autologistic.jl the default coding is -1 and +1.  The coding choice is not trivial: two ALR models with different numeric coding will not, in general, be equivalent.  Furthermore, the (-1 1) coding has distinct advantages"
 },
 
 {
@@ -77,7 +77,7 @@ var documenterSearchIndex = {"docs": [
     "page": "Examples",
     "title": "An Ising Model",
     "category": "section",
-    "text": "TODO"
+    "text": "TODO (here show how ALsimple can be used as a probability model for dichotomous RVs)(Also show how the model can be mutated after construction)"
 },
 
 {
@@ -113,6 +113,14 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
+    "location": "api/#Autologistic.AbstractPairwiseParameter",
+    "page": "API Reference",
+    "title": "Autologistic.AbstractPairwiseParameter",
+    "category": "type",
+    "text": "AbstractPairwiseParameter\n\nAbstract type representing the pairwise part of an autologistic regression model.\n\nAll concrete subtypes should have the following fields:\n\nG::SimpleGraph{Int} – The graph for the model.\ncount::Int  – The number of observations.\nA::SparseMatrixCSC{Float64,Int64}  – The adjacency matrix of the graph.\n\nIn addition to getindex() and setindex!(), any concrete subtype  P<:AbstractPairwiseParameter should also have the following methods defined:\n\ngetparameters(P), returning a Vector{Float64}\nsetparameters!(P, newpar::Vector{Float64}) for setting parameter values.\n\nNote that indexing is performance-critical and should be implemented carefully in  subtypes.  \n\nThe intention is that each subtype should implement a different way of parameterizing the association matrix. The way parameters are stored and values computed is up to the subtypes. \n\nThis type inherits from AbstractArray{Float64, 3}.  The third index is to allow for  multiple observations. P[:,:,r] should return the association matrix of the rth observation in an appropriate subtype of AbstractMatrix.  It is not intended that the third  index will be used for range or vector indexing like P[:,:,1:5] (though this may work  due to AbstractArray fallbacks). \n\nExamples\n\njulia> M = ALsimple(Graph(4,4));\njulia> typeof(M.pairwise)\nSimplePairwise\njulia> isa(M.pairwise, AbstractPairwiseParameter)\ntrue\n\n\n\n\n\n"
+},
+
+{
     "location": "api/#Autologistic.AbstractAutologisticModel",
     "page": "API Reference",
     "title": "Autologistic.AbstractAutologisticModel",
@@ -133,7 +141,7 @@ var documenterSearchIndex = {"docs": [
     "page": "API Reference",
     "title": "Types and Constructors",
     "category": "section",
-    "text": "AbstractAutologisticModel\r\nSamplingMethods"
+    "text": "AbstractPairwiseParameter\r\nAbstractAutologisticModel\r\nSamplingMethods"
 },
 
 {
