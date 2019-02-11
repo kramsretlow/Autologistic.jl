@@ -7,7 +7,8 @@ For next release:
 [ ] Pseudolikelihood estimation + bootstrap inference (need parallel for bootstrap?)
     (maybe better just to give an example of the bootstrap computation in the help, 
     in practice one might want to use parallel, not sure I want to bake that in yet.)
-[ ] Make Base.summary() methods for the main types
+[ ] Make Base.summary(), Base.show() (or Base.display?) (and describe?) methods for the main types
+    (see http://schurkus.com/2018/01/05/julia-print-show-display-dump-what-to-override-what-to-use/)
 
 For future:
 
@@ -16,3 +17,8 @@ For future:
 [ ] Think about how partially-observed graphs (missing responses) could be handled.
 [ ] Implement Swendsen-Wang (either as a MC sampler or bounding chain-type perfect
     sampler) (see Huber, 2016 book).
+[ ] Consider re-implementing parameters as arrays <: Real, instead of Float64, to allow use 
+    of ForwardDiff.jl to get derivatives by automatic differentiation in optimization and Hessian
+    calculation. Does it actually help optimization performance/accuracy/reliability? Any speed 
+    trade-offs elsewhere due to use of generic type? Any numerical problems with existing 
+    implementation that would justify the trouble of making the change?

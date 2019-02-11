@@ -101,6 +101,7 @@ Base.getindex(u::LinPredUnary, I::AbstractVector{Bool}, J::AbstractVector{<:Inte
 Base.setindex!(u::LinPredUnary, v::Real, i::Int, j::Int) =
     error("Values of $(typeof(u)) must be set using setparameters!().")
 
+
 #---- AbstractUnaryParameter interface ----
 getparameters(u::LinPredUnary) = u.β
 function setparameters!(u::LinPredUnary, newpars::Vector{Float64})
@@ -108,3 +109,9 @@ function setparameters!(u::LinPredUnary, newpars::Vector{Float64})
 end
 
 
+#---- to be used in show methods ----
+function showfields(u::LinPredUnary, leadspaces=0)
+    spc = repeat(" ", leadspaces)
+    return spc * "X: $(size2string(u.X)) $(typeof(u.X))\n" *
+           spc * "β: $(size2string(u.β)) $(typeof(u.β))\n"
+end

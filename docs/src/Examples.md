@@ -7,7 +7,9 @@ predictors (including intercept), ``m`` for the number of (vector) observations.
 
 ## An Ising Model
 
-TODO
+TODO (here show how ALsimple can be used as a probability model for dichotomous RVs)
+
+(Also show how the model can be mutated after construction)
 
 ## Clustered Binary Data (Small ``n``)
 

@@ -38,7 +38,7 @@ Base.getindex(u::FullUnary, I::AbstractVector{Bool}, J::AbstractVector{<:Integer
 Base.setindex!(u::FullUnary, v::Real, I::Vararg{Int,2}) = (u.α[CartesianIndex(I)] = v)
 
 #---- AbstractUnaryParameter interface ----
-getparameters(u::FullUnary) = dropdims(reshape(values(u), length(u), 1), dims=2)
+getparameters(u::FullUnary) = dropdims(reshape(u, length(u), 1), dims=2)
 function setparameters!(u::FullUnary, newpars::Vector{Float64})
     # Note, not implementing subsetting etc., can only replace the whole vector.
     if length(newpars) != length(u)
@@ -47,3 +47,8 @@ function setparameters!(u::FullUnary, newpars::Vector{Float64})
     u.α = reshape(newpars, size(u))
 end
 
+#---- to be used in show methods ----
+function showfields(u::FullUnary, leadspaces=0)
+    spc = repeat(" ", leadspaces)
+    return spc * "α: $(size2string(u.α)) $(typeof(u.α))\n"
+end

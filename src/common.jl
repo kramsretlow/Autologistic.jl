@@ -153,3 +153,19 @@ function datasets(name::String)
     return CSV.read(dfpath)
 end
 
+
+# Make size into strings like 10×5×2 (for use in show methods)
+function size2string(x::T) where T<:AbstractArray
+    d = size(x)
+    n = length(d)
+    if n ==1 
+        return "$(d[1])-element"
+    else
+        str = "$(d[1])" 
+        for i = 2:n
+            str *= "×"
+            str *= "$(d[i])"
+        end
+        return str
+    end
+end

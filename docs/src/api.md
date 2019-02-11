@@ -7,6 +7,7 @@ CurrentModule = Autologistic
 ## Types and Constructors
 
 ```@docs
+AbstractPairwiseParameter
 AbstractAutologisticModel
 SamplingMethods
 ```

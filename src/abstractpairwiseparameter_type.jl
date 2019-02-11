@@ -39,9 +39,9 @@ the association matrix. The way parameters are stored and values computed is up 
 subtypes. 
 
 This type inherits from `AbstractArray{Float64, 3}`.  The third index is to allow for 
-multiple observations.  P[:,:,r] should return the association matrix of the rth
+multiple observations. `P[:,:,r]` should return the association matrix of the rth
 observation in an appropriate subtype of AbstractMatrix.  It is not intended that the third 
-index will be used for range or vector indexing like P[:,:,1:5] (though this may work 
+index will be used for range or vector indexing like `P[:,:,1:5]` (though this may work 
 due to AbstractArray fallbacks). 
 
 # Examples
@@ -57,8 +57,6 @@ abstract type AbstractPairwiseParameter <: AbstractArray{Float64, 3} end
 
 Base.IndexStyle(::Type{<:AbstractPairwiseParameter}) = IndexCartesian()
 
-Base.summary(p::AbstractPairwiseParameter) = "**TODO**"
-
 #---- fallback methods --------------
 Base.size(p::AbstractPairwiseParameter) = (nv(p.G), nv(p.G), p.count)
 
@@ -66,3 +64,21 @@ function Base.getindex(p::AbstractPairwiseParameter, I::AbstractVector, J::Abstr
     error("getindex not implemented for $(typeof(p))")
 end
 
+function Base.show(io::IO, p::AbstractPairwiseParameter)
+    r, c, m = size(p)
+    str = "$(size2string(p)) $(typeof(p))"
+    print(io, str)
+end
+
+#=
+function Base.show(io::IO, ::MIME"text/plain", u::AbstractPairwiseParameter)
+    r, c = size(u)
+    if c==1
+        str = "$(typeof(u)) with $(r) vertices " *
+              "and average value $(round(mean(u), digits=3))"
+    else
+        str = "$(typeof(u)) with $(r) vertices and $(c) observations."  
+    end
+    print(io, str)
+end
+=#
