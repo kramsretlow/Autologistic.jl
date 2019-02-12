@@ -66,3 +66,25 @@ function ALsimple(graph::SimpleGraph{Int}, count::Int=1;
     return ALsimple(makebool(Y),u,p,centering,coding,labels,coordinates)
 end
 
+
+# === show methods =============================================================
+
+function Base.show(io::IO, ::MIME"text/plain", m::ALsimple)
+    print(io, "Autologistic model of type ALsimple with parameter vector [α; λ].\n",
+              "Fields:\n",
+              showfields(m,2))
+end
+
+function showfields(m::ALsimple, leadspaces=0)
+    spc = repeat(" ", leadspaces)
+    return spc * "responses    $(size2string(m.responses)) Bool array\n" *
+           spc * "unary        $(size2string(m.unary)) FullUnary with fields:\n" *
+           showfields(m.unary, leadspaces+15) *
+           spc * "pairwise     $(size2string(m.pairwise)) SimplePairwise with fields:\n" *
+           showfields(m.pairwise, leadspaces+15) *
+           spc * "centering    $(m.centering)\n" *
+           spc * "coding       $(m.coding)\n" * 
+           spc * "labels       $(m.labels)\n" *
+           spc * "coordinates  $(typeof(m.coordinates))\n"
+end
+

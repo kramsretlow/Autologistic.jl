@@ -78,3 +78,14 @@ getparameters(p::SimplePairwise) = p.λ
 function setparameters!(p::SimplePairwise, newpar::Vector{Float64})
     p.λ = newpar
 end
+
+
+#---- to be used in show methods ----
+function showfields(p::SimplePairwise, leadspaces=0)
+    spc = repeat(" ", leadspaces)
+    return spc * "λ      $(p.λ) (association parameter)\n" *
+		   spc * "G      the graph ($(nv(p.G)) vertices, $(ne(p.G)) edges)\n" *
+		   spc * "count  $(p.count) (the number of observations)\n" *
+		   spc * "A      $(size2string(p.A)) SparseMatrixCSC (the adjacency matrix)\n"
+end
+

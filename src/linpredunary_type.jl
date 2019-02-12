@@ -112,6 +112,6 @@ end
 #---- to be used in show methods ----
 function showfields(u::LinPredUnary, leadspaces=0)
     spc = repeat(" ", leadspaces)
-    return spc * "X: $(size2string(u.X)) $(typeof(u.X))\n" *
-           spc * "β: $(size2string(u.β)) $(typeof(u.β))\n"
+    return spc * "X  $(size2string(u.X)) array (covariates)\n" *
+           spc * "β  $(size2string(u.β)) vector (regression coefficients)\n"
 end

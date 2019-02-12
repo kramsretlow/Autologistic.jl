@@ -90,6 +90,24 @@ function makecoded(M::AbstractAutologisticModel, Y=nothing)
 end
 
 
+# === show methods =============================================================
+
+Base.show(io::IO, m::AbstractAutologisticModel) = print(io, "$(typeof(m))")
+
+function Base.show(io::IO, ::MIME"text/plain", m::AbstractAutologisticModel)
+    print(io, "Autologistic model of type $(typeof(m)), \n",
+              "with $(size(m.unary,1)) vertices, $(size(m.unary, 2)) ",
+              "$(size(m.unary,2)==1 ? "observation" : "observations") ", 
+              "and fields:\n",
+              showfields(m,2))
+end
+
+function showfields(m::AbstractAutologisticModel, leadspaces=0)
+    return repeat(" ", leadspaces) * 
+           "(**Autologistic.showfields not implemented for $(typeof(m))**)\n"
+end
+
+
 # === centering adjustment =====================================================
 # centeringterms(M) returns an Array{Float64,2} of the same dimension as 
 # M.unary, giving the centering adjustments for AutologisticModel M.
@@ -449,42 +467,3 @@ function sample_one_index(M::AbstractAutologisticModel, k::Int = 1;
 end
 
 
-#= #****** OLD ******************************
-function sample(M::AbstractAutologisticModel, k::Int = 1; method::SamplingMethods = Gibbs, 
-    index::Int = 1, average::Bool = false, start = nothing, burnin::Int = 0,
-    verbose::Bool = false)
-if k < 1 
-error("k must be positive") 
-end
-if index < 1 || index > size(M.unary, 2) 
-error("index must be between 1 and the number of observations")
-end
-if burnin < 0 
-error("burnin must be nonnegative") 
-end
-lo = Float64(M.coding[1])
-hi = Float64(M.coding[2])
-Y = vec(makecoded(M, M.responses[:,index]))  #TODO: be cetain M isn't mutated.
-Λ = M.pairwise[:,:,index]   
-α = M.unary[:,index]
-μ = centeringterms(M)[:,index]
-n = length(α)
-adjlist = M.pairwise.G.fadjlist
-if method == Gibbs
-if start == nothing
-start = rand([lo, hi], n)
-else
-start = vec(makecoded(M, makebool(start)))
-end
-return gibbssample(lo, hi, Y, Λ, adjlist, α, μ, n, k, average, start, burnin, verbose)
-elseif method == perfect_reuse_samples
-return cftp_reuse_samples(lo, hi, Λ, adjlist, α, μ, n, k, average, verbose)
-elseif method == perfect_reuse_seeds
-return cftp_reuse_seeds(lo, hi, Λ, adjlist, α, μ, n, k, average, verbose)
-elseif method == perfect_bounding_chain
-return cftp_bounding_chain(lo, hi, Λ, adjlist, α, μ, n, k, average, verbose)
-elseif method == perfect_read_once
-return cftp_read_once(lo, hi, Λ, adjlist, α, μ, n, k, average, verbose)
-end
-end
- =#

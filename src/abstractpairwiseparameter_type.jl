@@ -70,15 +70,21 @@ function Base.show(io::IO, p::AbstractPairwiseParameter)
     print(io, str)
 end
 
-#=
-function Base.show(io::IO, ::MIME"text/plain", u::AbstractPairwiseParameter)
-    r, c = size(u)
-    if c==1
-        str = "$(typeof(u)) with $(r) vertices " *
-              "and average value $(round(mean(u), digits=3))"
+function Base.show(io::IO, ::MIME"text/plain", p::AbstractPairwiseParameter)
+    r, c, m = size(p)
+    if m==1
+        str = " with $(r) vertices.\n"
     else
-        str = "$(typeof(u)) with $(r) vertices and $(c) observations."  
+        str = "\nwith $(r) vertices and $(m) observations.\n"  
     end
-    print(io, str)
+    print(io, "Autologistic pairwise parameter Λ of type $(typeof(p)), ",
+              "$(size2string(p)) array\n", 
+              "Fields:\n",
+              showfields(p,2),
+              "Use indexing (e.g. mypairwise[:,:,:]) to see Λ values.")
 end
-=#
+
+function showfields(p::AbstractPairwiseParameter, leadspaces=0)
+    return repeat(" ", leadspaces) * 
+           "(**Autologistic.showfields not implemented for $(typeof(p))**)\n"
+end

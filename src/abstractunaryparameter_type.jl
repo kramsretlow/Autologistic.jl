@@ -12,17 +12,18 @@ end
 function Base.show(io::IO, ::MIME"text/plain", u::AbstractUnaryParameter)
     r, c = size(u)
     if c==1
-        str = "with $(r) vertices and average value $(round(mean(u), digits=3)).\n"
+        str = "\n$(size2string(u)) array with average value $(round(mean(u), digits=3)).\n"
     else
-        str = "with $(r) vertices and $(c) observations.\n"  
+        str = " $(size2string(u)) array.\n"  
     end
-    print(io, "Autologistic unary parameter of type $(typeof(u)),\n",
+    print(io, "Autologistic unary parameter α of type $(typeof(u)),",
               str, 
               "Fields:\n",
               showfields(u,2),
-              "Index into the variable (e.g. myunary[:,:]) to see values.")
+              "Use indexing (e.g. myunary[:,:]) to see α values.")
 end
 
 function showfields(u::AbstractUnaryParameter, leadspaces=0)
-    return "(**fields display not implemented**)\n"
+    return repeat(" ", leadspaces) * 
+           "(**Autologistic.showfields not implemented for $(typeof(u))**)\n"
 end

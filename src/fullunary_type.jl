@@ -50,5 +50,5 @@ end
 #---- to be used in show methods ----
 function showfields(u::FullUnary, leadspaces=0)
     spc = repeat(" ", leadspaces)
-    return spc * "α: $(size2string(u.α)) $(typeof(u.α))\n"
+    return spc * "α  $(size2string(u.α)) array (unary parameter values)\n"
 end
