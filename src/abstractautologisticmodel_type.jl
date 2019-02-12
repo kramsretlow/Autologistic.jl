@@ -17,7 +17,7 @@ All concrete subtypes should have the following fields:
 *   `coding::Tuple{T,T} where T<:Real` -- Gives the numeric coding of the responses.
 *   `labels::Tuple{String,String}` -- Provides names for the high and low states.
 *   `coordinates<:SpatialCoordinates` -- Provides 2D or 3D coordinates for each vertex in 
-    the graph (or `nothing` if no coordinates).
+    the graph.
 
 The following functions are defined for the abstract type, and are considered part of the 
 type's interface (in this list, `M` of type inheriting from `AbstractAutologisticModel`).

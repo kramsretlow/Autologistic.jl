@@ -31,7 +31,7 @@ function ALsimple(unary::FullUnary, pairwise::SimplePairwise;
                   centering::CenteringKinds=none, 
                   coding::Tuple{Real,Real}=(-1,1),
                   labels::Tuple{String,String}=("low","high"), 
-                  coordinates::SpatialCoordinates=nothing)
+                  coordinates::SpatialCoordinates=[(0.0,0.0) for i=1:size(unary,1)])
     (n, m) = size(unary)
     if Y==nothing
         Y = Array{Bool,2}(undef, n, m)
@@ -47,7 +47,7 @@ function ALsimple(graph::SimpleGraph{Int}, alpha::Float1D2D;
                   centering::CenteringKinds=none, 
                   coding::Tuple{Real,Real}=(-1,1),
                   labels::Tuple{String,String}=("low","high"),
-                  coordinates::SpatialCoordinates=nothing)
+                  coordinates::SpatialCoordinates=[(0.0,0.0) for i=1:nv(graph)])
     u = FullUnary(alpha)
     p = SimplePairwise(λ, graph, size(alpha,2))
     return ALsimple(makebool(Y),u,p,centering,coding,labels,coordinates)
@@ -60,7 +60,7 @@ function ALsimple(graph::SimpleGraph{Int}, count::Int=1;
                   centering::CenteringKinds=none, 
                   coding::Tuple{Real,Real}=(-1,1),
                   labels::Tuple{String,String}=("low","high"),
-                  coordinates::SpatialCoordinates=nothing)
+                  coordinates::SpatialCoordinates=[(0.0,0.0) for i=1:nv(graph)])
     u = FullUnary(nv(graph),count)
     p = SimplePairwise(λ, graph, count)
     return ALsimple(makebool(Y),u,p,centering,coding,labels,coordinates)
@@ -85,6 +85,6 @@ function showfields(m::ALsimple, leadspaces=0)
            spc * "centering    $(m.centering)\n" *
            spc * "coding       $(m.coding)\n" * 
            spc * "labels       $(m.labels)\n" *
-           spc * "coordinates  $(typeof(m.coordinates))\n"
+           spc * "coordinates  $(size2string(m.coordinates)) vector of $(eltype(m.coordinates))\n"
 end
 
