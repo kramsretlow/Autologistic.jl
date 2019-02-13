@@ -267,6 +267,7 @@ end
 #TODO: documentation, tests
 function fit_ml!(M::AbstractAutologisticModel; 
                  start=zeros(length(getparameters(M))), 
+                 sigdigits=3,
                  force::Bool=false,
                  verbose::Bool=false,
                  g_tol=1e-8,
@@ -298,14 +299,15 @@ function fit_ml!(M::AbstractAutologisticModel;
         println("Getting standard errors...")
     end
     Hinv = inv(H)
-    SE = sqrt.(LinearAlgebra.diag(Hinv))
+    SE = round.(sqrt.(LinearAlgebra.diag(Hinv)), sigdigits=sigdigits)
     
     pvals = zeros(npar)
     CIs = [(0.0, 0.0) for i=1:npar]
     for i = 1:npar
         N = Normal(0,SE[i])
-        pvals[i] = 2*(1 - cdf(N, abs(out.minimizer[i])))
-        CIs[i] = (quantile(N,0.025), quantile(N,0.975))
+        pvals[i] = round(2*(1 - cdf(N, abs(out.minimizer[i]))), sigdigits=sigdigits)
+        CIs[i] = round.(out.minimizer[i] .+ (quantile(N,0.025), quantile(N,0.975)), 
+                        sigdigits=sigdigits)
     end
 
     setparameters!(M, out.minimizer)
@@ -313,7 +315,8 @@ function fit_ml!(M::AbstractAutologisticModel;
         println("Completed successfully. Output is a named tuple " * 
                 "(:estimate, :se, :pvalues, :CIs, :Hinv, :optimresults)")
     end
-    return (estimate=out.minimizer, se=SE, pvalues=pvals, CIs=CIs, Hinv=Hinv, optimresults=out)
+    return (estimate=round.(out.minimizer, sigdigits=sigdigits), se=SE, pvalues=pvals, 
+            CIs=CIs, Hinv=Hinv, optimresults=out)
 end
 
 

@@ -29,7 +29,7 @@ export
     #----- functions -----
     centeringterms,
     conditionalprobabilities,
-    fit_ml!
+    fit_ml!,
     fullPMF,
     getparameters,
     getpairwiseparameters,
