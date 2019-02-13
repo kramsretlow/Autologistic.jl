@@ -1,7 +1,7 @@
 module Autologistic
 
 # TODO: import only needed functions?
-using LightGraphs, LinearAlgebra, SparseArrays, Statistics, Random, CSV
+using LightGraphs, LinearAlgebra, SparseArrays, Statistics, Random, CSV, Optim, Distributions
 
 # ***TODO*** 
 # [x] Make and export concrete Centering types (or let the types be an enumeration)
@@ -29,10 +29,12 @@ export
     #----- functions -----
     centeringterms,
     conditionalprobabilities,
+    fit_ml!
     fullPMF,
     getparameters,
     getpairwiseparameters,
     getunaryparameters,
+    loglikelihood,
     makegrid4,
     makegrid8,
     makebool,

@@ -109,7 +109,7 @@ function cftp_reuse_seeds(lo::Float64, hi::Float64,
             j = j + 1
         end
         if !coalesce
-            warning("Sampler did not coalesce. Returning NaNs.")  #TODO: fix for average case
+            @warn "Sampler did not coalesce. Returning NaNs."  #TODO: fix for average case
             L .= fill(NaN, n)
         end
         if average && coalesce

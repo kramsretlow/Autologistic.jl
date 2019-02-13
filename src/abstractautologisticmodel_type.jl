@@ -253,6 +253,69 @@ function fullPMF(M::AbstractAutologisticModel; indices=1:size(M.unary,2),
     return (table=T, partition=partition)
 end
 
+# === maximum likelihood estimation ============================================
+function loglikelihood(M::AbstractAutologisticModel; force::Bool=false)
+    parts = fullPMF(M, force=force).partition
+    return sum(negpotential(M) - log.(parts))
+end
+
+function negloglik!(θ::Vector{Float64}, M::AbstractAutologisticModel; force::Bool=false)
+    setparameters!(M,θ)
+    return -loglikelihood(M, force=force)
+end
+
+#TODO: documentation, tests
+function fit_ml!(M::AbstractAutologisticModel; 
+                 start=zeros(length(getparameters(M))), 
+                 force::Bool=false,
+                 verbose::Bool=false,
+                 g_tol=1e-8,
+                 allow_f_increases=true,
+                 iterations=1000,
+                 time_limit=NaN)
+
+    originalparameters = getparameters(M)
+    npar = length(originalparameters)
+
+    opts = Optim.Options(show_trace=verbose, allow_f_increases=allow_f_increases,
+                         time_limit=time_limit, g_tol=g_tol)
+    if verbose 
+        println("Calling Optim.optimize with BFGS method...")
+    end
+    out = optimize(θ -> negloglik!(θ,M,force=force), start, BFGS(), opts)
+    if !Optim.converged(out)
+        setparameters!(M, originalparameters)
+        @warn "Optim.optimize did not converge. Model parameters have not been changed."
+        return (estimate="didn't converge", se="didn't converge", pvalues="didn't converge",
+                CIs="didn't converge", Hinv="didn't converge", optimresults=out)
+    end
+    
+    if verbose
+        println("Approximating the Hessian at the MLE...")
+    end
+    H = hess(θ -> negloglik!(θ,M), out.minimizer)
+    if verbose
+        println("Getting standard errors...")
+    end
+    Hinv = inv(H)
+    SE = sqrt.(LinearAlgebra.diag(Hinv))
+    
+    pvals = zeros(npar)
+    CIs = [(0.0, 0.0) for i=1:npar]
+    for i = 1:npar
+        N = Normal(0,SE[i])
+        pvals[i] = 2*(1 - cdf(N, abs(out.minimizer[i])))
+        CIs[i] = (quantile(N,0.025), quantile(N,0.975))
+    end
+
+    setparameters!(M, out.minimizer)
+    if verbose
+        println("Completed successfully. Output is a named tuple " * 
+                "(:estimate, :se, :pvalues, :CIs, :Hinv, :optimresults)")
+    end
+    return (estimate=out.minimizer, se=SE, pvalues=pvals, CIs=CIs, Hinv=Hinv, optimresults=out)
+end
+
 
 # ***TODO: documentation***
 #Returns an n-by-m array (or an n-vector if  m==1). The [i,j]th element is the 

@@ -168,3 +168,26 @@ function size2string(x::T) where T<:AbstractArray
         return str
     end
 end
+
+
+# Approximate the Hessian of fcn at the point x, using a step width h.
+# Uses the O(h^2) central difference approximation.
+# Intended for obtaining standard errors from ML fitting.
+# TODO: tests
+function hess(fcn, x, h=1e-6)  
+    n = length(x)
+    H = zeros(n,n)
+    hI = h*Matrix(1.0I,n,n)  #ith column of hI has h in ith position, 0 elsewhere.
+    
+    # Fill up the top half of the matrix
+    for i = 1:n        
+        for j = i:n
+            h1 = hI[:,i]
+            h2 = hI[:,j];
+            H[i,j] = (fcn(x+h1+h2)-fcn(x+h1-h2)-fcn(x-h1+h2)+fcn(x-h1-h2)) / (4*h^2)
+        end
+    end
+    
+    # Fill the bottom half of H (use symmetry), and return
+    return H + LinearAlgebra.triu(H,1)'
+end
