@@ -88,6 +88,39 @@ end
     @test getparameters(p1) == [2.0]
 end
 
+@testset "FullPairwise constructors and interfaces" begin
+    nvert = 10
+    nedge = 20
+    m = 3
+    G = Graph(nvert, nedge)
+    λ = round.(rand(nedge), digits=2)
+    p1 = FullPairwise(λ, G, m)
+    p2 = FullPairwise(G)
+    p3 = FullPairwise(G, m)
+    p4 = FullPairwise(nvert)
+    p5 = FullPairwise(nvert, m)
+    p6 = FullPairwise(λ, G)
+    p7 = FullPairwise(λ, G, m)
+
+    @test any(i -> (i!==(nvert,nvert,m)), [size(j) for j in [p1, p2, p3, p4, p5, p6, p7]])
+    @test (adjacency_matrix(G) .!= 0) == (p1.Λ .!= 0)
+    @test p1[2,2,2] == p1[2,2]
+
+    newpar = round.(rand(nedge), digits=2)
+    setparameters!(p1, newpar)
+
+    @test (adjacency_matrix(G) .!= 0) == (p1.Λ .!= 0)
+    fromΛ = []
+    for i = 1:nvert
+        for j = i+1:nvert
+            if p1.Λ[i,j] != 0
+                push!(fromΛ, p1.Λ[i,j])
+            end
+        end
+    end
+    @test newpar == p1.λ == fromΛ == getparameters(p1)
+end
+
 @testset "ALRsimple constructors" begin
     for r in [1 5]
         (n, p, m) = (100, 4, r)

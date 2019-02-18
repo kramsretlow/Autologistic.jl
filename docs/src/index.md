@@ -2,9 +2,8 @@
 
 The `Autologistic.jl` package provides tools for analyzing correlated binary data using
 autologistic (AL) or autologistic regression (ALR) models.  The AL model is a multivariate
-probability distribution, like an analogue of the multivariate normal distribution, except
-for dichotomous (two-valued) categorical responses. The ALR models incorporate
-covariate effects into this distribution and are therefore more useful for data analysis.
+probability distribution for dichotomous (two-valued) categorical responses. The ALR models incorporate covariate effects into this distribution and are therefore more useful for data
+analysis.
 
 The ALR model is potentially useful for any situation involving correlated binary responses.
 It can be described in a few ways.  It is:
@@ -22,12 +21,16 @@ to that article for in-depth discussion of the model, and please cite it if you 
 package in your research.  The [Background](@ref) section in this manual also provides an
 overview of the model.
 
-For quick navigation, here is a table of contents, followed by an index.
+## Contents
 
 ```@contents
-Pages = ["index.md", "Background.md", "Examples.md", "api.md"]
+Pages = ["index.md", "Background.md", "Design.md", "Examples.md", "api.md"]
 Depth = 2
 ```
+
+## Reference Index
+
+The following topics are documented in the [Reference](@ref) section:
 
 ```@index
 ```

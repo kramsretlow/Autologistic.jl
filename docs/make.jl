@@ -8,6 +8,7 @@ makedocs(
     pages = [
         "index.md",
         "Background.md",
+        "Design.md",
         "Examples.md",
         "api.md"
     ]

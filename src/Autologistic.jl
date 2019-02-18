@@ -19,8 +19,9 @@ export
     AutologisticModel,
     ALRsimple,
     ALsimple,
-    SpatialCoordinates,
+    FullPairwise,
     FullUnary,
+    SpatialCoordinates,
     LinPredUnary,
     SimplePairwise,
     #----- enums -----
@@ -52,6 +53,7 @@ include("common.jl")
 include("abstractautologisticmodel_type.jl")
 include("abstractunaryparameter_type.jl")
 include("abstractpairwiseparameter_type.jl")
+include("fullpairwise_type.jl")
 include("fullunary_type.jl")
 include("linpredunary_type.jl")
 include("simplepairwise_type.jl")

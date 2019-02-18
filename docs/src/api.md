@@ -1,20 +1,24 @@
-# API Reference
+# Reference
 
 ```@meta
 CurrentModule = Autologistic
 ```
 
+## Index
+
+```@index
+```
+
 ## Types and Constructors
 
-```@docs
-AbstractPairwiseParameter
-AbstractAutologisticModel
-SamplingMethods
+```@autodocs
+Modules = [Autologistic]
+Order   = [:type]
 ```
 
 ## Methods
 
-```@docs
-fullPMF
-sample
+```@autodocs
+Modules = [Autologistic]
+Order   = [:function]
 ```

@@ -23,7 +23,6 @@ All concrete subtypes should have the following fields:
 
 *   `G::SimpleGraph{Int}` -- The graph for the model.
 *   `count::Int`  -- The number of observations.
-*   `A::SparseMatrixCSC{Float64,Int64}`  -- The adjacency matrix of the graph.
 
 In addition to `getindex()` and `setindex!()`, any concrete subtype 
 `P<:AbstractPairwiseParameter` should also have the following methods defined:

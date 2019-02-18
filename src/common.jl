@@ -5,6 +5,18 @@ const Float2D3D = Union{Array{Float64,2},Array{Float64,3}}
 const SpatialCoordinates = Union{Array{NTuple{2,T},1},Array{NTuple{3,T},1}} where T<:Real
 
 # Enumerations
+"""
+    CenteringKinds
+
+An enumeration to facilitate choosing a form of centering for the model.  Available
+choices are: 
+
+*   `none`: no centering (centering adjustment equals zero).
+*   `expectation`: the centering adjustment is the expected value of the response under the
+    assumption of independence (this is what has been used in the "centered autologistic 
+    model").
+*   `onehalf`: a constant value of centering adjustment equal to 0.5.
+"""
 @enum CenteringKinds none expectation onehalf
 
 """
@@ -16,7 +28,7 @@ An enumeration to facilitate choosing a method for sampling. Available choices a
 *   `perfect_bounding_chain`  TODO
 *   `perfect_reuse_samples`  TODO 
 *   `perfect_reuse_seeds`  TODO
-*   `perfect_read_once`  TODO
+*   `perfect_read_once`  TODO 
 """
 @enum SamplingMethods Gibbs perfect_reuse_samples perfect_reuse_seeds perfect_read_once perfect_bounding_chain
 
