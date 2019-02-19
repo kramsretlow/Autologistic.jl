@@ -13,21 +13,21 @@
 """
 	FullPairwise
 
-A type representing a pairwise parameter (association matrix) with one parameter per edge
-in the graph.
+A type representing an association matrix with a "saturated" parametrization--one parameter 
+for each edge in the graph.
 
 In this type, the association matrix for each observation is a symmetric matrix with the 
 same pattern of nonzeros as the graph's adjacency matrix, but with arbitrary values in those
-locations. The package convention is to provide parameters as a vector of Float64.  So 
+locations. The package convention is to provide parameters as a vector of `Float64`.  So 
 `getparameters` and `setparameters!` use a vector of `ne(G)` values that correspond to the 
 nonzero locations in the upper triangle of the adjacency matrix, in the same (lexicographic)
-order as edges(G).
+order as `edges(G)`.
 
-The association matrix is stored as a SparseMatrixCSC{Float64,Int64} in the field Λ.
+The association matrix is stored as a `SparseMatrixCSC{Float64,Int64}` in the field Λ.
 
-As with SimplePairwise, the association matrix Λ can not be different for different
-observations.  So while we internally treat it like an n-by-n-by-m matrix, just
-return a 2D n-by-n matrix to the user.
+As with `SimplePairwise`, the association matrix can not be different for different
+observations.  So while `size` returns a 3-dimensional result, the third index is ignored
+when accessing the array's elements.
 """
 mutable struct FullPairwise <: AbstractPairwiseParameter
 	λ::Vector{Float64}

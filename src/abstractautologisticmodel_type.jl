@@ -20,7 +20,7 @@ All concrete subtypes should have the following fields:
     the graph.
 
 The following functions are defined for the abstract type, and are considered part of the 
-type's interface (in this list, `M` of type inheriting from `AbstractAutologisticModel`).
+type's interface (in this list, `M` is of type inheriting from `AbstractAutologisticModel`).
 
 *   `getparameters(M)` and `setparameters!(M, newpars::Vector{Float64})`
 *   `getunaryparameters(M)` and `setunaryparameters!(M, newpars::Vector{Float64})`
@@ -500,7 +500,6 @@ function sample(M::AbstractAutologisticModel, k::Int = 1; method::SamplingMethod
         return out
     end
 
-    # Update tests
 end
 
 function sample_one_index(M::AbstractAutologisticModel, k::Int = 1; 
@@ -508,7 +507,6 @@ function sample_one_index(M::AbstractAutologisticModel, k::Int = 1;
                      start = nothing, burnin::Int = 0, verbose::Bool = false)
     lo = Float64(M.coding[1])
     hi = Float64(M.coding[2])
-    Y = vec(makecoded(M, M.responses[:,index]))  #TODO: be cetain M isn't mutated.
     Λ = M.pairwise[:,:,index]   
     α = M.unary[:,index]
     μ = centeringterms(M)[:,index]
@@ -516,11 +514,11 @@ function sample_one_index(M::AbstractAutologisticModel, k::Int = 1;
     adjlist = M.pairwise.G.fadjlist
     if method == Gibbs
         if start == nothing
-            start = rand([lo, hi], n)
+            Y = rand([lo, hi], n)
         else
-            start = vec(makecoded(M, makebool(start)))
+            Y = vec(makecoded(M, makebool(start)))
         end
-        return gibbssample(lo, hi, Y, Λ, adjlist, α, μ, n, k, average, start, burnin, verbose)
+        return gibbssample(lo, hi, Y, Λ, adjlist, α, μ, n, k, average, burnin, verbose)
     elseif method == perfect_reuse_samples
         return cftp_reuse_samples(lo, hi, Λ, adjlist, α, μ, n, k, average, verbose)
     elseif method == perfect_reuse_seeds
@@ -531,5 +529,4 @@ function sample_one_index(M::AbstractAutologisticModel, k::Int = 1;
         return cftp_read_once(lo, hi, Λ, adjlist, α, μ, n, k, average, verbose)
     end
 end
-
 

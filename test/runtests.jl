@@ -288,4 +288,7 @@ end
     out13 = sample(M7, 10000, method=perfect_read_once, average=true)
     @test isapprox(out13[:], marg[:], atol=0.03, norm=x->norm(x,Inf))
 
+    M8 = ALsimple(CompleteGraph(10), zeros(10))
+    samp = sample(M8, 10000, method=Gibbs, average=true)
+    @test isapprox(samp, fill(0.5, 10), atol=0.03, norm=x->norm(x,Inf))
 end

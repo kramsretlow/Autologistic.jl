@@ -37,10 +37,15 @@ end
 function gibbssample(lo::Float64, hi::Float64, Y::Vector{Float64}, 
                      Λ::SparseMatrixCSC{Float64,Int}, adjlist::Array{Array{Int64,1},1},
                      α::Vector{Float64}, μ::Vector{Float64}, n::Int, k::Int, average::Bool, 
-                     start::Vector{Float64}, burnin::Int, verbose::Bool)
+                     burnin::Int, verbose::Bool)
 
-    temp = average ? zeros(Float64, n) : zeros(Float64, n, k-burnin)
+    temp = average ? zeros(Float64, n) : zeros(Float64, n, k)
 
+    if verbose print("\nStarting burnin...") end
+    for j = 1:burnin
+        gibbsstep!(Y, lo, hi, Λ, adjlist, α, μ, n)
+    end
+    if verbose print(" complete\n") end
     for j = 1:k
         gibbsstep!(Y, lo, hi, Λ, adjlist, α, μ, n)
         if average 
@@ -49,9 +54,9 @@ function gibbssample(lo::Float64, hi::Float64, Y::Vector{Float64},
             for i in 1:n
                 temp[i] = temp[i] + Y[i]
             end
-        elseif j > burnin
+        else
             for i in 1:n
-                temp[i,j-burnin] = Y[i]
+                temp[i,j] = Y[i]
             end
         end
         if verbose 
@@ -59,7 +64,7 @@ function gibbssample(lo::Float64, hi::Float64, Y::Vector{Float64},
         end
     end
     if average
-        return map(x -> (x - (k-burnin)*lo)/((k-burnin)*(hi-lo)), temp)
+        return map(x -> (x - k*lo)/(k*(hi-lo)), temp)
     else
         return temp
     end
