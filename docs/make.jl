@@ -9,6 +9,7 @@ makedocs(
         "index.md",
         "Background.md",
         "Design.md",
+        "BasicUsage.md",
         "Examples.md",
         "api.md"
     ]

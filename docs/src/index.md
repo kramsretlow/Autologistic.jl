@@ -24,7 +24,7 @@ overview of the model.
 ## Contents
 
 ```@contents
-Pages = ["index.md", "Background.md", "Design.md", "Examples.md", "api.md"]
+Pages = ["index.md", "Background.md", "Design.md", "BasicUsage.md", "Examples.md", "api.md"]
 Depth = 2
 ```
 

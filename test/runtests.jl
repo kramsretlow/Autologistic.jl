@@ -2,8 +2,6 @@
 # file is included in jupyter notebook.
 
 # TODO: 
-# [x] Decide whether values() is needed for interfaces, either delete or keep.
-#     - Seems not needed for SimplePairwise. 
 # [ ] Add more tests for getindex() with simplepairwise (many methods)
 
 using Test
@@ -93,7 +91,7 @@ end
     nedge = 20
     m = 3
     G = Graph(nvert, nedge)
-    λ = round.(rand(nedge), digits=2)
+    λ = rand(-1.1:0.2:1.1, nedge)
     p1 = FullPairwise(λ, G, m)
     p2 = FullPairwise(G)
     p3 = FullPairwise(G, m)
@@ -106,7 +104,7 @@ end
     @test (adjacency_matrix(G) .!= 0) == (p1.Λ .!= 0)
     @test p1[2,2,2] == p1[2,2]
 
-    newpar = round.(rand(nedge), digits=2)
+    newpar = rand(-1.1:0.2:1.1, nedge)
     setparameters!(p1, newpar)
 
     @test (adjacency_matrix(G) .!= 0) == (p1.Λ .!= 0)
