@@ -8,8 +8,8 @@ end
 function FullUnary(alpha::Array{Float64,1}) 
     return FullUnary( reshape(alpha, (length(alpha),1)) )
 end
-FullUnary(n::Int) = FullUnary(Array{Float64,2}(undef,n,1))
-FullUnary(n::Int,m::Int) = FullUnary(Array{Float64,2}(undef,n,m))
+FullUnary(n::Int) = FullUnary(zeros(Float64,n,1))
+FullUnary(n::Int,m::Int) = FullUnary(zeros(Float64,n,m))
 
 #---- AbstractArray methods ----
 

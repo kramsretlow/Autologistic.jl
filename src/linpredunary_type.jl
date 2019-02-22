@@ -22,19 +22,19 @@ function LinPredUnary(X::Matrix{Float64}, β::Vector{Float64})
 end
 function LinPredUnary(X::Matrix{Float64})
     (n,p) = size(X)
-    return LinPredUnary(reshape(X,(n,p,1)), Vector{Float64}(undef,p))
+    return LinPredUnary(reshape(X,(n,p,1)), zeros(Float64,p))
 end
 function LinPredUnary(X::Array{Float64, 3})
     (n,p,m) = size(X)
-    return LinPredUnary(X, Vector{Float64}(undef,p))
+    return LinPredUnary(X, zeros(Float64,p))
 end
 function LinPredUnary(n::Int,p::Int)
-    X = Array{Float64,3}(undef,n,p,1)
-    return LinPredUnary(X, Vector{Float64}(undef,p))
+    X = zeros(Float64,n,p,1)
+    return LinPredUnary(X, zeros(Float64,p))
 end
 function LinPredUnary(n::Int,p::Int,m::Int)
-    X = Array{Float64,3}(undef,n,p,m)
-    return LinPredUnary(X, Vector{Float64}(undef,p))
+    X = zeros(Float64,n,p,m)
+    return LinPredUnary(X, zeros(Float64,p))
 end
 
 #---- AbstractArray methods ----

@@ -1,15 +1,142 @@
 # Examples
 
-TODO
+These examples demonstrate most of the functionality of the package, its typical usage, and
+how to make some plots you might want to use.
 
-We will use the notation ``n`` for the number of variables, ``p`` for the number of
-predictors (including intercept), ``m`` for the number of (vector) observations.
+The examples:
+
+* [An Ising Model](@ref) shows how to use the package to explore the autologistic
+  probability distribution, without concern about covariates or parameter estimation.
+* [Clustered Binary Data (Small ``n``)](@ref) shows how to use the package for regression
+  analysis of correlated binary responses when the graph is small enough to permit
+  computation of the normalizing constant.
+* [Spatial Binary Regression](@ref) shows how to use the package for autologistic regression
+  analysis for larger, spatially-referenced graphs.
 
 ## An Ising Model
 
-TODO (here show how ALsimple can be used as a probability model for dichotomous RVs)
+The term "Ising model" is usually used to refer to a Markov random field of dichotomous
+random variables on a regular lattice.  The graph is such that each variable shares an
+edge only with its nearest neighbors in each dimension.  It's
+a traditional model for magnetic spins, where the coding ``(-1,1)`` is usually used.
+There's one parameter per vertex (a "local magnetic field") that increases or
+decreases the chance of getting a ``+1`` state at that vertex; and there's a single pairwise
+parameter that controls the strength of interaction between neighbor states.
 
-(Also show how the model can be mutated after construction)
+In our terminology it's just an autologistic model with the appropriate graph.
+Specifically, it's an `ARsimple` model: one with `FullUnary` type unary parameter, and
+`SimplePairwise` type pairwise parameter.
+
+We can create such a model once we have the graph.  For example, let's create two 30-by-30
+lattices: one without any special handling of the boundary, and one with periodic boundary
+conditions. This can be done with
+[LightGraphs.jl](https://github.com/JuliaGraphs/LightGraphs.jl)'s `Grid` function.
+
+```@example Ising
+n = 30  # numer of rows and columns
+using LightGraphs
+G1 = Grid([n, n], periodic=false)
+G2 = Grid([n, n], periodic=true)
+nothing # hide
+```
+
+Now create an AL model for each case. Initialize the unary parameters to white noise.
+By default, the pairwise parameter is set to zero which implies independence of the
+variables. Use the same parameters for the two models, so the only difference betwen them
+is the graph.
+
+```@example Ising
+using Random, Autologistic
+Random.seed!(8888)
+α = randn(n^2)
+M1 = ALsimple(G1, α)
+M2 = ALsimple(G2, α)
+```
+
+The REPL output shows information about the model.  It's an `ALsimple` type with one
+observation of length 900.
+
+The `conditionalprobabilities` function returns the probablity of observing a ``+1`` state
+at each vertex, conditional on the vertex's neighbor values. These can be visualized
+as an image, using a `heatmap` (from [Plots.jl](https://github.com/JuliaPlots/Plots.jl)):
+
+```@example Ising
+using Plots
+condprobs = conditionalprobabilities(M1)
+hm = heatmap(reshape(condprobs, n, n), c=:grays, aspect_ratio=1,
+             title="probability of +1 under independence")
+plot(hm)
+```
+
+Since the association parameter is zero, there are no neighborhood effects.  The above
+conditional probabilities are equal to the marginal probabilities.
+
+Next, set the association parameters to 0.75, a fairly strong association level, to
+introduce a neighbor effect.
+
+```@example Ising
+setpairwiseparameters!(M1, [0.75])
+setpairwiseparameters!(M2, [0.75])
+nothing # hide
+```
+
+A quick way to see the effect of this parameter is to observe random samples from the
+models. The `sample` function can be used to do this. For this example, use perfect
+sampling using a bounding chain algorithm (the enumeration
+[`SamplingMethods`](@ref) lists the available sampling options).
+
+```@example Ising
+s1 = sample(M1, method=perfect_bounding_chain)
+s2 = sample(M2, method=perfect_bounding_chain)
+nothing #hide
+```
+
+The samples can also be visualized using `heatmap`:
+
+```@example Ising
+pl1 = heatmap(reshape(s1, n, n), c=:grays, colorbar=false, title="regular boundary");
+pl2 = heatmap(reshape(s2, n, n), c=:grays, colorbar=false, title="periodic boundary");
+plot(pl1, pl2, size=(800,400), aspect_ratio=1)
+```
+
+In these plots, black indicates the low state, and white the high state.  A lot of local
+clustering is occurring in the samples due to the neighbor effects.
+
+To see the long-run differences between the two models, we can look at the marginal
+probabilities. They can be estimated by drawing many samples and averaging them
+(note that running this code chunk can take a couple of minutes):
+
+```julia
+marg1 = sample(M1, 500, method=perfect_bounding_chain, verbose=true, average=true)
+marg2 = sample(M2, 500, method=perfect_bounding_chain, verbose=true, average=true)
+pl3 = heatmap(reshape(marg1, n, n), c=:grays, colorbar=false, title="regular boundary");
+pl4 = heatmap(reshape(marg2, n, n), c=:grays, colorbar=false, title="periodic boundary");
+plot(pl3, pl4, size=(800,400), aspect_ratio=1)
+savefig("marginal-probs.png")
+```
+
+The figure `marginal-probs.png` looks like this:
+
+![](/assets/marginal-probs.png)
+
+Although the differences between the two marginal distributions are not striking, the
+extra edges connecting top to bottom and left to right do have some influence on the
+probabilities at the periphery of the square.
+
+As a final demonstration, perform Gibbs sampling for model `M2`, starting from
+a random state.  Display a gif animation of the progress.
+
+```julia
+nframes = 150
+gibbs_steps = sample(M2, nframes, method=Gibbs)
+anim = @animate for i =  1:nframes
+    heatmap(reshape(gibbs_steps[:,i], n, n), c=:grays, colorbar=false, 
+            aspect_ratio=1, title="Gibbs sampling: step $(i)")
+end
+gif(anim, "ising_gif.gif", fps=10)
+```
+
+![](/assets/ising_gif.gif)
 
 ## Clustered Binary Data (Small ``n``)
 
