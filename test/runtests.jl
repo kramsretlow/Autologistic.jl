@@ -287,6 +287,6 @@ end
     @test isapprox(out13[:], marg[:], atol=0.03, norm=x->norm(x,Inf))
 
     M8 = ALsimple(CompleteGraph(10), zeros(10))
-    samp = sample(M8, 10000, method=Gibbs, average=true)
+    samp = sample(M8, 10000, method=Gibbs, skip=2, average=true)
     @test isapprox(samp, fill(0.5, 10), atol=0.03, norm=x->norm(x,Inf))
 end

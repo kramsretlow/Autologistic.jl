@@ -267,7 +267,6 @@ end
 #TODO: documentation, tests
 function fit_ml!(M::AbstractAutologisticModel; 
                  start=zeros(length(getparameters(M))), 
-                 sigdigits=3,
                  force::Bool=false,
                  verbose::Bool=false,
                  g_tol=1e-8,
@@ -277,6 +276,7 @@ function fit_ml!(M::AbstractAutologisticModel;
 
     originalparameters = getparameters(M)
     npar = length(originalparameters)
+    ret = ALfit()  
 
     opts = Optim.Options(show_trace=verbose, allow_f_increases=allow_f_increases,
                          time_limit=time_limit, g_tol=g_tol)
@@ -287,8 +287,9 @@ function fit_ml!(M::AbstractAutologisticModel;
     if !Optim.converged(out)
         setparameters!(M, originalparameters)
         @warn "Optim.optimize did not converge. Model parameters have not been changed."
-        return (estimate="didn't converge", se="didn't converge", pvalues="didn't converge",
-                CIs="didn't converge", Hinv="didn't converge", optimresults=out)
+        ret.optim = out
+        ret.convergence = false
+        return ret
     end
     
     if verbose
@@ -299,24 +300,28 @@ function fit_ml!(M::AbstractAutologisticModel;
         println("Getting standard errors...")
     end
     Hinv = inv(H)
-    SE = round.(sqrt.(LinearAlgebra.diag(Hinv)), sigdigits=sigdigits)
+    SE = sqrt.(LinearAlgebra.diag(Hinv))
     
     pvals = zeros(npar)
     CIs = [(0.0, 0.0) for i=1:npar]
     for i = 1:npar
         N = Normal(0,SE[i])
-        pvals[i] = round(2*(1 - cdf(N, abs(out.minimizer[i]))), sigdigits=sigdigits)
-        CIs[i] = round.(out.minimizer[i] .+ (quantile(N,0.025), quantile(N,0.975)), 
-                        sigdigits=sigdigits)
+        pvals[i] = 2*(1 - cdf(N, abs(out.minimizer[i])))
+        CIs[i] = out.minimizer[i] .+ (quantile(N,0.025), quantile(N,0.975))
     end
 
     setparameters!(M, out.minimizer)
     if verbose
-        println("Completed successfully. Output is a named tuple " * 
-                "(:estimate, :se, :pvalues, :CIs, :Hinv, :optimresults)")
+        println("Completed successfully.")
     end
-    return (estimate=round.(out.minimizer, sigdigits=sigdigits), se=SE, pvalues=pvals, 
-            CIs=CIs, Hinv=Hinv, optimresults=out)
+    ret.estimate = out.minimizer
+    ret.se = SE
+    ret.pvalues = pvals
+    ret.CIs = CIs
+    ret.optim = out
+    ret.Hinv = Hinv
+    ret.convergence = true
+    return ret
 end
 
 
@@ -442,6 +447,9 @@ a random configuration is used.
 **`burnin`** specifies the number of initial samples to discard from the results.  Only used
 if `method=Gibbs`.
 
+**`skip`** specifies how many samples to throw away between returned samples.  Only used 
+if `method=Gibbs`. 
+
 **`verbose`** controls output to the console.  If `true`, intermediate information about 
 sampling progress is printed to the console. Otherwise no output is shown.
 
@@ -460,7 +468,7 @@ julia> sort(unique(r))
 """
 function sample(M::AbstractAutologisticModel, k::Int = 1; method::SamplingMethods = Gibbs, 
                 indices=1:size(M.unary,2), average::Bool = false, start = nothing, 
-                burnin::Int = 0, verbose::Bool = false)
+                burnin::Int = 0, skip::Int = 0, verbose::Bool = false)
     
     # Create storage object 
     n, m = size(M.unary)
@@ -487,7 +495,7 @@ function sample(M::AbstractAutologisticModel, k::Int = 1; method::SamplingMethod
         end
         out[:,i,:] = sample_one_index(M, k, method=method, 
                                       index=indices[i], average=average,
-                                      start=start, burnin=burnin, verbose=verbose)
+                                      start=start, burnin=burnin, skip=skip, verbose=verbose)
     end
 
     # Return
@@ -504,7 +512,7 @@ end
 
 function sample_one_index(M::AbstractAutologisticModel, k::Int = 1; 
                      method::SamplingMethods = Gibbs, index::Int = 1, average::Bool = false, 
-                     start = nothing, burnin::Int = 0, verbose::Bool = false)
+                     start = nothing, burnin::Int = 0, skip::Int = 0, verbose::Bool = false)
     lo = Float64(M.coding[1])
     hi = Float64(M.coding[2])
     Λ = M.pairwise[:,:,index]   
@@ -518,7 +526,7 @@ function sample_one_index(M::AbstractAutologisticModel, k::Int = 1;
         else
             Y = vec(makecoded(M, makebool(start)))
         end
-        return gibbssample(lo, hi, Y, Λ, adjlist, α, μ, n, k, average, burnin, verbose)
+        return gibbssample(lo, hi, Y, Λ, adjlist, α, μ, n, k, average, burnin, skip, verbose)
     elseif method == perfect_reuse_samples
         return cftp_reuse_samples(lo, hi, Λ, adjlist, α, μ, n, k, average, verbose)
     elseif method == perfect_reuse_seeds

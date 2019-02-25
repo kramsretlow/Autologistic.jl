@@ -17,6 +17,7 @@ export
     AbstractPairwiseParameter,
     AbstractUnaryParameter,
     AutologisticModel,
+    ALfit,
     ALRsimple,
     ALsimple,
     FullPairwise,
@@ -53,6 +54,7 @@ include("common.jl")
 include("abstractautologisticmodel_type.jl")
 include("abstractunaryparameter_type.jl")
 include("abstractpairwiseparameter_type.jl")
+include("ALfit_type.jl")
 include("fullpairwise_type.jl")
 include("fullunary_type.jl")
 include("linpredunary_type.jl")

@@ -37,7 +37,7 @@ end
 function gibbssample(lo::Float64, hi::Float64, Y::Vector{Float64}, 
                      Λ::SparseMatrixCSC{Float64,Int}, adjlist::Array{Array{Int64,1},1},
                      α::Vector{Float64}, μ::Vector{Float64}, n::Int, k::Int, average::Bool, 
-                     burnin::Int, verbose::Bool)
+                     burnin::Int, skip::Int, verbose::Bool)
 
     temp = average ? zeros(Float64, n) : zeros(Float64, n, k)
 
@@ -57,6 +57,11 @@ function gibbssample(lo::Float64, hi::Float64, Y::Vector{Float64},
         else
             for i in 1:n
                 temp[i,j] = Y[i]
+            end
+        end
+        if j != k
+            for s = 1:skip
+                gibbsstep!(Y, lo, hi, Λ, adjlist, α, μ, n)
             end
         end
         if verbose 

@@ -20,3 +20,5 @@ For future:
     calculation. Does it actually help optimization performance/accuracy/reliability? Any speed 
     trade-offs elsewhere due to use of generic type? Any numerical problems with existing 
     implementation that would justify the trouble of making the change?
+[ ] Consider using StatsModels.DataFrameRegressionModel approach as in GLM for supplying predictors
+    and responses as a DataFrame?
