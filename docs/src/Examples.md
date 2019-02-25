@@ -117,7 +117,7 @@ savefig("marginal-probs.png")
 
 The figure `marginal-probs.png` looks like this:
 
-![](/assets/marginal-probs.png)
+![marginal-probs.png](/assets/marginal-probs.png)
 
 Although the differences between the two marginal distributions are not striking, the
 extra edges connecting top to bottom and left to right do have some influence on the
@@ -136,7 +136,7 @@ end
 gif(anim, "ising_gif.gif", fps=10)
 ```
 
-![](/assets/ising_gif.gif)
+![ising_gif.gif](/assets/ising_gif.gif)
 
 ## Clustered Binary Data (Small ``n``)
 

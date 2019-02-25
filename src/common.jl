@@ -157,7 +157,7 @@ end
 # Open data sets 
 function datasets(name::String)
     if name=="pigmentosa"
-        dfpath = joinpath(dirname(pathof(Autologistic)), "..", "assets") * "\\pigmentosa.csv"
+        dfpath = joinpath(dirname(pathof(Autologistic)), "..", "assets", "pigmentosa.csv")
         return CSV.read(dfpath)
     else
         error("Name is not one of the available options.")
