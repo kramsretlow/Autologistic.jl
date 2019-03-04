@@ -167,7 +167,7 @@ function Base.summary(io::IO, f::ALfit; parnames=nothing, sigdigits=3)
     out[2:npar+1, 2] = string.(round.(f.estimate,sigdigits=sigdigits))
     out[2:npar+1, 3] = string.(round.(f.se,sigdigits=sigdigits))
     out[2:npar+1, 4] = string.(round.(f.pvalues,sigdigits=sigdigits))
-    out[2:npar+1, 5] = [string(round.((f.CIs[i][1], f.CIs[i][2]),sigdigits=sigdigits)) for i=1:9]
+    out[2:npar+1, 5] = [string(round.((f.CIs[i][1], f.CIs[i][2]),sigdigits=sigdigits)) for i=1:npar]
 
     align!(out, 2, '.')
     align!(out, 3, '.')

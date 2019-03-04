@@ -256,7 +256,7 @@ end
 # === maximum likelihood estimation ============================================
 function loglikelihood(M::AbstractAutologisticModel; force::Bool=false)
     parts = fullPMF(M, force=force).partition
-    return sum(negpotential(M) - log.(parts))
+    return sum(negpotential(M) .- log.(parts))
 end
 
 function negloglik!(θ::Vector{Float64}, M::AbstractAutologisticModel; force::Bool=false)
@@ -415,8 +415,9 @@ end
 Draws `k` random samples from autologistic model `M`, and either returns the samples 
 themselves, or the estimated probabilities of observing the "high" level at each vertex.
 
-If the model has more than one observation, then `k` samples are drawn for each observation.
-To restrict the samples to a subset of observations, use argument `indices`. 
+If the model has more than one observation, then `k` samples are drawn for each
+observation's parameter settings. To restrict the samples to a subset of observations, use
+argument `indices`. 
 
 For a model `M` with `n` vertices in its graph:
 
@@ -499,14 +500,20 @@ function sample(M::AbstractAutologisticModel, k::Int = 1; method::SamplingMethod
     end
 
     # Return
-    if nidx==1 && !average
-        out = dropdims(out,dims=2)
-    end
-    if size(out,2) == size(out,3) == 1
-        return out[:]
+    if average
+        if nidx==1
+            out = dropdims(out,dims=2)
+        end
     else
-        return out
+        if nidx==1 && k==1
+            out = dropdims(out,dims=(2,3))
+        elseif nidx==1
+            out = dropdims(out,dims=2)
+        elseif k == 1
+            out = dropdims(out,dims=3)
+        end
     end
+    return out
 
 end
 
