@@ -192,7 +192,6 @@ function Base.summary(f::ALfit; parnames=nothing, sigdigits=3)
 end
 
 # TODO:
-# - Update pigmentosa example and commit/push.  ***then stop: paper!***
 # - tests?
 # - Write fit_pl! and do_boot
 # - Figure out how to parallelize fit_pl!/do_boot

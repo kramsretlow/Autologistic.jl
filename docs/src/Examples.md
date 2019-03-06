@@ -11,7 +11,8 @@ The examples:
   analysis of correlated binary responses when the graph is small enough to permit
   computation of the normalizing constant.
 * [Spatial Binary Regression](@ref) shows how to use the package for autologistic regression
-  analysis for larger, spatially-referenced graphs.
+  analysis for larger, spatially-referenced graphs. In this case pseudolikelihood is used
+  for estimation, and a (possibly parallelized) parametric bootstrap is used for inference.
 
 ## An Ising Model
 

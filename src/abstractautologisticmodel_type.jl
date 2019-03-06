@@ -157,6 +157,94 @@ function pseudolikelihood(M::AbstractAutologisticModel)
 
 end
 
+function pslik!(θ::Vector{Float64}, M::AbstractAutologisticModel)
+    setparameters!(M, θ)
+    return pseudolikelihood(M)
+end
+
+function fit_pl!(M::AbstractAutologisticModel;
+                 start=zeros(length(getparameters(M))), 
+                 verbose::Bool=false,
+                 g_tol=1e-8,
+                 allow_f_increases=true,
+                 iterations=1000,
+                 time_limit=NaN,
+                 nboot::Int = 0,
+                 kwargs...)
+
+    originalparameters = getparameters(M)
+    npar = length(originalparameters)
+    ret = ALfit()  
+             
+    opts = Optim.Options(show_trace=verbose, allow_f_increases=allow_f_increases,
+                         time_limit=time_limit, g_tol=g_tol)
+    if verbose 
+        println("-- Finding the maximum pseudolikelihood estimate --")
+        println("Calling Optim.optimize with BFGS method...")
+    end
+    out = optimize(θ -> pslik!(θ,M), start, BFGS(), opts)
+    if !Optim.converged(out)
+        setparameters!(M, originalparameters)
+        @warn "Optim.optimize did not converge. Model parameters have not been changed."
+        ret.optim = out
+        ret.convergence = false
+        return ret
+    else
+        setparameters!(M, out.minimizer)
+        ret.estimate = out.minimizer
+        ret.optim = out
+    end
+
+    if verbose
+        println("-- Parametric bootstrap variance estimation --")
+        if nboot == 0
+            println("nboot==0. Skipping the bootstrap. Returning point estimates only.")
+        end
+    end
+    #=
+    if nboot > 0 
+
+        # Initialize
+        bootsamples = [SharedArray{Bool}(size(M.responses)) for i = 1:nboot]
+        bootestimates = SharedArray{Float64}(npar, nboot)
+        ret.convergence = SharedArray{Bool}(nboot)
+        #bootsamples = [fill(false, size(M.responses) for i=1:nboot]
+        #bootestimates = zeros[npar, nboot]
+        #ret.convergence = fill(false, nboot)
+        MM = deepcopy(M)
+
+        # Do bootstrap replications
+        oldY = M.responses
+        @sync @distributed for i = 1:nboot
+            yboot = sample(M, kwargs...)
+            M.responses = makebool(yboot)
+            thisfit = fit_pl!(M, start=ret.estimate)
+            bootsamples[i] = yboot
+            bootestimates[i,:] = getparameters(M)
+            ret.convergence[i] = thisfit.convergence
+        end
+        M.responses = oldY
+
+        # Process results
+        if length(kwargs) > 0
+            str = "("
+            i = 1
+            for k in kwargs
+                if i > 1
+                    str *= ", "
+                end
+                str *= string(k.first) * " = " * string(k.second)
+                i += 1
+            end
+            str *= ")"
+            ret.kwargs = str
+        end
+    end
+    =#
+    return ret
+             
+end
+
 
 # === negpotential function ====================================================
 # negpotential(M) returns an m-vector of Float64 negpotential values, where 
@@ -312,7 +400,7 @@ function fit_ml!(M::AbstractAutologisticModel;
 
     setparameters!(M, out.minimizer)
     if verbose
-        println("Completed successfully.")
+        println("...completed successfully.")
     end
     ret.estimate = out.minimizer
     ret.se = SE
