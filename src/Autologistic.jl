@@ -30,6 +30,7 @@ export
     CenteringKinds, none, expectation, onehalf,
     SamplingMethods, Gibbs, perfect_reuse_samples, perfect_reuse_seeds, perfect_read_once, perfect_bounding_chain,
     #----- functions -----
+    addboot!,
     centeringterms,
     conditionalprobabilities,
     fit_ml!,
@@ -43,20 +44,21 @@ export
     makegrid8,
     makebool,
     makecoded,
+    makespatialgraph,
     marginalprobabilities,
     negpotential,
+    oneboot,
     pseudolikelihood,
     sample,
     setparameters!,
     setunaryparameters!,
-    setpairwiseparameters!,
-    makespatialgraph
+    setpairwiseparameters!
 
 include("common.jl")
+include("ALfit_type.jl")
 include("abstractautologisticmodel_type.jl")
 include("abstractunaryparameter_type.jl")
 include("abstractpairwiseparameter_type.jl")
-include("ALfit_type.jl")
 include("fullpairwise_type.jl")
 include("fullunary_type.jl")
 include("linpredunary_type.jl")

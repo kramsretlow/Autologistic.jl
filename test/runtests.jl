@@ -244,7 +244,7 @@ end
     M5 = ALRsimple(makegrid4(4,4)[1], rand(16,1))
     out1 = sample(M5, 10000, average=false)
     @test all(x->isapprox(x,0.5,atol=0.05), sum(out1.==1, dims=2)/10000)
-    out2 = sample(M5, 10000, average=true, burnin=100, start=rand([1,2], 16))
+    out2 = sample(M5, 10000, average=true, burnin=100, config=rand([1,2], 16))
     @test all(x->isapprox(x,0.5,atol=0.05), out2)
 
     M6 = ALRsimple(makegrid4(3,3)[1], rand(9,2))
@@ -295,4 +295,27 @@ end
     M8 = ALsimple(CompleteGraph(10), zeros(10))
     samp = sample(M8, 10000, method=Gibbs, skip=2, average=true)
     @test isapprox(samp, fill(0.5, 10), atol=0.03, norm=x->norm(x,Inf))
+end
+
+@testset "ML and PL Estimation" begin
+    G = makegrid4(4,3).G
+    model = ALRsimple(G, ones(12,1), Y=[fill(-1,4); fill(1,8)])
+    mle = fit_ml!(model)
+    @test isapprox(mle.estimate, [0.07915; 0.4249], atol=0.001)
+    mle2 = fit_ml!(model, start=[0.07; 0.4], verbose=true, iterations=30, show_trace=true)
+    @test isapprox(mle2.estimate, [0.07915; 0.4249], atol=0.001)
+    @test isapprox(mle2.pvalues, [0.6279; 0.0511], atol=0.001)
+
+    tup1, tup2  = Autologistic.splitkw((method=Gibbs, iterations=1000, average=true, 
+                                       show_trace=false))
+    @test tup1 == (show_trace = false, iterations = 1000)
+    @test tup2 == (method = Gibbs, average = true)
+
+    oldY = model.responses
+    oldpar = getparameters(model)
+    theboot = oneboot(model, method=Gibbs)
+    @test model.responses == oldY
+    @test getparameters(model) == oldpar
+    @test keys(theboot) == (:bootsample, :bootestimate, :convergence)
+    @test collect(map(x -> size(x), theboot)) == [(12,), (2,), ()]
 end

@@ -16,7 +16,7 @@ are set to `nothing` or to zero-dimensional arrays.  The fields are:
 * `Hinv` (used by `fit_ml!`): The inverse of the Hessian matrix of the objective function, 
   evaluated at the estimate.
 * `nboot` - (`fit_pl!`) number of bootstrap samples to use for error estimation
-* `kwargs` - (`fit_pl!`) string representation of extra keyword arguments passed in the call
+* `kwargs` - (`fit_pl!`) A ***TODO-what type?***** of extra keyword arguments passed in the call
   (a record of which arguments were passed to `sample`)
 * `bootsamples` - (`fit_pl!`) the bootstrap samples
 * `bootestimates` - (`fit_pl!`) the bootstrap parameter estimates
@@ -34,7 +34,7 @@ mutable struct ALfit
     optim
     Hinv::Array{Float64,2}
     nboot::Int
-    kwargs::String
+    kwargs
     bootsamples
     bootestimates
     convergence
@@ -61,7 +61,7 @@ Base.show(io::IO, f::ALfit) = print(io, "ALfit")
 function Base.show(io::IO, ::MIME"text/plain", f::ALfit)
     print(io, "Autologistic model fitting results. Its non-empty fields are:\n", 
           showfields(f,2), "Use summary(fit; [parnames, sigdigits]) to see a table of estimates.\n",
-          "Use do_boot(model, fit, ...) to add bootstrap variance estimates after estimation")
+          "For pseudolikelihood, use oneboot() and addboot!() to add bootstrap after the fact.")
 end
                 
 function showfields(f::ALfit, leadspaces=0)
@@ -113,7 +113,8 @@ function showfields(f::ALfit, leadspaces=0)
                    "$(f.convergence)\n"
         else
             out *= spc * "convergence    " * 
-                   "$(size2string(f.convergence)) vector of bootstrap convergence flags\n"
+                   "$(size2string(f.convergence)) vector of convergence flags " * 
+                   "($(sum(f.convergence .= false)) false)\n"
         end
     end
     if out == ""
@@ -158,27 +159,42 @@ function Base.summary(io::IO, f::ALfit; parnames=nothing, sigdigits=3)
     if parnames != nothing && length(parnames) !== npar
         error("parnames vector is not the correct length")
     end
-    out = Matrix{String}(undef, npar+1, 5)
 
-    out[1,:] = ["name", "est", "se", "p-value", "95% CI"]
+    # Create the matrix of strings, and add header row and "p-values" and "CIs" columns 
+    # (only include the "p-value" column if it's a ML estimate).
+    if f.bootestimates == nothing
+        out = Matrix{String}(undef, npar+1, 5)
+        out[1,:] = ["name", "est", "se", "p-value", "95% CI"]
+        out[2:npar+1, 4] = length(f.pvalues)==0 ? ["" for i=1:npar] : 
+                           string.(round.(f.pvalues,sigdigits=sigdigits))
+        out[2:npar+1, 5] = length(f.CIs)==0 ? ["" for i=1:npar] : 
+                           [string(round.((f.CIs[i][1], f.CIs[i][2]),sigdigits=sigdigits)) for i=1:npar]
+        align!(out, 5, ',')
+    else
+        out = Matrix{String}(undef, npar+1, 4)
+        out[1,:] = ["name", "est", "se", "95% CI"]
+        out[2:npar+1, 4] = length(f.CIs)==0 ? ["" for i=1:npar] : 
+                           [string(round.((f.CIs[i][1], f.CIs[i][2]),sigdigits=sigdigits)) for i=1:npar]
+    end
+
+    # Fill in the other columns
     for i = 2:npar+1
         out[i,1] = parnames==nothing ? "parameter $(i-1)" : parnames[i-1]
     end        
     out[2:npar+1, 2] = string.(round.(f.estimate,sigdigits=sigdigits))
-    out[2:npar+1, 3] = string.(round.(f.se,sigdigits=sigdigits))
-    out[2:npar+1, 4] = string.(round.(f.pvalues,sigdigits=sigdigits))
-    out[2:npar+1, 5] = [string(round.((f.CIs[i][1], f.CIs[i][2]),sigdigits=sigdigits)) for i=1:npar]
+    out[2:npar+1, 3] = length(f.se)==0 ? ["" for i=1:npar] : 
+                       string.(round.(f.se,sigdigits=sigdigits))
 
     align!(out, 2, '.')
     align!(out, 3, '.')
     align!(out, 4, '.')
-    align!(out, 5, ',')
 
-    colwidths = [maximum(length.(out[:,i])) for i=1:5]
-    for i = 1:size(out,1)
-        for j = 1:size(out,2)
+    nrow, ncol = size(out)
+    colwidths = [maximum(length.(out[:,i])) for i=1:ncol]
+    for i = 1:nrow
+        for j = 1:ncol
             print(io, out[i,j], repeat(" ", colwidths[j]-length(out[i,j])))
-            if j < 5
+            if j < ncol
                 print(io, "   ")
             else 
                 print(io, "\n")
@@ -191,7 +207,47 @@ function Base.summary(f::ALfit; parnames=nothing, sigdigits=3)
     Base.summary(stdout, f; parnames=parnames, sigdigits=sigdigits)
 end
 
-# TODO:
-# - tests?
-# - Write fit_pl! and do_boot
-# - Figure out how to parallelize fit_pl!/do_boot
+
+function addboot!(fit::ALfit, bootresults::Array{T,1}) where 
+    T <: NamedTuple{(:bootsample, :bootestimate, :convergence)}
+
+    nboot = length(bootresults)
+    npar = length(bootresults[1].bootestimate)
+    bootsz = size(bootresults[1].bootsample)  #sample could be 1D or 2D
+
+    bootsamples = Array{Float64}(undef, bootsz..., nboot)
+    bootestimates = Array{Float64}(undef, npar, nboot)
+    convergence = Array{Bool}(undef, nboot)
+    for i = 1:nboot
+        if length(bootsz) == 1
+            bootsamples[:,i] = bootresults[i].bootsample
+        else
+            bootsamples[:,:,i] = bootresults[i].bootsample
+        end
+        bootestimates[:,i] = bootresults[i].bootestimate
+        convergence[i] = bootresults[i].convergence
+    end
+
+    addboot!(fit, bootsamples, bootestimates, convergence)
+end
+
+#TODO: make this function append samples to any that currently exist, rather than replace.
+#TODO: handle non-converged cases (here and elsewhere).  Maybe make se, CI, etc. computed
+# from the info, rather than stored?
+function addboot!(fit::ALfit, bootsamples::Array, bootestimates::Array, convergence::Array)
+
+    fit.bootsamples = bootsamples
+    fit.bootestimates = bootestimates
+    fit.convergence = convergence
+    npar = size(bootestimates,1)
+
+    # Compute se, and CIs and fill in.  (Proper handling of p-values requires that 
+    # bootstrap samples were drawn from the appropriate null hypothesis scenario. Leave 
+    # them out.)
+    fit.se = std(fit.bootestimates, dims=2)[:]
+    fit.CIs = [(0.0, 0.0) for i=1:npar]
+    for i = 1:npar
+        fit.CIs[i] = (quantile(bootestimates[i,:],0.025), quantile(bootestimates[i,:],0.975))
+    end
+
+end

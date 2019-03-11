@@ -32,7 +32,7 @@ type's interface (in this list, `M` is of type inheriting from `AbstractAutologi
 *   `fullPMF(M; indices, force::Bool)`
 *   `marginalprobabilities(M; indices, force::Bool)`
 *   `conditionalprobabilities(M; vertices, indices)`
-*   `sample(M, k::Int, method::SamplingMethods, indices::Int, average::Bool, start, 
+*   `sample(M, k::Int, method::SamplingMethods, indices::Int, average::Bool, config, 
     burnin::Int, verbose::Bool)`
 
 The `sample()` function is a wrapper for a variety of random sampling algorithms enumerated
@@ -162,85 +162,123 @@ function pslik!(θ::Vector{Float64}, M::AbstractAutologisticModel)
     return pseudolikelihood(M)
 end
 
+
+# Takes a named tuple (arising from keyword argument list) and produces two named tuples:
+# one with the arguments for optimise(), and one for arguments to sample()
+# Usage: optimargs, sampleargs = splitkw(keyword_tuple)
+# (tests done)
+splitkw = function(kwargs)
+    optimnames = fieldnames(typeof(Optim.Options()))
+    samplenames = (:method, :indices, :average, :config, :burnin, :verbose)
+    optimargs = Dict{Symbol,Any}()
+    sampleargs = Dict{Symbol,Any}()
+    for (symb, val) in pairs(kwargs)
+        if symb in optimnames
+            push!(optimargs, symb => val)
+        end
+        if symb in samplenames
+            push!(sampleargs, symb => val)
+        end
+    end
+    return (;optimargs...), (;sampleargs...)
+end
+
+# (tests done)
+function oneboot(M::AbstractAutologisticModel; 
+                 start=zeros(length(getparameters(M))),
+                 verbose::Bool=false,
+                 kwargs...)
+
+    oldY = M.responses;
+    oldpar = getparameters(M)
+    optimargs, sampleargs = splitkw(kwargs)
+    yboot = sample(M; verbose=verbose, sampleargs...)
+    M.responses = makebool(yboot)
+    thisfit = fit_pl!(M; start=start, verbose=verbose, kwargs...)
+    M.responses = oldY
+    setparameters!(M, oldpar)
+
+    return (bootsample=yboot, bootestimate=thisfit.estimate, convergence=thisfit.convergence)
+end
+
+function oneboot(M::AbstractAutologisticModel, params::Vector{Float64};
+                 start=zeros(length(getparameters(M))),
+                 verbose::Bool=false,
+                 kwargs...)
+    oldpar = getparameters(M)
+    out = oneboot(M; start=start, verbose=verbose, kwargs...)
+    setparameters!(M, oldpar)
+    return out
+end
+
 function fit_pl!(M::AbstractAutologisticModel;
                  start=zeros(length(getparameters(M))), 
                  verbose::Bool=false,
-                 g_tol=1e-8,
-                 allow_f_increases=true,
-                 iterations=1000,
-                 time_limit=NaN,
                  nboot::Int = 0,
+                 nproc::Int = 1,
                  kwargs...)
 
     originalparameters = getparameters(M)
     npar = length(originalparameters)
     ret = ALfit()  
-             
-    opts = Optim.Options(show_trace=verbose, allow_f_increases=allow_f_increases,
-                         time_limit=time_limit, g_tol=g_tol)
+    ret.kwargs = kwargs
+    optimargs, sampleargs = splitkw(kwargs)
+
+    opts = Optim.Options(; optimargs...)
     if verbose 
         println("-- Finding the maximum pseudolikelihood estimate --")
         println("Calling Optim.optimize with BFGS method...")
     end
     out = optimize(θ -> pslik!(θ,M), start, BFGS(), opts)
+    ret.estimate = out.minimizer
+    ret.optim = out
     if !Optim.converged(out)
         setparameters!(M, originalparameters)
         @warn "Optim.optimize did not converge. Model parameters have not been changed."
-        ret.optim = out
         ret.convergence = false
         return ret
     else
         setparameters!(M, out.minimizer)
-        ret.estimate = out.minimizer
-        ret.optim = out
+        ret.convergence = true
     end
 
     if verbose
         println("-- Parametric bootstrap variance estimation --")
         if nboot == 0
             println("nboot==0. Skipping the bootstrap. Returning point estimates only.")
+        elseif nproc > 1
+            println("Attempting parallel bootstrap with $(nproc) workers.")
         end
     end
-    #=
-    if nboot > 0 
 
-        # Initialize
-        bootsamples = [SharedArray{Bool}(size(M.responses)) for i = 1:nboot]
-        bootestimates = SharedArray{Float64}(npar, nboot)
-        ret.convergence = SharedArray{Bool}(nboot)
-        #bootsamples = [fill(false, size(M.responses) for i=1:nboot]
-        #bootestimates = zeros[npar, nboot]
-        #ret.convergence = fill(false, nboot)
-        MM = deepcopy(M)
-
-        # Do bootstrap replications
-        oldY = M.responses
-        @sync @distributed for i = 1:nboot
-            yboot = sample(M, kwargs...)
-            M.responses = makebool(yboot)
-            thisfit = fit_pl!(M, start=ret.estimate)
-            bootsamples[i] = yboot
-            bootestimates[i,:] = getparameters(M)
-            ret.convergence[i] = thisfit.convergence
-        end
-        M.responses = oldY
-
-        # Process results
-        if length(kwargs) > 0
-            str = "("
-            i = 1
-            for k in kwargs
-                if i > 1
-                    str *= ", "
-                end
-                str *= string(k.first) * " = " * string(k.second)
-                i += 1
+    if nboot > 0
+        if nproc > 1  #TODO: change to if length(workers()) > 1
+            #addprocs(nproc)
+            bootsamples = SharedArray{Float64}(size(M.responses)..., nboot)
+            bootestimates = SharedArray{Float64}(npar, nboot)
+            convresults = SharedArray{Bool}(nboot)
+            #Distributed.remotecall_eval(Main, workers(), :(using Autologistic))  # using @everywhere caused probs.
+            @sync @distributed for i = 1:nboot
+                bootout = oneboot(M; start=start, verbose=verbose, kwargs...)
+                bootsamples[:,:,i] = bootout.bootsample
+                bootestimates[:,i] = bootout.bootestimate
+                convresults[i] = bootout.convergence
+            end                    
+            if size(M.responses,2) == 1
+                addboot!(ret, dropdims(Array(bootsamples),dims=2), Array(bootestimates), Array(convresults))
+            else
+                addboot!(ret, Array(bootsamples), Array(bootestimates), Array(convresults))
             end
-            str *= ")"
-            ret.kwargs = str
+            #rmprocs(workers())
+        else
+            bootresults = Array{NamedTuple{(:bootsample, :bootestimate, :convergence)}}(undef,nboot)
+            for i = 1:nboot
+                bootresults[i] = oneboot(M; start=start, verbose=verbose, kwargs...)
+            end
+            addboot!(ret, bootresults)
         end
     end
-    =#
+
     return ret
              
 end
@@ -352,25 +390,24 @@ function negloglik!(θ::Vector{Float64}, M::AbstractAutologisticModel; force::Bo
     return -loglikelihood(M, force=force)
 end
 
-#TODO: documentation, tests
-function fit_ml!(M::AbstractAutologisticModel; 
-                 start=zeros(length(getparameters(M))), 
-                 force::Bool=false,
+#TODO: documentation
+# kwargs are extra keyword arguments to pass on to optimise()
+function fit_ml!(M::AbstractAutologisticModel;
+                 start=zeros(length(getparameters(M))),
                  verbose::Bool=false,
-                 g_tol=1e-8,
-                 allow_f_increases=true,
-                 iterations=1000,
-                 time_limit=NaN)
+                 force::Bool=false,
+                 kwargs...)
 
     originalparameters = getparameters(M)
     npar = length(originalparameters)
     ret = ALfit()  
-
-    opts = Optim.Options(show_trace=verbose, allow_f_increases=allow_f_increases,
-                         time_limit=time_limit, g_tol=g_tol)
-    if verbose 
+    ret.kwargs = kwargs
+    opts = Optim.Options(; kwargs...)
+    if verbose
         println("Calling Optim.optimize with BFGS method...")
     end
+
+    # TODO: some kind of try/catch around call to optimize()
     out = optimize(θ -> negloglik!(θ,M,force=force), start, BFGS(), opts)
     if !Optim.converged(out)
         setparameters!(M, originalparameters)
@@ -399,9 +436,6 @@ function fit_ml!(M::AbstractAutologisticModel;
     end
 
     setparameters!(M, out.minimizer)
-    if verbose
-        println("...completed successfully.")
-    end
     ret.estimate = out.minimizer
     ret.se = SE
     ret.pvalues = pvals
@@ -409,6 +443,9 @@ function fit_ml!(M::AbstractAutologisticModel;
     ret.optim = out
     ret.Hinv = Hinv
     ret.convergence = true
+    if verbose
+        println("...completed successfully.")
+    end
     return ret
 end
 
@@ -495,7 +532,7 @@ end
         method::SamplingMethods = Gibbs,
         indices = 1:size(M.unary,2), 
         average::Bool = false, 
-        start = nothing, 
+        config = nothing, 
         burnin::Int = 0,
         verbose::Bool = false
     )
@@ -529,9 +566,9 @@ arithmetic average of the samples, unless the coding is (0,1). Rather, it is an 
 the probability of getting a "high" outcome.)  When `average=false`, the full set of samples
 is returned. 
 
-**`start`** allows a starting configuration of the random variables to be provided. Only
-used if `method=Gibbs`. Any vector with two unique values can be used as `start`. By default
-a random configuration is used.
+**`config`** allows a starting configuration of the random variables to be provided. Only
+used if `method=Gibbs`. Any vector of the correct length, with two unique values, can be 
+used as `config`. By default a random configuration is used.
 
 **`burnin`** specifies the number of initial samples to discard from the results.  Only used
 if `method=Gibbs`.
@@ -556,8 +593,10 @@ julia> sort(unique(r))
 ```
 """
 function sample(M::AbstractAutologisticModel, k::Int = 1; method::SamplingMethods = Gibbs, 
-                indices=1:size(M.unary,2), average::Bool = false, start = nothing, 
+                indices=1:size(M.unary,2), average::Bool = false, config = nothing, 
                 burnin::Int = 0, skip::Int = 0, verbose::Bool = false)
+                #NOTE: if keyword argument list changes in future, need to update the tuple
+                #      samplenames inside splitkw() to match. 
     
     # Create storage object 
     n, m = size(M.unary)
@@ -584,7 +623,7 @@ function sample(M::AbstractAutologisticModel, k::Int = 1; method::SamplingMethod
         end
         out[:,i,:] = sample_one_index(M, k, method=method, 
                                       index=indices[i], average=average,
-                                      start=start, burnin=burnin, skip=skip, verbose=verbose)
+                                      config=config, burnin=burnin, skip=skip, verbose=verbose)
     end
 
     # Return
@@ -607,7 +646,7 @@ end
 
 function sample_one_index(M::AbstractAutologisticModel, k::Int = 1; 
                      method::SamplingMethods = Gibbs, index::Int = 1, average::Bool = false, 
-                     start = nothing, burnin::Int = 0, skip::Int = 0, verbose::Bool = false)
+                     config = nothing, burnin::Int = 0, skip::Int = 0, verbose::Bool = false)
     lo = Float64(M.coding[1])
     hi = Float64(M.coding[2])
     Λ = M.pairwise[:,:,index]   
@@ -616,10 +655,10 @@ function sample_one_index(M::AbstractAutologisticModel, k::Int = 1;
     n = length(α)
     adjlist = M.pairwise.G.fadjlist
     if method == Gibbs
-        if start == nothing
+        if config == nothing
             Y = rand([lo, hi], n)
         else
-            Y = vec(makecoded(M, makebool(start)))
+            Y = vec(makecoded(M, makebool(config)))
         end
         return gibbssample(lo, hi, Y, Λ, adjlist, α, μ, n, k, average, burnin, skip, verbose)
     elseif method == perfect_reuse_samples
