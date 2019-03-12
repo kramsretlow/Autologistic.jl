@@ -114,7 +114,7 @@ function showfields(f::ALfit, leadspaces=0)
         else
             out *= spc * "convergence    " * 
                    "$(size2string(f.convergence)) vector of convergence flags " * 
-                   "($(sum(f.convergence .= false)) false)\n"
+                   "($(sum(f.convergence .== false)) false)\n"
         end
     end
     if out == ""
@@ -209,22 +209,19 @@ end
 
 
 function addboot!(fit::ALfit, bootresults::Array{T,1}) where 
-    T <: NamedTuple{(:bootsample, :bootestimate, :convergence)}
+    T <: NamedTuple{(:sample, :estimate, :convergence)}
 
     nboot = length(bootresults)
-    npar = length(bootresults[1].bootestimate)
-    bootsz = size(bootresults[1].bootsample)  #sample could be 1D or 2D
+    npar = length(bootresults[1].estimate)
+    n = size(bootresults[1].sample, 1)
+    m = size(bootresults[1].sample, 2) #n,m = size(...) won't work (sample may be 1D or 2D)
 
-    bootsamples = Array{Float64}(undef, bootsz..., nboot)
+    bootsamples = Array{Float64}(undef, n, m, nboot)
     bootestimates = Array{Float64}(undef, npar, nboot)
     convergence = Array{Bool}(undef, nboot)
     for i = 1:nboot
-        if length(bootsz) == 1
-            bootsamples[:,i] = bootresults[i].bootsample
-        else
-            bootsamples[:,:,i] = bootresults[i].bootsample
-        end
-        bootestimates[:,i] = bootresults[i].bootestimate
+        bootsamples[:,:,i] = bootresults[i].sample
+        bootestimates[:,i] = bootresults[i].estimate
         convergence[i] = bootresults[i].convergence
     end
 
@@ -234,20 +231,38 @@ end
 #TODO: make this function append samples to any that currently exist, rather than replace.
 #TODO: handle non-converged cases (here and elsewhere).  Maybe make se, CI, etc. computed
 # from the info, rather than stored?
-function addboot!(fit::ALfit, bootsamples::Array, bootestimates::Array, convergence::Array)
-
-    fit.bootsamples = bootsamples
-    fit.bootestimates = bootestimates
-    fit.convergence = convergence
-    npar = size(bootestimates,1)
-
     # Compute se, and CIs and fill in.  (Proper handling of p-values requires that 
     # bootstrap samples were drawn from the appropriate null hypothesis scenario. Leave 
     # them out.)
-    fit.se = std(fit.bootestimates, dims=2)[:]
+function addboot!(fit::ALfit, 
+                  bootsamples::Array{Float64,3}, 
+                  bootestimates::Array{Float64,2}, 
+                  convergence::Vector{Bool})
+
+    if size(bootsamples,2) == 1
+        bootsamples = dropdims(bootsamples, dims=2)
+    end
+    if fit.bootsamples != nothing
+        fit.bootsamples = cat(fit.bootsamples, bootsamples, dims=length(size(bootsamples)))
+        fit.bootestimates = [fit.bootestimates bootestimates]
+        fit.convergence = [fit.convergence; convergence]
+    else
+        fit.bootsamples = bootsamples
+        fit.bootestimates = bootestimates
+        fit.convergence = convergence
+    end
+
+    ix = findall(convergence)
+    if length(ix) < length(convergence)
+        println("NOTE: $(length(convergence) - length(ix)) entries have convergence==false.", 
+                " Omitting these in calculations.")
+    end
+
+    npar = size(bootestimates,1)
+    fit.se = std(fit.bootestimates[:,ix], dims=2)[:]
     fit.CIs = [(0.0, 0.0) for i=1:npar]
     for i = 1:npar
-        fit.CIs[i] = (quantile(bootestimates[i,:],0.025), quantile(bootestimates[i,:],0.975))
+        fit.CIs[i] = (quantile(bootestimates[i,ix],0.025), quantile(bootestimates[i,ix],0.975))
     end
 
 end

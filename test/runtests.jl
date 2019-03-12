@@ -316,6 +316,27 @@ end
     theboot = oneboot(model, method=Gibbs)
     @test model.responses == oldY
     @test getparameters(model) == oldpar
-    @test keys(theboot) == (:bootsample, :bootestimate, :convergence)
+    theboot2 = oneboot(model, [0.1,0.02])
+    @test getparameters(model) == oldpar
+    @test keys(theboot) == keys(theboot2) == (:sample, :estimate, :convergence)
     @test collect(map(x -> size(x), theboot)) == [(12,), (2,), ()]
+
+    Y=[[fill(-1,4); fill(1,8)] [fill(-1,3); fill(1,9)] [fill(-1,5); fill(1,7)]]
+    model2 = ALRsimple(G, ones(12,1,3), Y=Y)
+    fit = fit_pl!(model2, start=[-0.4, 1.1])
+    @test isapprox(fit.estimate, [-0.390104; 1.10103], atol=0.001)
+    boots1 = [oneboot(model2, start=[-0.4, 1.1]) for i = 1:10]
+    samps = zeros(12,3,10)
+    ests = zeros(2,10)
+    convs = fill(false, 10)
+    for i = 1:10
+        samps[:,:,i] = boots1[i].sample
+        ests[:,i] = boots1[i].estimate
+        convs[i] = boots1[i].convergence
+    end
+    addboot!(fit, boots1)
+    addboot!(fit, samps, ests, convs)
+    @test size(fit.bootsamples) == (12,3,20)
+    @test length(fit.convergence) == 20
+    @test fit.bootestimates[:,1:10] == fit.bootestimates[:,11:20]
 end

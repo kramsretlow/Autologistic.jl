@@ -198,7 +198,7 @@ function oneboot(M::AbstractAutologisticModel;
     M.responses = oldY
     setparameters!(M, oldpar)
 
-    return (bootsample=yboot, bootestimate=thisfit.estimate, convergence=thisfit.convergence)
+    return (sample=yboot, estimate=thisfit.estimate, convergence=thisfit.convergence)
 end
 
 function oneboot(M::AbstractAutologisticModel, params::Vector{Float64};
@@ -215,7 +215,6 @@ function fit_pl!(M::AbstractAutologisticModel;
                  start=zeros(length(getparameters(M))), 
                  verbose::Bool=false,
                  nboot::Int = 0,
-                 nproc::Int = 1,
                  kwargs...)
 
     originalparameters = getparameters(M)
@@ -246,35 +245,33 @@ function fit_pl!(M::AbstractAutologisticModel;
         println("-- Parametric bootstrap variance estimation --")
         if nboot == 0
             println("nboot==0. Skipping the bootstrap. Returning point estimates only.")
-        elseif nproc > 1
-            println("Attempting parallel bootstrap with $(nproc) workers.")
         end
     end
 
     if nboot > 0
-        if nproc > 1  #TODO: change to if length(workers()) > 1
-            #addprocs(nproc)
-            bootsamples = SharedArray{Float64}(size(M.responses)..., nboot)
+        if length(workers()) > 1
+            if verbose
+                println("Attempting parallel bootstrap with $(length(workers())) workers.")
+            end
+            n, m = size(M.responses)
+            bootsamples = SharedArray{Float64}(n, m, nboot)
             bootestimates = SharedArray{Float64}(npar, nboot)
             convresults = SharedArray{Bool}(nboot)
-            #Distributed.remotecall_eval(Main, workers(), :(using Autologistic))  # using @everywhere caused probs.
             @sync @distributed for i = 1:nboot
-                bootout = oneboot(M; start=start, verbose=verbose, kwargs...)
-                bootsamples[:,:,i] = bootout.bootsample
-                bootestimates[:,i] = bootout.bootestimate
+                bootout = oneboot(M; start=start, kwargs...)
+                bootsamples[:,:,i] = bootout.sample
+                bootestimates[:,i] = bootout.estimate
                 convresults[i] = bootout.convergence
             end                    
-            if size(M.responses,2) == 1
-                addboot!(ret, dropdims(Array(bootsamples),dims=2), Array(bootestimates), Array(convresults))
-            else
-                addboot!(ret, Array(bootsamples), Array(bootestimates), Array(convresults))
-            end
-            #rmprocs(workers())
+            addboot!(ret, Array(bootsamples), Array(bootestimates), Array(convresults))
         else
-            bootresults = Array{NamedTuple{(:bootsample, :bootestimate, :convergence)}}(undef,nboot)
+            if verbose print("bootstrap iteration 1") end
+            bootresults = Array{NamedTuple{(:sample, :estimate, :convergence)}}(undef,nboot)
             for i = 1:nboot
-                bootresults[i] = oneboot(M; start=start, verbose=verbose, kwargs...)
+                bootresults[i] = oneboot(M; start=start, kwargs...)
+                if verbose print(mod(i,10)==0 ? i : "|") end
             end
+            if verbose print("\n") end
             addboot!(ret, bootresults)
         end
     end
