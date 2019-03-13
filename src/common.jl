@@ -127,16 +127,19 @@ end
 # one another.
 # TODO: write tests
 function makespatialgraph(coords::C, δ::Real) where C<:SpatialCoordinates
+    #Replace coords by an equivalent tuple of Float64, for consistency
     n = length(coords)
+    locs = [Float64.(coords[i]) for i = 1:n]
+    #Make the graph and add edges
     G = Graph(n)
     for i in 1:n
         for j in i+1:n 
-            if norm(coords[i] .- coords[j]) <= δ
+            if norm(locs[i] .- locs[j]) <= δ
                 add_edge!(G,i,j)
             end
         end
     end
-    return (G=G, locs=coords)
+    return (G=G, locs=locs)
 end
 
 
@@ -158,6 +161,9 @@ end
 function datasets(name::String)
     if name=="pigmentosa"
         dfpath = joinpath(dirname(pathof(Autologistic)), "..", "assets", "pigmentosa.csv")
+        return CSV.read(dfpath)
+    elseif name=="hydrocotyle"
+        dfpath = joinpath(dirname(pathof(Autologistic)), "..", "assets", "hydrocotyle.csv")
         return CSV.read(dfpath)
     else
         error("Name is not one of the available options.")
