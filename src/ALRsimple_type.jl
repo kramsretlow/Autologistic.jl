@@ -35,8 +35,8 @@ function ALRsimple(unary::LinPredUnary, pairwise::SimplePairwise;
     (n, m) = size(unary)
     if Y==nothing
         Y = Array{Bool,2}(undef, n, m)
-    else 
-        Y = makebool(Y)
+    else
+        Y = makebool(Y, coding)
     end
     return ALRsimple(Y,unary,pairwise,centering,coding,labels,coordinates)
 end
@@ -50,7 +50,7 @@ function ALRsimple(graph::SimpleGraph{Int}, X::Float2D3D;
                    coordinates::SpatialCoordinates=[(0.0,0.0) for i=1:nv(graph)])
     u = LinPredUnary(X, β)
     p = SimplePairwise(λ, graph, size(X,3))
-    return ALRsimple(makebool(Y),u,p,centering,coding,labels,coordinates)
+    return ALRsimple(makebool(Y,coding),u,p,centering,coding,labels,coordinates)
 end
 
 

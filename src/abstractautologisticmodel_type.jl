@@ -25,7 +25,6 @@ type's interface (in this list, `M` is of type inheriting from `AbstractAutologi
 *   `getparameters(M)` and `setparameters!(M, newpars::Vector{Float64})`
 *   `getunaryparameters(M)` and `setunaryparameters!(M, newpars::Vector{Float64})`
 *   `getpairwiseparameters(M)` and `setpairwiseparameters!(M, newpars::Vector{Float64})`
-*   `makecoded(M, Y)`
 *   `centeringterms(M, kind::Union{Nothing,CenteringKinds})`
 *   `pseudolikelihood(M)`
 *   `negpotential(M)`
@@ -65,28 +64,6 @@ function setunaryparameters!(M::AbstractAutologisticModel, newpars::Vector{Float
 end
 function setpairwiseparameters!(M::AbstractAutologisticModel, newpars::Vector{Float64})
     setparameters!(M.pairwise, newpars)
-end
-
-
-# A fcn to convert Boolean responses into coded values.
-# Returns a 2D array of Float64.  If Y is not supplied, use the responses stored
-# in the 1st argument.
-function makecoded(M::AbstractAutologisticModel, Y=nothing)
-    if Y==nothing
-        Y = M.responses
-    else
-        Y = makebool(Y)
-    end
-    lo = M.coding[1]
-    hi = M.coding[2]
-    n, m = size(Y)
-    out = Array{Float64,2}(undef, n, m)
-    for j = 1:m
-        for i = 1:n
-            out[i,j] = Y[i,j] ? hi : lo
-        end
-    end
-    return out
 end
 
 
@@ -193,7 +170,7 @@ function oneboot(M::AbstractAutologisticModel;
     oldpar = getparameters(M)
     optimargs, sampleargs = splitkw(kwargs)
     yboot = sample(M; verbose=verbose, sampleargs...)
-    M.responses = makebool(yboot)
+    M.responses = makebool(yboot, M.coding)
     thisfit = fit_pl!(M; start=start, verbose=verbose, kwargs...)
     M.responses = oldY
     setparameters!(M, oldpar)
@@ -655,7 +632,7 @@ function sample_one_index(M::AbstractAutologisticModel, k::Int = 1;
         if config == nothing
             Y = rand([lo, hi], n)
         else
-            Y = vec(makecoded(M, makebool(config)))
+            Y = vec(makecoded(makebool(config, M.coding), M.coding))
         end
         return gibbssample(lo, hi, Y, Λ, adjlist, α, μ, n, k, average, burnin, skip, verbose)
     elseif method == perfect_reuse_samples
@@ -669,3 +646,7 @@ function sample_one_index(M::AbstractAutologisticModel, k::Int = 1;
     end
 end
 
+# A convenience method for makecoded
+function makecoded(M::AbstractAutologisticModel)
+    return makecoded(M.responses, M.coding)
+end

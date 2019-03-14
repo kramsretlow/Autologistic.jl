@@ -124,7 +124,7 @@ end
         (n, p, m) = (100, 4, r)
         X = rand(n,p,m)
         β = [1.0, 2.0, 3.0, 4.0]
-        Y = makebool(round.(rand(n,m)))
+        Y = makebool(round.(rand(n,m)), (0.0, 1.0))
         unary = LinPredUnary(X, β)
         pairwise = SimplePairwise(n, m)
         coords = [(rand(),rand()) for i=1:n]
@@ -148,7 +148,7 @@ end
     for r in [1 5]
         (n, m) = (100, r)
         alpha = rand(n, m)
-        Y = makebool(round.(rand(n, m)))
+        Y = makebool(round.(rand(n, m)), (0.0, 1.0))
         unary = FullUnary(alpha)
         pairwise = SimplePairwise(n, m)
         coords = [(rand(), rand()) for i=1:n]
@@ -179,19 +179,22 @@ end
     y2 = [1 2; 1 2]
     y3 = [1.0 2.0; 1.0 2.0]
     y4 = ["yes", "no", "no"]
+    y5 = ones(10,3)
     @test makebool(y1) == reshape([false, false, true], (3,1))
     @test makebool(y2) == makebool(y3) == [false true; false true]
     @test makebool(y4) == reshape([true, false, false], (3,1))
+    @test makebool(y5, (0,1)) == fill(true, 10, 3)
+    @test makebool(y5, (1,2)) == fill(false, 10, 3)
+
+    # --- makecoded() ---
+    M1 = ALRsimple(Graph(4,3), rand(4,2), Y=[true, false, false, true], coding=(-1,1))
+    @test makecoded(M1) == reshape([1, -1, -1, 1], (4,1))
+    @test makecoded([true, false, false, true], M1.coding) == reshape([1, -1, -1, 1], (4,1))
 end
 
 @testset "almodel_functions" begin
-    # --- makecoded() ---
-    M1 = ALRsimple(Graph(4,3), rand(4,2), 
-                  Y=[true, false, false, true], coding=(-1,1))
-    @test makecoded(M1) == reshape([1, -1, -1, 1], (4,1))
-    @test makecoded(M1,[4, 3, 3, 4]) == reshape([1, -1, -1, 1], (4,1))
-
     # --- centeringterms() ---
+    M1 = ALRsimple(Graph(4,3), rand(4,2), Y=[true, false, false, true], coding=(-1,1))
     @test centeringterms(M1) == zeros(4,1)
     @test centeringterms(M1, onehalf) == ones(4,1)./2
     @test centeringterms(M1, expectation) == zeros(4,1)
@@ -339,4 +342,13 @@ end
     @test size(fit.bootsamples) == (12,3,20)
     @test length(fit.convergence) == 20
     @test fit.bootestimates[:,1:10] == fit.bootestimates[:,11:20]
+
+    G3 = makegrid4(7,7)
+    model3 = ALRsimple(G3.G, [-ones(15,1); ones(34,1)])
+    Y = ones(49)
+    Y[[3, 5, 7, 12, 14, 17, 18, 22, 23, 24, 25, 27, 30, 31, 34, 35, 36, 37, 40, 43, 
+       44, 45, 46, 48, 49]] .= -1.0
+    model3.responses = makebool(Y)
+    fit = fit_pl!(model3, nboot=100)
+    @test isapprox(fit.estimate, [-0.26976, -0.06015], atol=0.001)
 end

@@ -243,7 +243,7 @@ function addboot!(fit::ALfit,
         bootsamples = dropdims(bootsamples, dims=2)
     end
     if fit.bootsamples != nothing
-        fit.bootsamples = cat(fit.bootsamples, bootsamples, dims=length(size(bootsamples)))
+        fit.bootsamples = cat(fit.bootsamples, bootsamples, dims=ndims(bootsamples))
         fit.bootestimates = [fit.bootestimates bootestimates]
         fit.convergence = [fit.convergence; convergence]
     else

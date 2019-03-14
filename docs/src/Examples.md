@@ -8,8 +8,8 @@ The examples:
 * [An Ising Model](@ref) shows how to use the package to explore the autologistic
   probability distribution, without concern about covariates or parameter estimation.
 * [Clustered Binary Data (Small ``n``)](@ref) shows how to use the package for regression
-  analysis of correlated binary responses when the graph is small enough to permit
-  computation of the normalizing constant.
+  analysis when the graph is small enough to permit computation of the normalizing constant.
+  In this case standard maximum likelihood methods of inference can be used.
 * [Spatial Binary Regression](@ref) shows how to use the package for autologistic regression
   analysis for larger, spatially-referenced graphs. In this case pseudolikelihood is used
   for estimation, and a (possibly parallelized) parametric bootstrap is used for inference.
@@ -265,8 +265,60 @@ idea that the left and right eyes are associated.  It is also highly statistical
 significant.  Among the covariates, `sex_link`, `age`, and `psc` are all statistically
 significant.
 
-
 ## Spatial Binary Regression
+
+Autologistic regression is a natural candidate for analysis of spatial binary data, where
+nearby sites are more likely to have the same observation than sites that are far apart.
+The [hydrocotyle data](https://doi.org/10.1016/j.ecolmodel.2007.04.024) provide a typical
+example.  The response in this data set is the presence/absence of a certain plant species
+in a grid of 2995 regions covering Germany. The data set is included in the package:
+
+```@example hydro
+using Autologistic, DataFrames, LightGraphs
+df = Autologistic.datasets("hydrocotyle")
+describe(df)
+```
+
+The variables `X` and `Y` give the spatial coordinates of each region (in dimensionless
+integer units), `obs` gives the presence/absence data (1 = presence), and `altitude` and
+`temperature` are covariates.
+
+We will use an `ALRsimple` model for these data.  The graph can be formed using
+[`makespatialgraph`](@ref):
+
+```@example hydro
+locations = [(df.X[i], df.Y[i]) for i in 1:size(df,1)]
+g = makespatialgraph(locations, 1.0)
+```
+
+The 2nd argument to `makespatialgraph` is a distance threshold for two vertices to share an
+edge.  So for these data, letting it be 1.0 will make a 4-nearest-neighbors lattice; letting
+it be sqrt(2) would make an 8-nearest-neighbors.
+
+We can visualize the graph, the responses, and the predictors using `Plots.jl` through
+[GraphRecipes.jl](https://github.com/JuliaPlots/GraphRecipes.jl) (there are
+[many other](http://juliagraphs.github.io/LightGraphs.jl/latest/plotting.html)
+options for plotting graphs as well).
+
+```@example hydro
+using GraphRecipes, Plots
+function myplot(colors)
+    return graphplot(g.G, x=df.X, y=df.Y, background_color = :lightblue,
+                marker = :square, markersize=2, markerstrokewidth=0,
+                markercolor = colors, yflip = true)
+end
+makegray(x, lo, hi) = RGB([(x-lo)/(hi-lo) for i=1:3]...)
+plot(myplot(makegray.(df.obs, 0, 1)),
+     myplot(makegray.(df.altitude, minimum(df.altitude), maximum(df.altitude))),
+     myplot(makegray.(df.temperature, minimum(df.temperature), maximum(df.temperature))),
+     layout=(1,3), size=(800,300), aspect_ratio=1,
+     title=["Species Presence" "Altitude" "Temperature"])
+```
+
+
+
+
+
 
 TODO.  Create the graph using spatialgraph and plot the endogenous probabilities (gplot);
 fit the ALRsimple model and do inference with parametric bootstrap; show how alternative

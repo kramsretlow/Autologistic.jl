@@ -33,21 +33,32 @@ An enumeration to facilitate choosing a method for sampling. Available choices a
 @enum SamplingMethods Gibbs perfect_reuse_samples perfect_reuse_seeds perfect_read_once perfect_bounding_chain
 
 # A function to make a 2D array of Booleans out of a 1- or 2-D input.
-function makebool(v::V) where V<:VecOrMat
+# 2nd argument `values` optionally can be a 2-tuple (low, high) specifying the two values
+# we want to convert to boolean (useful for the case where all elements of `v` take one 
+# value or the other.)
+# - If v has more than 3 unique values, throw an error
+# - If v has exactly 2 unique values, use those to set the coding (ignore vals)
+# - If v has 1 unique value, use vals to determine if it's the high or low (throw an error
+#   if v's value isn't in vals)
+function makebool(v::VecOrMat, vals=nothing)
     if ndims(v)==1
         v = v[:,:]    #**convet to 2D, not sure the logic behind [:,:] index
     end
     if typeof(v) == Array{Bool,2} 
         return v 
     end
-    vals = unique(v)
-    if length(vals) != 2
-        error("Need exactly 2 unique values to make a Bool array")
-    end
-    lower = minimum(vals)
-    higher = maximum(vals)
     (nrow, ncol) = size(v)
     out = Array{Bool}(undef, nrow, ncol)
+    nv = length(unique(v))
+    if nv > 2
+        error("The input has more than two values.")
+    elseif nv == 2
+        lower = minimum(v)
+    elseif typeof(vals) <: NTuple{2} && v[1] in vals
+        lower = vals[1]
+    else
+        error("One unique value. Could not assign true or false.")
+    end
     for i in 1:nrow
         for j in 1:ncol
             v[i,j]==lower ? out[i,j] = false : out[i,j] = true
@@ -55,6 +66,27 @@ function makebool(v::V) where V<:VecOrMat
     end
     return out
 end
+
+
+# A fcn to convert Boolean responses into coded values.  1st argument is boolean
+# Returns a 2D array of Float64.  If Y is not supplied, use the responses stored
+# in the 1st argument.
+function makecoded(b::VecOrMat, coding::Tuple{Real,Real})
+    lo = Float64(coding[1])
+    hi = Float64(coding[2])
+    if ndims(b)==1
+        b = b[:,:]
+    end
+    n, m = size(b)
+    out = Array{Float64,2}(undef, n, m)
+    for j = 1:m
+        for i = 1:n
+            out[i,j] = b[i,j] ? hi : lo
+        end
+    end
+    return out
+end
+
 
 
 # A function to produce a graph with a 4-connected 2D grid structure, having r 

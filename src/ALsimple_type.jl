@@ -36,7 +36,7 @@ function ALsimple(unary::FullUnary, pairwise::SimplePairwise;
     if Y==nothing
         Y = Array{Bool,2}(undef, n, m)
     else 
-        Y = makebool(Y) 
+        Y = makebool(Y,coding) 
     end
     return ALsimple(Y,unary,pairwise,centering,coding,labels,coordinates)
 end
@@ -50,7 +50,7 @@ function ALsimple(graph::SimpleGraph{Int}, alpha::Float1D2D;
                   coordinates::SpatialCoordinates=[(0.0,0.0) for i=1:nv(graph)])
     u = FullUnary(alpha)
     p = SimplePairwise(λ, graph, size(alpha,2))
-    return ALsimple(makebool(Y),u,p,centering,coding,labels,coordinates)
+    return ALsimple(makebool(Y,coding),u,p,centering,coding,labels,coordinates)
 end
 
 # include the observation count (can get n from the nv(graph))
@@ -63,7 +63,7 @@ function ALsimple(graph::SimpleGraph{Int}, count::Int=1;
                   coordinates::SpatialCoordinates=[(0.0,0.0) for i=1:nv(graph)])
     u = FullUnary(nv(graph),count)
     p = SimplePairwise(λ, graph, count)
-    return ALsimple(makebool(Y),u,p,centering,coding,labels,coordinates)
+    return ALsimple(makebool(Y,coding),u,p,centering,coding,labels,coordinates)
 end
 
 
