@@ -169,12 +169,14 @@ function Base.summary(io::IO, f::ALfit; parnames=nothing, sigdigits=3)
                            string.(round.(f.pvalues,sigdigits=sigdigits))
         out[2:npar+1, 5] = length(f.CIs)==0 ? ["" for i=1:npar] : 
                            [string(round.((f.CIs[i][1], f.CIs[i][2]),sigdigits=sigdigits)) for i=1:npar]
+        align!(out, 4, '.')
         align!(out, 5, ',')
     else
         out = Matrix{String}(undef, npar+1, 4)
         out[1,:] = ["name", "est", "se", "95% CI"]
         out[2:npar+1, 4] = length(f.CIs)==0 ? ["" for i=1:npar] : 
                            [string(round.((f.CIs[i][1], f.CIs[i][2]),sigdigits=sigdigits)) for i=1:npar]
+        align!(out, 4, ',')
     end
 
     # Fill in the other columns
@@ -184,10 +186,8 @@ function Base.summary(io::IO, f::ALfit; parnames=nothing, sigdigits=3)
     out[2:npar+1, 2] = string.(round.(f.estimate,sigdigits=sigdigits))
     out[2:npar+1, 3] = length(f.se)==0 ? ["" for i=1:npar] : 
                        string.(round.(f.se,sigdigits=sigdigits))
-
     align!(out, 2, '.')
     align!(out, 3, '.')
-    align!(out, 4, '.')
 
     nrow, ncol = size(out)
     colwidths = [maximum(length.(out[:,i])) for i=1:ncol]

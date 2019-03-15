@@ -268,20 +268,20 @@ significant.
 ## Spatial Binary Regression
 
 Autologistic regression is a natural candidate for analysis of spatial binary data, where
-nearby sites are more likely to have the same observation than sites that are far apart.
+locations in the same neighborhood are more likely to have the same outcome than sites that
+are far apart.
 The [hydrocotyle data](https://doi.org/10.1016/j.ecolmodel.2007.04.024) provide a typical
 example.  The response in this data set is the presence/absence of a certain plant species
-in a grid of 2995 regions covering Germany. The data set is included in the package:
+in a grid of 2995 regions covering Germany. The data set is included in Autologistic.jl:
 
-```@example hydro
+```@repl hydro
 using Autologistic, DataFrames, LightGraphs
 df = Autologistic.datasets("hydrocotyle")
-describe(df)
 ```
 
-The variables `X` and `Y` give the spatial coordinates of each region (in dimensionless
-integer units), `obs` gives the presence/absence data (1 = presence), and `altitude` and
-`temperature` are covariates.
+In the data frame, the variables `X` and `Y` give the spatial coordinates of each region (in
+dimensionless integer units), `obs` gives the presence/absence data (1 = presence), and
+`altitude` and `temperature` are covariates.
 
 We will use an `ALRsimple` model for these data.  The graph can be formed using
 [`makespatialgraph`](@ref):
@@ -289,39 +289,228 @@ We will use an `ALRsimple` model for these data.  The graph can be formed using
 ```@example hydro
 locations = [(df.X[i], df.Y[i]) for i in 1:size(df,1)]
 g = makespatialgraph(locations, 1.0)
+nothing # hide
 ```
 
-The 2nd argument to `makespatialgraph` is a distance threshold for two vertices to share an
-edge.  So for these data, letting it be 1.0 will make a 4-nearest-neighbors lattice; letting
-it be sqrt(2) would make an 8-nearest-neighbors.
+`makespatialgraph` takes an array of tuples giving the spatial coodinates, and a distance
+threshold. It returns a named tuple with the graph and the array of coordinates.  The graph
+has one vertex for each spatial location, and edge for every pair of locations that are
+within the threshold distance of each other. For these data arranged on a grid, a threshold
+of 1.0 will make a 4-nearest-neighbors lattice. Letting the threshold be `sqrt(2)` would
+make an 8-nearest-neighbors lattice.
 
-We can visualize the graph, the responses, and the predictors using `Plots.jl` through
+We can visualize the graph, the responses, and the predictors using
 [GraphRecipes.jl](https://github.com/JuliaPlots/GraphRecipes.jl) (there are
-[many other](http://juliagraphs.github.io/LightGraphs.jl/latest/plotting.html)
+[several other](http://juliagraphs.github.io/LightGraphs.jl/latest/plotting.html)
 options for plotting graphs as well).
 
 ```@example hydro
 using GraphRecipes, Plots
-function myplot(colors)
+
+# Function to convert a value to a gray shade
+makegray(x, lo, hi) = RGB([(x-lo)/(hi-lo) for i=1:3]...)  
+
+# Function to plot the graph with node shading determined by v.
+# Plot each node as a square and don't show the edges.
+function myplot(v, lohi=nothing)  
+    if lohi==nothing
+        colors = makegray.(v, minimum(v), maximum(v))
+    else
+        colors = makegray.(v, lohi[1], lohi[2])
+    end
     return graphplot(g.G, x=df.X, y=df.Y, background_color = :lightblue,
                 marker = :square, markersize=2, markerstrokewidth=0,
-                markercolor = colors, yflip = true)
+                markercolor = colors, yflip = true, linecolor=nothing)
 end
-makegray(x, lo, hi) = RGB([(x-lo)/(hi-lo) for i=1:3]...)
-plot(myplot(makegray.(df.obs, 0, 1)),
-     myplot(makegray.(df.altitude, minimum(df.altitude), maximum(df.altitude))),
-     myplot(makegray.(df.temperature, minimum(df.temperature), maximum(df.temperature))),
-     layout=(1,3), size=(800,300), aspect_ratio=1,
-     title=["Species Presence" "Altitude" "Temperature"])
+
+# Make the plot
+plot(myplot(df.obs), myplot(df.altitude), myplot(df.temperature),
+     layout=(1,3), size=(800,300), titlefontsize=8,
+     title=hcat("Species Presence (white = yes)", "Altitude (lighter = higher)",
+                "Temperature (lighter = higher)"))
+```
+
+### Constructing the model
+
+We can see that the species primarily is found at low-altidude locations. To model the
+effect of altitude and temperature on species presence, construct an `ALRsimple` model.
+
+```@example hydro
+# Autologistic.jl requres predictors to be a matrix of Float64
+Xmatrix = Array{Float64}([ones(2995) df.altitude df.temperature])
+
+# Create the model
+hydro = ALRsimple(g.G, Xmatrix, Y=df.obs)
+
+```
+
+The model `hydro` has four parameters: three regression coefficients (interceept, altitude,
+and temperature) plus an association parameter.  It is a "symmetric" autologistic model,
+because it has a coding symmetric around zero and no centering term.
+
+### Fitting the model by pseudolikelihood
+
+With 2995 nodes in the graph, the likelihood is intractable for this case.  Use `fit_pl!` to
+do parameter estimation by pseudolikelihood instead.  The fitting function uses the BFGS
+algorithm via [`Optim.jl`](http://julianlsolvers.github.io/Optim.jl/stable/).  Any of
+Optim's [general options](http://julianlsolvers.github.io/Optim.jl/stable/#user/config/)
+can be passed to `fit_pl!` to control the optimization.  We have found that
+`allow_f_increases` often aids convergence; it is used here:
+
+```@repl hydro
+fit1 = fit_pl!(hydro, allow_f_increases=true)
+parnames = ["intercept", "altitude", "temperature", "association"];
+summary(fit1, parnames=parnames)
+```
+
+`fit_pl!` sets the parameters of the model object to the optimal values, and also returns
+an object of type `ALfit`, with fields holding useful information.  Calling `summary(fit1)`
+produces a summary table of the estimates.  For now there are no standard errors.  This
+will be addressed below.
+
+To quickly visualize the quality of the fitted model, we can use sampling to get the
+marginal probabilities:
+
+```@example hydro
+# Average 500 samples to estimate marginal probability of species presence
+marginal1 = sample(hydro, 500, method=perfect_bounding_chain, average=true)
+
+# Draw 2 random samples for visualizing generated data.
+draws = sample(hydro, 2, method=perfect_bounding_chain)
+
+# Plot them
+plot(myplot(marginal1, (0,1)), myplot(draws[:,1]), myplot(draws[:,2]),
+     layout=(1,3), size=(800,300), titlefontsize=8,
+     title=["Marginal Probability" "Random sample 1" "Random Sample 2"])
+```
+
+In the above code, perfect sampling was used to draw samples from the fitted distribution.
+The marginal plot shows consistency with the observed data, and the two generated data
+sets show a level of spatial clustering similar to the observed data.
+
+### Error estimation 1: bootstrap after the fact
+
+A parametric bootstrap can be used to get an estimate of the precision of the estimates
+returned by `fit_pl!`.  The function [`oneboot`](@ref) has been included in the package to
+facilitate this.  Each call of `oneboot` draws a random sample from the fitted distribution,
+then re-fits the model using this sample as the responses. It returns a named tuple giving
+the sample, the parameter estimates, and a convergence flag.  Extra keyword arguments are
+passed to `sample` or `optimize` as appropriate to control the process:
+
+```@repl hydro
+oneboot(hydro, allow_f_increases=true, method=perfect_bounding_chain)
+```
+
+An array of the tuples produced by `oneboot` can be fed to [`addboot!`](@ref) to update
+the fitting summary with precision estimates:
+
+```julia
+nboot = 2000
+boots = [oneboot(hydro, allow_f_increases=true, method=perfect_bounding_chain) for i=1:nboot]
+addboot!(fit1, boots)
+```
+
+On the author's workstation, this took about 5.7 minutes.  After adding the bootstrap
+information, the fitting results look like this:
+
+```
+julia> summary(fit1,parnames=parnames)
+name          est       se       95% CI
+intercept     -0.192    0.319     (-0.858, 0.4)
+altitude      -0.0573   0.015    (-0.0887, -0.0296)
+temperature    0.0498   0.0361   (-0.0163, 0.126)
+association    0.361    0.018      (0.326, 0.397)
+```
+
+Confidence intervals for altitude and the association parameter both exclude zero, so we
+conclude that they are statistically significant.
+
+
+### Error estimation 2: (parallel) bootstrap when fitting
+
+Alternatively, the bootstrap inference procedure can be done at the same time as fitting by
+providing the keyword argument `nboot` (which specifies the number of bootstrap samles to
+generate) when calling `fit_pl!`. If you do this, *and* you have more than one worker
+process available, then the bootstrap will be done in parallel across the workers (using an
+`@distributed for` loop).  This makes it easy to achieve speed gains from parallelism on
+multicore workstations.
+
+```julia
+using Distributed                  # needed for parallel computing
+addprocs(6)                        # create 6 worker processes
+@everywhere using Autologistic     # workers need the package loaded
+fit2 = fit_pl!(hydro, nboot=2000, 
+               allow_f_increases=true, method=perfect_bounding_chain)
+```
+
+In this case the 2000 bootstrap replications took about 1.1 minutes on the same 6-core
+workstation. The output object `fit2` already includes the confidence intervals:
+
+```
+julia> summary(fit2, parnames=parnames)
+name          est       se       95% CI
+intercept     -0.192    0.33        (-0.9, 0.407)
+altitude      -0.0573   0.0157   (-0.0897, -0.0297)
+temperature    0.0498   0.0372   (-0.0169, 0.13)
+association    0.361    0.0179     (0.327, 0.396)
+```
+
+For parallel computing of the bootstrap in other settings (eg. on a cluster), it should be
+fairly simple implement in a script, using the `oneboot`/`addboot!` approach of the previous
+section.
+
+### Comparison to the centered model
+
+(blah) (local minimia, need to provide starting values)
+
+```julia
+centered_hydro = deepcopy(hydro)
+centered_hydro.coding = (0,1)
+centered_hydro.centering = expectation
+fit3 = fit_pl!(centered_hydro, nboot=2000, start=[-1.7, -0.17, 0.0, 1.5],
+               allow_f_increases=true, method=perfect_bounding_chain)
+```
+
+```
+julia> summary(fit3, parnames=parnames)
+name          est       se       95% CI
+intercept     -2.29     1.07       (-4.6, -0.345)
+altitude      -0.16     0.0429   (-0.258, -0.088)
+temperature    0.0634   0.115    (-0.138, 0.32)
+association    1.51     0.0505     (1.42, 1.61)
 ```
 
 
+(fit the model and show predictions for assoc=0)
+
+(**** TODO: need marginals plot to color scale always from 0 to 1****)
+
+```julia
+# Make modified parameter vectors
+centered_pars = getparameters(centered_hydro)
+centered_pars[4] = 0.0
+symmetric_pars = getparameters(hydro)
+symmetric_pars[4] = 0.0
+
+# Change models to have the new parameters
+setparameters!(centered_hydro, centered_pars)
+setparameters!(hydro, symmetric_pars)
+
+# Sample to estimate marginal probabilities
+centered_marg = sample(centered_hydro, 500, method=perfect_bounding_chain, average=true)
+symmetric_marg = sample(hydro, 500, method=perfect_bounding_chain, average=true)
+
+# Plot to compare
+plot(myplot(centered_marg, (0,1)), myplot(symmetric_marg, (0,1)),
+     layout=(1,2), size=(500,300), titlefontsize=8,
+     title=["Centered Model" "Symmetric Model"])
+```
 
 
+### Comparison to logistic regression
+
+(include a tip about getting logistic-comparable coefficients: either use symmetric model
+and transform after, or use zero-one/model with centering=1/2)
 
 
-TODO.  Create the graph using spatialgraph and plot the endogenous probabilities (gplot);
-fit the ALRsimple model and do inference with parametric bootstrap; show how alternative
-models (e.g. centered ALR model) can be made and compared.  Show the estimated fitted
-probabilities of symmetric and centered models (and/or predicted probs for altitude=0?)
 
