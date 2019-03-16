@@ -189,7 +189,7 @@ var documenterSearchIndex = {"docs": [
     "page": "Examples",
     "title": "Comparison to logistic regression",
     "category": "section",
-    "text": "(include a tip about getting logistic-comparable coefficients: either use symmetric model and transform after, or use zero-one/model with centering=1/2)"
+    "text": "(include a tip about getting logistic-comparable coefficients: either use symmetric model and transform after, or use zero-one/model with centering=1/2)using GLM\r\ntst = glm(@formula(obs ~ altitude + temperature), df, Bernoulli(), LogitLink())"
 },
 
 {
