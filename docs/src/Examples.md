@@ -512,5 +512,8 @@ plot(myplot(centered_marg, (0,1)), myplot(symmetric_marg, (0,1)),
 (include a tip about getting logistic-comparable coefficients: either use symmetric model
 and transform after, or use zero-one/model with centering=1/2)
 
-
+```julia
+using GLM
+tst = glm(@formula(obs ~ altitude + temperature), df, Bernoulli(), LogitLink())
+```
 
