@@ -1,12 +1,13 @@
 <!DOCTYPE html>
-<html lang="en"><head><meta charset="UTF-8"/><meta name="viewport" content="width=device-width, initial-scale=1.0"/><title>Examples · Autologistic.jl</title><link href="https://cdnjs.cloudflare.com/ajax/libs/normalize/4.2.0/normalize.min.css" rel="stylesheet" type="text/css"/><link href="https://fonts.googleapis.com/css?family=Lato|Roboto+Mono" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.6.3/css/font-awesome.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/9.12.0/styles/default.min.css" rel="stylesheet" type="text/css"/><script>documenterBaseURL=".."</script><script src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.2.0/require.min.js" data-main="../assets/documenter.js"></script><script src="../siteinfo.js"></script><script src="../../versions.js"></script><link href="../assets/documenter.css" rel="stylesheet" type="text/css"/></head><body><nav class="toc"><h1>Autologistic.jl</h1><select id="version-selector" onChange="window.location.href=this.value" style="visibility: hidden"></select><form class="search" id="search-form" action="../search/"><input id="search-query" name="q" type="text" placeholder="Search docs"/></form><ul><li><a class="toctext" href="../">Introduction</a></li><li><a class="toctext" href="../Background/">Background</a></li><li><a class="toctext" href="../Design/">Design of the Package</a></li><li><a class="toctext" href="../BasicUsage/">Basic Usage</a></li><li class="current"><a class="toctext" href>Examples</a><ul class="internal"><li><a class="toctext" href="#An-Ising-Model-1">An Ising Model</a></li><li><a class="toctext" href="#Clustered-Binary-Data-(Small-n)-1">Clustered Binary Data (Small <span>$n$</span>)</a></li><li><a class="toctext" href="#Spatial-Binary-Regression-1">Spatial Binary Regression</a></li></ul></li><li><a class="toctext" href="../api/">Reference</a></li></ul></nav><article id="docs"><header><nav><ul><li><a href>Examples</a></li></ul><a class="edit-page" href="https://github.com/kramsretlow/Autologistic.jl/blob/master/docs/src/Examples.md"><span class="fa"></span> Edit on GitHub</a></nav><hr/><div id="topbar"><span>Examples</span><a class="fa fa-bars" href="#"></a></div></header><h1><a class="nav-anchor" id="Examples-1" href="#Examples-1">Examples</a></h1><p>These examples demonstrate most of the functionality of the package, its typical usage, and how to make some plots you might want to use.</p><p>The examples:</p><ul><li><a href="#An-Ising-Model-1">An Ising Model</a> shows how to use the package to explore the autologistic probability distribution, without concern about covariates or parameter estimation.</li><li><a href="#Clustered-Binary-Data-(Small-n)-1">Clustered Binary Data (Small <span>$n$</span>)</a> shows how to use the package for regression analysis when the graph is small enough to permit computation of the normalizing constant. In this case standard maximum likelihood methods of inference can be used.</li><li><a href="#Spatial-Binary-Regression-1">Spatial Binary Regression</a> shows how to use the package for autologistic regression analysis for larger, spatially-referenced graphs. In this case pseudolikelihood is used for estimation, and a (possibly parallelized) parametric bootstrap is used for inference.</li></ul><h2><a class="nav-anchor" id="An-Ising-Model-1" href="#An-Ising-Model-1">An Ising Model</a></h2><p>The term &quot;Ising model&quot; is usually used to refer to a Markov random field of dichotomous random variables on a regular lattice.  The graph is such that each variable shares an edge only with its nearest neighbors in each dimension.  It&#39;s a traditional model for magnetic spins, where the coding <span>$(-1,1)$</span> is usually used. There&#39;s one parameter per vertex (a &quot;local magnetic field&quot;) that increases or decreases the chance of getting a <span>$+1$</span> state at that vertex; and there&#39;s a single pairwise parameter that controls the strength of interaction between neighbor states.</p><p>In our terminology it&#39;s just an autologistic model with the appropriate graph. Specifically, it&#39;s an <code>ARsimple</code> model: one with <code>FullUnary</code> type unary parameter, and <code>SimplePairwise</code> type pairwise parameter.</p><p>We can create such a model once we have the graph.  For example, let&#39;s create two 30-by-30 lattices: one without any special handling of the boundary, and one with periodic boundary conditions. This can be done with <a href="https://github.com/JuliaGraphs/LightGraphs.jl">LightGraphs.jl</a>&#39;s <code>Grid</code> function.</p><div><pre><code class="language-julia">n = 30  # numer of rows and columns
+<html lang="en"><head><meta charset="UTF-8"/><meta name="viewport" content="width=device-width, initial-scale=1.0"/><title>Examples · Autologistic.jl</title><link href="https://cdnjs.cloudflare.com/ajax/libs/normalize/4.2.0/normalize.min.css" rel="stylesheet" type="text/css"/><link href="https://fonts.googleapis.com/css?family=Lato|Roboto+Mono" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.6.3/css/font-awesome.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/9.12.0/styles/default.min.css" rel="stylesheet" type="text/css"/><script>documenterBaseURL=".."</script><script src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.2.0/require.min.js" data-main="../assets/documenter.js"></script><script src="../siteinfo.js"></script><script src="../../versions.js"></script><link href="../assets/documenter.css" rel="stylesheet" type="text/css"/></head><body><nav class="toc"><h1>Autologistic.jl</h1><select id="version-selector" onChange="window.location.href=this.value" style="visibility: hidden"></select><form class="search" id="search-form" action="../search/"><input id="search-query" name="q" type="text" placeholder="Search docs"/></form><ul><li><a class="toctext" href="../">Introduction</a></li><li><a class="toctext" href="../Background/">Background</a></li><li><a class="toctext" href="../Design/">Design of the Package</a></li><li><a class="toctext" href="../BasicUsage/">Basic Usage</a></li><li class="current"><a class="toctext" href>Examples</a><ul class="internal"><li><a class="toctext" href="#An-Ising-Model-1">An Ising Model</a></li><li><a class="toctext" href="#Clustered-Binary-Data-(Small-n)-1">Clustered Binary Data (Small <span>$n$</span>)</a></li><li><a class="toctext" href="#Spatial-Binary-Regression-1">Spatial Binary Regression</a></li></ul></li><li><a class="toctext" href="../api/">Reference</a></li></ul></nav><article id="docs"><header><nav><ul><li><a href>Examples</a></li></ul><a class="edit-page" href="https://github.com/kramsretlow/Autologistic.jl/blob/master/docs/src/Examples.md"><span class="fa"></span> Edit on GitHub</a></nav><hr/><div id="topbar"><span>Examples</span><a class="fa fa-bars" href="#"></a></div></header><h1><a class="nav-anchor" id="Examples-1" href="#Examples-1">Examples</a></h1><p>These examples demonstrate most of the functionality of the package, its typical usage, and how to make some plots you might want to use.</p><p>The examples:</p><ul><li><a href="#An-Ising-Model-1">An Ising Model</a> shows how to use the package to explore the autologistic probability distribution, without concern about covariates or parameter estimation.</li><li><a href="#Clustered-Binary-Data-(Small-n)-1">Clustered Binary Data (Small <span>$n$</span>)</a> shows how to use the package for regression analysis when the graph is small enough to permit computation of the normalizing constant. In this case standard maximum likelihood methods of inference can be used.</li><li><a href="#Spatial-Binary-Regression-1">Spatial Binary Regression</a> shows how to use the package for autologistic regression analysis for larger, spatially-referenced graphs. In this case pseudolikelihood is used for estimation, and a (possibly parallelized) parametric bootstrap is used for inference.</li></ul><h2><a class="nav-anchor" id="An-Ising-Model-1" href="#An-Ising-Model-1">An Ising Model</a></h2><p>The term &quot;Ising model&quot; is usually used to refer to a Markov random field of dichotomous random variables on a regular lattice.  The graph is such that each variable shares an edge only with its nearest neighbors in each dimension.  It&#39;s a traditional model for magnetic spins, where the coding <span>$(-1,1)$</span> is usually used. There&#39;s one parameter per vertex (a &quot;local magnetic field&quot;) that increases or decreases the chance of getting a <span>$+1$</span> state at that vertex; and there&#39;s a single pairwise parameter that controls the strength of interaction between neighbor states.</p><p>In our terminology it&#39;s just an autologistic model with the appropriate graph. Specifically, it&#39;s an <code>ALsimple</code> model: one with <code>FullUnary</code> type unary parameter, and <code>SimplePairwise</code> type pairwise parameter.</p><p>We can create such a model once we have the graph.  For example, let&#39;s create two 30-by-30 lattices: one without any special handling of the boundary, and one with periodic boundary conditions. This can be done with <a href="https://github.com/JuliaGraphs/LightGraphs.jl">LightGraphs.jl</a>&#39;s <code>Grid</code> function.</p><div><pre><code class="language-julia">n = 30  # numer of rows and columns
 using LightGraphs
 G1 = Grid([n, n], periodic=false)
 G2 = Grid([n, n], periodic=true)</code></pre></div><p>Now create an AL model for each case. Initialize the unary parameters to Gaussian white noise. By default the pairwise parameter is set to zero, which implies independence of the variables. Use the same parameters for the two models, so the only difference betwen them is the graph.</p><div><pre><code class="language-julia">using Random, Autologistic
 Random.seed!(8888)
 α = randn(n^2)
 M1 = ALsimple(G1, α)
-M2 = ALsimple(G2, α)</code></pre><pre><code class="language-none">Autologistic model of type ALsimple with parameter vector [α; λ].
+M2 = ALsimple(G2, α)</code></pre></div><p>Typing <code>M2</code> at the REPL shows information about the model.  It&#39;s an <code>ALsimple</code> type with one observation of length 900.</p><pre><code class="language-julia-repl">julia&gt; M2
+Autologistic model of type ALsimple with parameter vector [α; λ].
 Fields:
   responses    900×1 Bool array
   unary        900×1 FullUnary with fields:
@@ -19,156 +20,156 @@ Fields:
   centering    none
   coding       (-1, 1)
   labels       (&quot;low&quot;, &quot;high&quot;)
-  coordinates  900-element vector of Tuple{Float64,Float64}</code></pre></div><p>The REPL output shows information about the model.  It&#39;s an <code>ALsimple</code> type with one observation of length 900.</p><p>The <code>conditionalprobabilities</code> function returns the probablity of observing a <span>$+1$</span> state at each vertex, conditional on the vertex&#39;s neighbor values. These can be visualized as an image, using a <code>heatmap</code> (from <a href="https://github.com/JuliaPlots/Plots.jl">Plots.jl</a>):</p><div><pre><code class="language-julia">using Plots
+  coordinates  900-element vector of Tuple{Float64,Float64}</code></pre><p>The <code>conditionalprobabilities</code> function returns the probablity of observing a <span>$+1$</span> state at each vertex, conditional on the vertex&#39;s neighbor values. These can be visualized as an image, using a <code>heatmap</code> (from <a href="https://github.com/JuliaPlots/Plots.jl">Plots.jl</a>):</p><div><pre><code class="language-julia">using Plots
 condprobs = conditionalprobabilities(M1)
 hm = heatmap(reshape(condprobs, n, n), c=:grays, aspect_ratio=1,
              title=&quot;probability of +1 under independence&quot;)
 plot(hm)</code></pre><?xml version="1.0" encoding="utf-8"?>
 <svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" width="600" height="400" viewBox="0 0 2400 1600">
 <defs>
-  <clipPath id="clip5400">
+  <clipPath id="clip7200">
     <rect x="0" y="0" width="2000" height="2000"/>
   </clipPath>
 </defs>
 <defs>
-  <clipPath id="clip5401">
+  <clipPath id="clip7201">
     <rect x="0" y="0" width="2400" height="1600"/>
   </clipPath>
 </defs>
-<polygon clip-path="url(#clip5401)" points="
+<polygon clip-path="url(#clip7201)" points="
 0,1600 2400,1600 2400,0 0,0 
   " fill="#ffffff" fill-rule="evenodd" fill-opacity="1"/>
 <defs>
-  <clipPath id="clip5402">
+  <clipPath id="clip7202">
     <rect x="480" y="0" width="1681" height="1600"/>
   </clipPath>
 </defs>
-<polygon clip-path="url(#clip5401)" points="
+<polygon clip-path="url(#clip7201)" points="
 382.362,1537.01 1793.39,1537.01 1793.39,125.984 382.362,125.984 
   " fill="#ffffff" fill-rule="evenodd" fill-opacity="1"/>
 <defs>
-  <clipPath id="clip5403">
+  <clipPath id="clip7203">
     <rect x="382" y="125" width="1412" height="1412"/>
   </clipPath>
 </defs>
-<polyline clip-path="url(#clip5403)" style="stroke:#000000; stroke-width:2; stroke-opacity:0.1; fill:none" points="
+<polyline clip-path="url(#clip7203)" style="stroke:#000000; stroke-width:2; stroke-opacity:0.1; fill:none" points="
   594.016,1537.01 594.016,125.984 
   "/>
-<polyline clip-path="url(#clip5403)" style="stroke:#000000; stroke-width:2; stroke-opacity:0.1; fill:none" points="
+<polyline clip-path="url(#clip7203)" style="stroke:#000000; stroke-width:2; stroke-opacity:0.1; fill:none" points="
   829.186,1537.01 829.186,125.984 
   "/>
-<polyline clip-path="url(#clip5403)" style="stroke:#000000; stroke-width:2; stroke-opacity:0.1; fill:none" points="
+<polyline clip-path="url(#clip7203)" style="stroke:#000000; stroke-width:2; stroke-opacity:0.1; fill:none" points="
   1064.36,1537.01 1064.36,125.984 
   "/>
-<polyline clip-path="url(#clip5403)" style="stroke:#000000; stroke-width:2; stroke-opacity:0.1; fill:none" points="
+<polyline clip-path="url(#clip7203)" style="stroke:#000000; stroke-width:2; stroke-opacity:0.1; fill:none" points="
   1299.53,1537.01 1299.53,125.984 
   "/>
-<polyline clip-path="url(#clip5403)" style="stroke:#000000; stroke-width:2; stroke-opacity:0.1; fill:none" points="
+<polyline clip-path="url(#clip7203)" style="stroke:#000000; stroke-width:2; stroke-opacity:0.1; fill:none" points="
   1534.7,1537.01 1534.7,125.984 
   "/>
-<polyline clip-path="url(#clip5403)" style="stroke:#000000; stroke-width:2; stroke-opacity:0.1; fill:none" points="
+<polyline clip-path="url(#clip7203)" style="stroke:#000000; stroke-width:2; stroke-opacity:0.1; fill:none" points="
   1769.87,1537.01 1769.87,125.984 
   "/>
-<polyline clip-path="url(#clip5403)" style="stroke:#000000; stroke-width:2; stroke-opacity:0.1; fill:none" points="
+<polyline clip-path="url(#clip7203)" style="stroke:#000000; stroke-width:2; stroke-opacity:0.1; fill:none" points="
   382.362,1325.35 1793.39,1325.35 
   "/>
-<polyline clip-path="url(#clip5403)" style="stroke:#000000; stroke-width:2; stroke-opacity:0.1; fill:none" points="
+<polyline clip-path="url(#clip7203)" style="stroke:#000000; stroke-width:2; stroke-opacity:0.1; fill:none" points="
   382.362,1090.18 1793.39,1090.18 
   "/>
-<polyline clip-path="url(#clip5403)" style="stroke:#000000; stroke-width:2; stroke-opacity:0.1; fill:none" points="
+<polyline clip-path="url(#clip7203)" style="stroke:#000000; stroke-width:2; stroke-opacity:0.1; fill:none" points="
   382.362,855.013 1793.39,855.013 
   "/>
-<polyline clip-path="url(#clip5403)" style="stroke:#000000; stroke-width:2; stroke-opacity:0.1; fill:none" points="
+<polyline clip-path="url(#clip7203)" style="stroke:#000000; stroke-width:2; stroke-opacity:0.1; fill:none" points="
   382.362,619.843 1793.39,619.843 
   "/>
-<polyline clip-path="url(#clip5403)" style="stroke:#000000; stroke-width:2; stroke-opacity:0.1; fill:none" points="
+<polyline clip-path="url(#clip7203)" style="stroke:#000000; stroke-width:2; stroke-opacity:0.1; fill:none" points="
   382.362,384.672 1793.39,384.672 
   "/>
-<polyline clip-path="url(#clip5403)" style="stroke:#000000; stroke-width:2; stroke-opacity:0.1; fill:none" points="
+<polyline clip-path="url(#clip7203)" style="stroke:#000000; stroke-width:2; stroke-opacity:0.1; fill:none" points="
   382.362,149.501 1793.39,149.501 
   "/>
-<polyline clip-path="url(#clip5401)" style="stroke:#000000; stroke-width:4; stroke-opacity:1; fill:none" points="
+<polyline clip-path="url(#clip7201)" style="stroke:#000000; stroke-width:4; stroke-opacity:1; fill:none" points="
   382.362,1537.01 1793.39,1537.01 
   "/>
-<polyline clip-path="url(#clip5401)" style="stroke:#000000; stroke-width:4; stroke-opacity:1; fill:none" points="
+<polyline clip-path="url(#clip7201)" style="stroke:#000000; stroke-width:4; stroke-opacity:1; fill:none" points="
   382.362,1537.01 382.362,125.984 
   "/>
-<polyline clip-path="url(#clip5401)" style="stroke:#000000; stroke-width:4; stroke-opacity:1; fill:none" points="
+<polyline clip-path="url(#clip7201)" style="stroke:#000000; stroke-width:4; stroke-opacity:1; fill:none" points="
   594.016,1537.01 594.016,1515.84 
   "/>
-<polyline clip-path="url(#clip5401)" style="stroke:#000000; stroke-width:4; stroke-opacity:1; fill:none" points="
+<polyline clip-path="url(#clip7201)" style="stroke:#000000; stroke-width:4; stroke-opacity:1; fill:none" points="
   829.186,1537.01 829.186,1515.84 
   "/>
-<polyline clip-path="url(#clip5401)" style="stroke:#000000; stroke-width:4; stroke-opacity:1; fill:none" points="
+<polyline clip-path="url(#clip7201)" style="stroke:#000000; stroke-width:4; stroke-opacity:1; fill:none" points="
   1064.36,1537.01 1064.36,1515.84 
   "/>
-<polyline clip-path="url(#clip5401)" style="stroke:#000000; stroke-width:4; stroke-opacity:1; fill:none" points="
+<polyline clip-path="url(#clip7201)" style="stroke:#000000; stroke-width:4; stroke-opacity:1; fill:none" points="
   1299.53,1537.01 1299.53,1515.84 
   "/>
-<polyline clip-path="url(#clip5401)" style="stroke:#000000; stroke-width:4; stroke-opacity:1; fill:none" points="
+<polyline clip-path="url(#clip7201)" style="stroke:#000000; stroke-width:4; stroke-opacity:1; fill:none" points="
   1534.7,1537.01 1534.7,1515.84 
   "/>
-<polyline clip-path="url(#clip5401)" style="stroke:#000000; stroke-width:4; stroke-opacity:1; fill:none" points="
+<polyline clip-path="url(#clip7201)" style="stroke:#000000; stroke-width:4; stroke-opacity:1; fill:none" points="
   1769.87,1537.01 1769.87,1515.84 
   "/>
-<polyline clip-path="url(#clip5401)" style="stroke:#000000; stroke-width:4; stroke-opacity:1; fill:none" points="
+<polyline clip-path="url(#clip7201)" style="stroke:#000000; stroke-width:4; stroke-opacity:1; fill:none" points="
   382.362,1325.35 403.528,1325.35 
   "/>
-<polyline clip-path="url(#clip5401)" style="stroke:#000000; stroke-width:4; stroke-opacity:1; fill:none" points="
+<polyline clip-path="url(#clip7201)" style="stroke:#000000; stroke-width:4; stroke-opacity:1; fill:none" points="
   382.362,1090.18 403.528,1090.18 
   "/>
-<polyline clip-path="url(#clip5401)" style="stroke:#000000; stroke-width:4; stroke-opacity:1; fill:none" points="
+<polyline clip-path="url(#clip7201)" style="stroke:#000000; stroke-width:4; stroke-opacity:1; fill:none" points="
   382.362,855.013 403.528,855.013 
   "/>
-<polyline clip-path="url(#clip5401)" style="stroke:#000000; stroke-width:4; stroke-opacity:1; fill:none" points="
+<polyline clip-path="url(#clip7201)" style="stroke:#000000; stroke-width:4; stroke-opacity:1; fill:none" points="
   382.362,619.843 403.528,619.843 
   "/>
-<polyline clip-path="url(#clip5401)" style="stroke:#000000; stroke-width:4; stroke-opacity:1; fill:none" points="
+<polyline clip-path="url(#clip7201)" style="stroke:#000000; stroke-width:4; stroke-opacity:1; fill:none" points="
   382.362,384.672 403.528,384.672 
   "/>
-<polyline clip-path="url(#clip5401)" style="stroke:#000000; stroke-width:4; stroke-opacity:1; fill:none" points="
+<polyline clip-path="url(#clip7201)" style="stroke:#000000; stroke-width:4; stroke-opacity:1; fill:none" points="
   382.362,149.501 403.528,149.501 
   "/>
-<g clip-path="url(#clip5401)">
+<g clip-path="url(#clip7201)">
 <text style="fill:#000000; fill-opacity:1; font-family:Arial,Helvetica Neue,Helvetica,sans-serif; font-size:48px; text-anchor:middle;" transform="rotate(0, 594.016, 1591.01)" x="594.016" y="1591.01">5</text>
 </g>
-<g clip-path="url(#clip5401)">
+<g clip-path="url(#clip7201)">
 <text style="fill:#000000; fill-opacity:1; font-family:Arial,Helvetica Neue,Helvetica,sans-serif; font-size:48px; text-anchor:middle;" transform="rotate(0, 829.186, 1591.01)" x="829.186" y="1591.01">10</text>
 </g>
-<g clip-path="url(#clip5401)">
+<g clip-path="url(#clip7201)">
 <text style="fill:#000000; fill-opacity:1; font-family:Arial,Helvetica Neue,Helvetica,sans-serif; font-size:48px; text-anchor:middle;" transform="rotate(0, 1064.36, 1591.01)" x="1064.36" y="1591.01">15</text>
 </g>
-<g clip-path="url(#clip5401)">
+<g clip-path="url(#clip7201)">
 <text style="fill:#000000; fill-opacity:1; font-family:Arial,Helvetica Neue,Helvetica,sans-serif; font-size:48px; text-anchor:middle;" transform="rotate(0, 1299.53, 1591.01)" x="1299.53" y="1591.01">20</text>
 </g>
-<g clip-path="url(#clip5401)">
+<g clip-path="url(#clip7201)">
 <text style="fill:#000000; fill-opacity:1; font-family:Arial,Helvetica Neue,Helvetica,sans-serif; font-size:48px; text-anchor:middle;" transform="rotate(0, 1534.7, 1591.01)" x="1534.7" y="1591.01">25</text>
 </g>
-<g clip-path="url(#clip5401)">
+<g clip-path="url(#clip7201)">
 <text style="fill:#000000; fill-opacity:1; font-family:Arial,Helvetica Neue,Helvetica,sans-serif; font-size:48px; text-anchor:middle;" transform="rotate(0, 1769.87, 1591.01)" x="1769.87" y="1591.01">30</text>
 </g>
-<g clip-path="url(#clip5401)">
+<g clip-path="url(#clip7201)">
 <text style="fill:#000000; fill-opacity:1; font-family:Arial,Helvetica Neue,Helvetica,sans-serif; font-size:48px; text-anchor:end;" transform="rotate(0, 358.362, 1342.85)" x="358.362" y="1342.85">5</text>
 </g>
-<g clip-path="url(#clip5401)">
+<g clip-path="url(#clip7201)">
 <text style="fill:#000000; fill-opacity:1; font-family:Arial,Helvetica Neue,Helvetica,sans-serif; font-size:48px; text-anchor:end;" transform="rotate(0, 358.362, 1107.68)" x="358.362" y="1107.68">10</text>
 </g>
-<g clip-path="url(#clip5401)">
+<g clip-path="url(#clip7201)">
 <text style="fill:#000000; fill-opacity:1; font-family:Arial,Helvetica Neue,Helvetica,sans-serif; font-size:48px; text-anchor:end;" transform="rotate(0, 358.362, 872.513)" x="358.362" y="872.513">15</text>
 </g>
-<g clip-path="url(#clip5401)">
+<g clip-path="url(#clip7201)">
 <text style="fill:#000000; fill-opacity:1; font-family:Arial,Helvetica Neue,Helvetica,sans-serif; font-size:48px; text-anchor:end;" transform="rotate(0, 358.362, 637.343)" x="358.362" y="637.343">20</text>
 </g>
-<g clip-path="url(#clip5401)">
+<g clip-path="url(#clip7201)">
 <text style="fill:#000000; fill-opacity:1; font-family:Arial,Helvetica Neue,Helvetica,sans-serif; font-size:48px; text-anchor:end;" transform="rotate(0, 358.362, 402.172)" x="358.362" y="402.172">25</text>
 </g>
-<g clip-path="url(#clip5401)">
+<g clip-path="url(#clip7201)">
 <text style="fill:#000000; fill-opacity:1; font-family:Arial,Helvetica Neue,Helvetica,sans-serif; font-size:48px; text-anchor:end;" transform="rotate(0, 358.362, 167.001)" x="358.362" y="167.001">30</text>
 </g>
-<g clip-path="url(#clip5401)">
+<g clip-path="url(#clip7201)">
 <text style="fill:#000000; fill-opacity:1; font-family:Arial,Helvetica Neue,Helvetica,sans-serif; font-size:84px; text-anchor:middle;" transform="rotate(0, 1087.87, 73.2)" x="1087.87" y="73.2">probability of +1 under independence</text>
 </g>
-<g clip-path="url(#clip5403)">
+<g clip-path="url(#clip7203)">
 <image width="1411" height="1411" xlink:href="data:image/png;base64,
 iVBORw0KGgoAAAANSUhEUgAABYMAAAWDCAYAAACN8iuDAAAgAElEQVR4nOza/6/Wdf3H8Q9xFNaZ
 mQ2itajObEEkkznSaVIWOttJZQGr1ApyFVrOppQVNWuTirk2LcbIwJXkhtNlv0jQjh2YlZWeIFOI
@@ -474,11 +475,11 @@ iMEAAAAAAAHEYAAAAACAAGIwAAAAAEAAMRgAAAAAIMAXAx5tUeO/k3QAAAAASUVORK5CYII=
 " transform="translate(382, 126)"/>
 </g>
 <defs>
-  <clipPath id="clip5404">
+  <clipPath id="clip7204">
     <rect x="1841" y="125" width="73" height="1412"/>
   </clipPath>
 </defs>
-<g clip-path="url(#clip5404)">
+<g clip-path="url(#clip7204)">
 <image width="72" height="1411" xlink:href="data:image/png;base64,
 iVBORw0KGgoAAAANSUhEUgAAAEgAAAWDCAYAAAB8+nKXAAALQUlEQVR4nO3XsQ2AMBAEQUD0X6wb
 eCowG0IwUwFanfziXGvNwdb19Qf8nUBBoCBQECjcM47YGwsKAgWBgkBBoOCKBQsKAgWBgkDBIx0s
@@ -534,192 +535,192 @@ oCBQcMWCBQWBgkBBoOCRDhYUBAoCBYGCQMEVCxYUBAoCBYGCQEGgIFAQKAgUBAp+NYIFBYGCQEGg
 XLFgQUGgIFAQKDy2Y8ATW2TjxwAAAABJRU5ErkJggg==
 " transform="translate(1841, 126)"/>
 </g>
-<g clip-path="url(#clip5401)">
+<g clip-path="url(#clip7201)">
 <text style="fill:#000000; fill-opacity:1; font-family:Arial,Helvetica Neue,Helvetica,sans-serif; font-size:48px; text-anchor:start;" transform="rotate(0, 1949.39, 1410.28)" x="1949.39" y="1410.28">0.1</text>
 </g>
-<g clip-path="url(#clip5401)">
+<g clip-path="url(#clip7201)">
 <text style="fill:#000000; fill-opacity:1; font-family:Arial,Helvetica Neue,Helvetica,sans-serif; font-size:48px; text-anchor:start;" transform="rotate(0, 1949.39, 1268.85)" x="1949.39" y="1268.85">0.2</text>
 </g>
-<g clip-path="url(#clip5401)">
+<g clip-path="url(#clip7201)">
 <text style="fill:#000000; fill-opacity:1; font-family:Arial,Helvetica Neue,Helvetica,sans-serif; font-size:48px; text-anchor:start;" transform="rotate(0, 1949.39, 1127.42)" x="1949.39" y="1127.42">0.3</text>
 </g>
-<g clip-path="url(#clip5401)">
+<g clip-path="url(#clip7201)">
 <text style="fill:#000000; fill-opacity:1; font-family:Arial,Helvetica Neue,Helvetica,sans-serif; font-size:48px; text-anchor:start;" transform="rotate(0, 1949.39, 985.991)" x="1949.39" y="985.991">0.4</text>
 </g>
-<g clip-path="url(#clip5401)">
+<g clip-path="url(#clip7201)">
 <text style="fill:#000000; fill-opacity:1; font-family:Arial,Helvetica Neue,Helvetica,sans-serif; font-size:48px; text-anchor:start;" transform="rotate(0, 1949.39, 844.562)" x="1949.39" y="844.562">0.5</text>
 </g>
-<g clip-path="url(#clip5401)">
+<g clip-path="url(#clip7201)">
 <text style="fill:#000000; fill-opacity:1; font-family:Arial,Helvetica Neue,Helvetica,sans-serif; font-size:48px; text-anchor:start;" transform="rotate(0, 1949.39, 703.134)" x="1949.39" y="703.134">0.6</text>
 </g>
-<g clip-path="url(#clip5401)">
+<g clip-path="url(#clip7201)">
 <text style="fill:#000000; fill-opacity:1; font-family:Arial,Helvetica Neue,Helvetica,sans-serif; font-size:48px; text-anchor:start;" transform="rotate(0, 1949.39, 561.705)" x="1949.39" y="561.705">0.7</text>
 </g>
-<g clip-path="url(#clip5401)">
+<g clip-path="url(#clip7201)">
 <text style="fill:#000000; fill-opacity:1; font-family:Arial,Helvetica Neue,Helvetica,sans-serif; font-size:48px; text-anchor:start;" transform="rotate(0, 1949.39, 420.277)" x="1949.39" y="420.277">0.8</text>
 </g>
-<g clip-path="url(#clip5401)">
+<g clip-path="url(#clip7201)">
 <text style="fill:#000000; fill-opacity:1; font-family:Arial,Helvetica Neue,Helvetica,sans-serif; font-size:48px; text-anchor:start;" transform="rotate(0, 1949.39, 278.848)" x="1949.39" y="278.848">0.9</text>
 </g>
-<polyline clip-path="url(#clip5401)" style="stroke:#000000; stroke-width:4; stroke-opacity:1; fill:none" points="
+<polyline clip-path="url(#clip7201)" style="stroke:#000000; stroke-width:4; stroke-opacity:1; fill:none" points="
   1913.39,1537.01 1913.39,1396.63 1937.39,1396.63 1913.39,1396.63 1913.39,1255.2 1937.39,1255.2 1913.39,1255.2 1913.39,1113.77 1937.39,1113.77 1913.39,1113.77 
   1913.39,972.34 1937.39,972.34 1913.39,972.34 1913.39,830.911 1937.39,830.911 1913.39,830.911 1913.39,689.482 1937.39,689.482 1913.39,689.482 1913.39,548.054 
   1937.39,548.054 1913.39,548.054 1913.39,406.625 1937.39,406.625 1913.39,406.625 1913.39,265.197 1937.39,265.197 1913.39,265.197 1913.39,125.984 
   "/>
-<g clip-path="url(#clip5401)">
+<g clip-path="url(#clip7201)">
 <text style="fill:#000000; fill-opacity:1; font-family:Arial,Helvetica Neue,Helvetica,sans-serif; font-size:66px; text-anchor:middle;" transform="rotate(-90, 2090.99, 831.496)" x="2090.99" y="831.496"></text>
 </g>
 </svg>
 </div><p>Since the association parameter is zero, there are no neighborhood effects.  The above conditional probabilities are equal to the marginal probabilities.</p><p>Next, set the association parameters to 0.75, a fairly strong association level, to introduce a neighbor effect.</p><div><pre><code class="language-julia">setpairwiseparameters!(M1, [0.75])
-setpairwiseparameters!(M2, [0.75])</code></pre></div><p>A quick way to see the effect of this parameter is to observe random samples from the models. The <code>sample</code> function can be used to do this. For this example, use perfect sampling using a bounding chain algorithm (the enumeration <a href="../api/#Autologistic.SamplingMethods"><code>SamplingMethods</code></a> lists the available sampling options).</p><div><pre><code class="language-julia">s1 = sample(M1, method=perfect_bounding_chain)
-s2 = sample(M2, method=perfect_bounding_chain)</code></pre></div><p>The samples can also be visualized using <code>heatmap</code>:</p><div><pre><code class="language-julia">pl1 = heatmap(reshape(s1, n, n), c=:grays, colorbar=false, title=&quot;regular boundary&quot;);
+setpairwiseparameters!(M2, [0.75])</code></pre></div><p>A quick way to see the effect of this parameter is to observe random samples from the models. The <code>sample</code> function can be used to do this. For this example, use perfect sampling using a bounding chain algorithm.</p><div><pre><code class="language-julia">s1 = sample(M1, method=perfect_bounding_chain)
+s2 = sample(M2, method=perfect_bounding_chain)</code></pre></div><p>Other options are available for sampling.  The enumeration <a href="../api/#Autologistic.SamplingMethods"><code>SamplingMethods</code></a> lists them. The samples we have just drawn can also be visualized using <code>heatmap</code>:</p><div><pre><code class="language-julia">pl1 = heatmap(reshape(s1, n, n), c=:grays, colorbar=false, title=&quot;regular boundary&quot;);
 pl2 = heatmap(reshape(s2, n, n), c=:grays, colorbar=false, title=&quot;periodic boundary&quot;);
 plot(pl1, pl2, size=(800,400), aspect_ratio=1)</code></pre><?xml version="1.0" encoding="utf-8"?>
 <svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" width="800" height="400" viewBox="0 0 3200 1600">
 <defs>
-  <clipPath id="clip5500">
+  <clipPath id="clip7300">
     <rect x="0" y="0" width="2000" height="2000"/>
   </clipPath>
 </defs>
 <defs>
-  <clipPath id="clip5501">
+  <clipPath id="clip7301">
     <rect x="0" y="0" width="3200" height="1600"/>
   </clipPath>
 </defs>
-<polygon clip-path="url(#clip5501)" points="
+<polygon clip-path="url(#clip7301)" points="
 0,1600 3200,1600 3200,0 0,0 
   " fill="#ffffff" fill-rule="evenodd" fill-opacity="1"/>
 <defs>
-  <clipPath id="clip5502">
+  <clipPath id="clip7302">
     <rect x="640" y="0" width="2241" height="1600"/>
   </clipPath>
 </defs>
-<polygon clip-path="url(#clip5501)" points="
+<polygon clip-path="url(#clip7301)" points="
 102.362,1537.01 1513.39,1537.01 1513.39,125.984 102.362,125.984 
   " fill="#ffffff" fill-rule="evenodd" fill-opacity="1"/>
 <defs>
-  <clipPath id="clip5503">
+  <clipPath id="clip7303">
     <rect x="102" y="125" width="1412" height="1412"/>
   </clipPath>
 </defs>
-<polyline clip-path="url(#clip5503)" style="stroke:#000000; stroke-width:2; stroke-opacity:0.1; fill:none" points="
+<polyline clip-path="url(#clip7303)" style="stroke:#000000; stroke-width:2; stroke-opacity:0.1; fill:none" points="
   314.016,1537.01 314.016,125.984 
   "/>
-<polyline clip-path="url(#clip5503)" style="stroke:#000000; stroke-width:2; stroke-opacity:0.1; fill:none" points="
+<polyline clip-path="url(#clip7303)" style="stroke:#000000; stroke-width:2; stroke-opacity:0.1; fill:none" points="
   549.186,1537.01 549.186,125.984 
   "/>
-<polyline clip-path="url(#clip5503)" style="stroke:#000000; stroke-width:2; stroke-opacity:0.1; fill:none" points="
+<polyline clip-path="url(#clip7303)" style="stroke:#000000; stroke-width:2; stroke-opacity:0.1; fill:none" points="
   784.357,1537.01 784.357,125.984 
   "/>
-<polyline clip-path="url(#clip5503)" style="stroke:#000000; stroke-width:2; stroke-opacity:0.1; fill:none" points="
+<polyline clip-path="url(#clip7303)" style="stroke:#000000; stroke-width:2; stroke-opacity:0.1; fill:none" points="
   1019.53,1537.01 1019.53,125.984 
   "/>
-<polyline clip-path="url(#clip5503)" style="stroke:#000000; stroke-width:2; stroke-opacity:0.1; fill:none" points="
+<polyline clip-path="url(#clip7303)" style="stroke:#000000; stroke-width:2; stroke-opacity:0.1; fill:none" points="
   1254.7,1537.01 1254.7,125.984 
   "/>
-<polyline clip-path="url(#clip5503)" style="stroke:#000000; stroke-width:2; stroke-opacity:0.1; fill:none" points="
+<polyline clip-path="url(#clip7303)" style="stroke:#000000; stroke-width:2; stroke-opacity:0.1; fill:none" points="
   1489.87,1537.01 1489.87,125.984 
   "/>
-<polyline clip-path="url(#clip5503)" style="stroke:#000000; stroke-width:2; stroke-opacity:0.1; fill:none" points="
+<polyline clip-path="url(#clip7303)" style="stroke:#000000; stroke-width:2; stroke-opacity:0.1; fill:none" points="
   102.362,1325.35 1513.39,1325.35 
   "/>
-<polyline clip-path="url(#clip5503)" style="stroke:#000000; stroke-width:2; stroke-opacity:0.1; fill:none" points="
+<polyline clip-path="url(#clip7303)" style="stroke:#000000; stroke-width:2; stroke-opacity:0.1; fill:none" points="
   102.362,1090.18 1513.39,1090.18 
   "/>
-<polyline clip-path="url(#clip5503)" style="stroke:#000000; stroke-width:2; stroke-opacity:0.1; fill:none" points="
+<polyline clip-path="url(#clip7303)" style="stroke:#000000; stroke-width:2; stroke-opacity:0.1; fill:none" points="
   102.362,855.013 1513.39,855.013 
   "/>
-<polyline clip-path="url(#clip5503)" style="stroke:#000000; stroke-width:2; stroke-opacity:0.1; fill:none" points="
+<polyline clip-path="url(#clip7303)" style="stroke:#000000; stroke-width:2; stroke-opacity:0.1; fill:none" points="
   102.362,619.843 1513.39,619.843 
   "/>
-<polyline clip-path="url(#clip5503)" style="stroke:#000000; stroke-width:2; stroke-opacity:0.1; fill:none" points="
+<polyline clip-path="url(#clip7303)" style="stroke:#000000; stroke-width:2; stroke-opacity:0.1; fill:none" points="
   102.362,384.672 1513.39,384.672 
   "/>
-<polyline clip-path="url(#clip5503)" style="stroke:#000000; stroke-width:2; stroke-opacity:0.1; fill:none" points="
+<polyline clip-path="url(#clip7303)" style="stroke:#000000; stroke-width:2; stroke-opacity:0.1; fill:none" points="
   102.362,149.501 1513.39,149.501 
   "/>
-<polyline clip-path="url(#clip5501)" style="stroke:#000000; stroke-width:4; stroke-opacity:1; fill:none" points="
+<polyline clip-path="url(#clip7301)" style="stroke:#000000; stroke-width:4; stroke-opacity:1; fill:none" points="
   102.362,1537.01 1513.39,1537.01 
   "/>
-<polyline clip-path="url(#clip5501)" style="stroke:#000000; stroke-width:4; stroke-opacity:1; fill:none" points="
+<polyline clip-path="url(#clip7301)" style="stroke:#000000; stroke-width:4; stroke-opacity:1; fill:none" points="
   102.362,1537.01 102.362,125.984 
   "/>
-<polyline clip-path="url(#clip5501)" style="stroke:#000000; stroke-width:4; stroke-opacity:1; fill:none" points="
+<polyline clip-path="url(#clip7301)" style="stroke:#000000; stroke-width:4; stroke-opacity:1; fill:none" points="
   314.016,1537.01 314.016,1515.84 
   "/>
-<polyline clip-path="url(#clip5501)" style="stroke:#000000; stroke-width:4; stroke-opacity:1; fill:none" points="
+<polyline clip-path="url(#clip7301)" style="stroke:#000000; stroke-width:4; stroke-opacity:1; fill:none" points="
   549.186,1537.01 549.186,1515.84 
   "/>
-<polyline clip-path="url(#clip5501)" style="stroke:#000000; stroke-width:4; stroke-opacity:1; fill:none" points="
+<polyline clip-path="url(#clip7301)" style="stroke:#000000; stroke-width:4; stroke-opacity:1; fill:none" points="
   784.357,1537.01 784.357,1515.84 
   "/>
-<polyline clip-path="url(#clip5501)" style="stroke:#000000; stroke-width:4; stroke-opacity:1; fill:none" points="
+<polyline clip-path="url(#clip7301)" style="stroke:#000000; stroke-width:4; stroke-opacity:1; fill:none" points="
   1019.53,1537.01 1019.53,1515.84 
   "/>
-<polyline clip-path="url(#clip5501)" style="stroke:#000000; stroke-width:4; stroke-opacity:1; fill:none" points="
+<polyline clip-path="url(#clip7301)" style="stroke:#000000; stroke-width:4; stroke-opacity:1; fill:none" points="
   1254.7,1537.01 1254.7,1515.84 
   "/>
-<polyline clip-path="url(#clip5501)" style="stroke:#000000; stroke-width:4; stroke-opacity:1; fill:none" points="
+<polyline clip-path="url(#clip7301)" style="stroke:#000000; stroke-width:4; stroke-opacity:1; fill:none" points="
   1489.87,1537.01 1489.87,1515.84 
   "/>
-<polyline clip-path="url(#clip5501)" style="stroke:#000000; stroke-width:4; stroke-opacity:1; fill:none" points="
+<polyline clip-path="url(#clip7301)" style="stroke:#000000; stroke-width:4; stroke-opacity:1; fill:none" points="
   102.362,1325.35 123.528,1325.35 
   "/>
-<polyline clip-path="url(#clip5501)" style="stroke:#000000; stroke-width:4; stroke-opacity:1; fill:none" points="
+<polyline clip-path="url(#clip7301)" style="stroke:#000000; stroke-width:4; stroke-opacity:1; fill:none" points="
   102.362,1090.18 123.528,1090.18 
   "/>
-<polyline clip-path="url(#clip5501)" style="stroke:#000000; stroke-width:4; stroke-opacity:1; fill:none" points="
+<polyline clip-path="url(#clip7301)" style="stroke:#000000; stroke-width:4; stroke-opacity:1; fill:none" points="
   102.362,855.013 123.528,855.013 
   "/>
-<polyline clip-path="url(#clip5501)" style="stroke:#000000; stroke-width:4; stroke-opacity:1; fill:none" points="
+<polyline clip-path="url(#clip7301)" style="stroke:#000000; stroke-width:4; stroke-opacity:1; fill:none" points="
   102.362,619.843 123.528,619.843 
   "/>
-<polyline clip-path="url(#clip5501)" style="stroke:#000000; stroke-width:4; stroke-opacity:1; fill:none" points="
+<polyline clip-path="url(#clip7301)" style="stroke:#000000; stroke-width:4; stroke-opacity:1; fill:none" points="
   102.362,384.672 123.528,384.672 
   "/>
-<polyline clip-path="url(#clip5501)" style="stroke:#000000; stroke-width:4; stroke-opacity:1; fill:none" points="
+<polyline clip-path="url(#clip7301)" style="stroke:#000000; stroke-width:4; stroke-opacity:1; fill:none" points="
   102.362,149.501 123.528,149.501 
   "/>
-<g clip-path="url(#clip5501)">
+<g clip-path="url(#clip7301)">
 <text style="fill:#000000; fill-opacity:1; font-family:Arial,Helvetica Neue,Helvetica,sans-serif; font-size:48px; text-anchor:middle;" transform="rotate(0, 314.016, 1595.01)" x="314.016" y="1595.01">5</text>
 </g>
-<g clip-path="url(#clip5501)">
+<g clip-path="url(#clip7301)">
 <text style="fill:#000000; fill-opacity:1; font-family:Arial,Helvetica Neue,Helvetica,sans-serif; font-size:48px; text-anchor:middle;" transform="rotate(0, 549.186, 1595.01)" x="549.186" y="1595.01">10</text>
 </g>
-<g clip-path="url(#clip5501)">
+<g clip-path="url(#clip7301)">
 <text style="fill:#000000; fill-opacity:1; font-family:Arial,Helvetica Neue,Helvetica,sans-serif; font-size:48px; text-anchor:middle;" transform="rotate(0, 784.357, 1595.01)" x="784.357" y="1595.01">15</text>
 </g>
-<g clip-path="url(#clip5501)">
+<g clip-path="url(#clip7301)">
 <text style="fill:#000000; fill-opacity:1; font-family:Arial,Helvetica Neue,Helvetica,sans-serif; font-size:48px; text-anchor:middle;" transform="rotate(0, 1019.53, 1595.01)" x="1019.53" y="1595.01">20</text>
 </g>
-<g clip-path="url(#clip5501)">
+<g clip-path="url(#clip7301)">
 <text style="fill:#000000; fill-opacity:1; font-family:Arial,Helvetica Neue,Helvetica,sans-serif; font-size:48px; text-anchor:middle;" transform="rotate(0, 1254.7, 1595.01)" x="1254.7" y="1595.01">25</text>
 </g>
-<g clip-path="url(#clip5501)">
+<g clip-path="url(#clip7301)">
 <text style="fill:#000000; fill-opacity:1; font-family:Arial,Helvetica Neue,Helvetica,sans-serif; font-size:48px; text-anchor:middle;" transform="rotate(0, 1489.87, 1595.01)" x="1489.87" y="1595.01">30</text>
 </g>
-<g clip-path="url(#clip5501)">
+<g clip-path="url(#clip7301)">
 <text style="fill:#000000; fill-opacity:1; font-family:Arial,Helvetica Neue,Helvetica,sans-serif; font-size:48px; text-anchor:end;" transform="rotate(0, 70.3622, 1342.85)" x="70.3622" y="1342.85">5</text>
 </g>
-<g clip-path="url(#clip5501)">
+<g clip-path="url(#clip7301)">
 <text style="fill:#000000; fill-opacity:1; font-family:Arial,Helvetica Neue,Helvetica,sans-serif; font-size:48px; text-anchor:end;" transform="rotate(0, 70.3622, 1107.68)" x="70.3622" y="1107.68">10</text>
 </g>
-<g clip-path="url(#clip5501)">
+<g clip-path="url(#clip7301)">
 <text style="fill:#000000; fill-opacity:1; font-family:Arial,Helvetica Neue,Helvetica,sans-serif; font-size:48px; text-anchor:end;" transform="rotate(0, 70.3622, 872.513)" x="70.3622" y="872.513">15</text>
 </g>
-<g clip-path="url(#clip5501)">
+<g clip-path="url(#clip7301)">
 <text style="fill:#000000; fill-opacity:1; font-family:Arial,Helvetica Neue,Helvetica,sans-serif; font-size:48px; text-anchor:end;" transform="rotate(0, 70.3622, 637.343)" x="70.3622" y="637.343">20</text>
 </g>
-<g clip-path="url(#clip5501)">
+<g clip-path="url(#clip7301)">
 <text style="fill:#000000; fill-opacity:1; font-family:Arial,Helvetica Neue,Helvetica,sans-serif; font-size:48px; text-anchor:end;" transform="rotate(0, 70.3622, 402.172)" x="70.3622" y="402.172">25</text>
 </g>
-<g clip-path="url(#clip5501)">
+<g clip-path="url(#clip7301)">
 <text style="fill:#000000; fill-opacity:1; font-family:Arial,Helvetica Neue,Helvetica,sans-serif; font-size:48px; text-anchor:end;" transform="rotate(0, 70.3622, 167.001)" x="70.3622" y="167.001">30</text>
 </g>
-<g clip-path="url(#clip5501)">
+<g clip-path="url(#clip7301)">
 <text style="fill:#000000; fill-opacity:1; font-family:Arial,Helvetica Neue,Helvetica,sans-serif; font-size:82px; text-anchor:middle;" transform="rotate(0, 807.874, 72)" x="807.874" y="72">regular boundary</text>
 </g>
-<g clip-path="url(#clip5503)">
+<g clip-path="url(#clip7303)">
 <image width="1411" height="1411" xlink:href="data:image/png;base64,
 iVBORw0KGgoAAAANSUhEUgAABYMAAAWDCAYAAACN8iuDAAAgAElEQVR4nOza220rSRAFwcsFf2VB
 +W9aOzAOcF3QA1JplBEWHAgg1UzU47qu1z8AAAAAVs3M9gTgj/tvewAAAAAAAN9PDAYAAAAACBCD
@@ -927,132 +928,132 @@ ACBADAYAAAAACBCDAQAAAAACxGAAAAAAgAAxGAAAAAAgQAwGAAAAAAj4BRtQrmZ2/0KYAAAAAElF
 TkSuQmCC
 " transform="translate(102, 126)"/>
 </g>
-<polygon clip-path="url(#clip5501)" points="
+<polygon clip-path="url(#clip7301)" points="
 1702.36,1537.01 3113.39,1537.01 3113.39,125.984 1702.36,125.984 
   " fill="#ffffff" fill-rule="evenodd" fill-opacity="1"/>
 <defs>
-  <clipPath id="clip5504">
+  <clipPath id="clip7304">
     <rect x="1702" y="125" width="1412" height="1412"/>
   </clipPath>
 </defs>
-<polyline clip-path="url(#clip5504)" style="stroke:#000000; stroke-width:2; stroke-opacity:0.1; fill:none" points="
+<polyline clip-path="url(#clip7304)" style="stroke:#000000; stroke-width:2; stroke-opacity:0.1; fill:none" points="
   1914.02,1537.01 1914.02,125.984 
   "/>
-<polyline clip-path="url(#clip5504)" style="stroke:#000000; stroke-width:2; stroke-opacity:0.1; fill:none" points="
+<polyline clip-path="url(#clip7304)" style="stroke:#000000; stroke-width:2; stroke-opacity:0.1; fill:none" points="
   2149.19,1537.01 2149.19,125.984 
   "/>
-<polyline clip-path="url(#clip5504)" style="stroke:#000000; stroke-width:2; stroke-opacity:0.1; fill:none" points="
+<polyline clip-path="url(#clip7304)" style="stroke:#000000; stroke-width:2; stroke-opacity:0.1; fill:none" points="
   2384.36,1537.01 2384.36,125.984 
   "/>
-<polyline clip-path="url(#clip5504)" style="stroke:#000000; stroke-width:2; stroke-opacity:0.1; fill:none" points="
+<polyline clip-path="url(#clip7304)" style="stroke:#000000; stroke-width:2; stroke-opacity:0.1; fill:none" points="
   2619.53,1537.01 2619.53,125.984 
   "/>
-<polyline clip-path="url(#clip5504)" style="stroke:#000000; stroke-width:2; stroke-opacity:0.1; fill:none" points="
+<polyline clip-path="url(#clip7304)" style="stroke:#000000; stroke-width:2; stroke-opacity:0.1; fill:none" points="
   2854.7,1537.01 2854.7,125.984 
   "/>
-<polyline clip-path="url(#clip5504)" style="stroke:#000000; stroke-width:2; stroke-opacity:0.1; fill:none" points="
+<polyline clip-path="url(#clip7304)" style="stroke:#000000; stroke-width:2; stroke-opacity:0.1; fill:none" points="
   3089.87,1537.01 3089.87,125.984 
   "/>
-<polyline clip-path="url(#clip5504)" style="stroke:#000000; stroke-width:2; stroke-opacity:0.1; fill:none" points="
+<polyline clip-path="url(#clip7304)" style="stroke:#000000; stroke-width:2; stroke-opacity:0.1; fill:none" points="
   1702.36,1325.35 3113.39,1325.35 
   "/>
-<polyline clip-path="url(#clip5504)" style="stroke:#000000; stroke-width:2; stroke-opacity:0.1; fill:none" points="
+<polyline clip-path="url(#clip7304)" style="stroke:#000000; stroke-width:2; stroke-opacity:0.1; fill:none" points="
   1702.36,1090.18 3113.39,1090.18 
   "/>
-<polyline clip-path="url(#clip5504)" style="stroke:#000000; stroke-width:2; stroke-opacity:0.1; fill:none" points="
+<polyline clip-path="url(#clip7304)" style="stroke:#000000; stroke-width:2; stroke-opacity:0.1; fill:none" points="
   1702.36,855.013 3113.39,855.013 
   "/>
-<polyline clip-path="url(#clip5504)" style="stroke:#000000; stroke-width:2; stroke-opacity:0.1; fill:none" points="
+<polyline clip-path="url(#clip7304)" style="stroke:#000000; stroke-width:2; stroke-opacity:0.1; fill:none" points="
   1702.36,619.843 3113.39,619.843 
   "/>
-<polyline clip-path="url(#clip5504)" style="stroke:#000000; stroke-width:2; stroke-opacity:0.1; fill:none" points="
+<polyline clip-path="url(#clip7304)" style="stroke:#000000; stroke-width:2; stroke-opacity:0.1; fill:none" points="
   1702.36,384.672 3113.39,384.672 
   "/>
-<polyline clip-path="url(#clip5504)" style="stroke:#000000; stroke-width:2; stroke-opacity:0.1; fill:none" points="
+<polyline clip-path="url(#clip7304)" style="stroke:#000000; stroke-width:2; stroke-opacity:0.1; fill:none" points="
   1702.36,149.501 3113.39,149.501 
   "/>
-<polyline clip-path="url(#clip5501)" style="stroke:#000000; stroke-width:4; stroke-opacity:1; fill:none" points="
+<polyline clip-path="url(#clip7301)" style="stroke:#000000; stroke-width:4; stroke-opacity:1; fill:none" points="
   1702.36,1537.01 3113.39,1537.01 
   "/>
-<polyline clip-path="url(#clip5501)" style="stroke:#000000; stroke-width:4; stroke-opacity:1; fill:none" points="
+<polyline clip-path="url(#clip7301)" style="stroke:#000000; stroke-width:4; stroke-opacity:1; fill:none" points="
   1702.36,1537.01 1702.36,125.984 
   "/>
-<polyline clip-path="url(#clip5501)" style="stroke:#000000; stroke-width:4; stroke-opacity:1; fill:none" points="
+<polyline clip-path="url(#clip7301)" style="stroke:#000000; stroke-width:4; stroke-opacity:1; fill:none" points="
   1914.02,1537.01 1914.02,1515.84 
   "/>
-<polyline clip-path="url(#clip5501)" style="stroke:#000000; stroke-width:4; stroke-opacity:1; fill:none" points="
+<polyline clip-path="url(#clip7301)" style="stroke:#000000; stroke-width:4; stroke-opacity:1; fill:none" points="
   2149.19,1537.01 2149.19,1515.84 
   "/>
-<polyline clip-path="url(#clip5501)" style="stroke:#000000; stroke-width:4; stroke-opacity:1; fill:none" points="
+<polyline clip-path="url(#clip7301)" style="stroke:#000000; stroke-width:4; stroke-opacity:1; fill:none" points="
   2384.36,1537.01 2384.36,1515.84 
   "/>
-<polyline clip-path="url(#clip5501)" style="stroke:#000000; stroke-width:4; stroke-opacity:1; fill:none" points="
+<polyline clip-path="url(#clip7301)" style="stroke:#000000; stroke-width:4; stroke-opacity:1; fill:none" points="
   2619.53,1537.01 2619.53,1515.84 
   "/>
-<polyline clip-path="url(#clip5501)" style="stroke:#000000; stroke-width:4; stroke-opacity:1; fill:none" points="
+<polyline clip-path="url(#clip7301)" style="stroke:#000000; stroke-width:4; stroke-opacity:1; fill:none" points="
   2854.7,1537.01 2854.7,1515.84 
   "/>
-<polyline clip-path="url(#clip5501)" style="stroke:#000000; stroke-width:4; stroke-opacity:1; fill:none" points="
+<polyline clip-path="url(#clip7301)" style="stroke:#000000; stroke-width:4; stroke-opacity:1; fill:none" points="
   3089.87,1537.01 3089.87,1515.84 
   "/>
-<polyline clip-path="url(#clip5501)" style="stroke:#000000; stroke-width:4; stroke-opacity:1; fill:none" points="
+<polyline clip-path="url(#clip7301)" style="stroke:#000000; stroke-width:4; stroke-opacity:1; fill:none" points="
   1702.36,1325.35 1723.53,1325.35 
   "/>
-<polyline clip-path="url(#clip5501)" style="stroke:#000000; stroke-width:4; stroke-opacity:1; fill:none" points="
+<polyline clip-path="url(#clip7301)" style="stroke:#000000; stroke-width:4; stroke-opacity:1; fill:none" points="
   1702.36,1090.18 1723.53,1090.18 
   "/>
-<polyline clip-path="url(#clip5501)" style="stroke:#000000; stroke-width:4; stroke-opacity:1; fill:none" points="
+<polyline clip-path="url(#clip7301)" style="stroke:#000000; stroke-width:4; stroke-opacity:1; fill:none" points="
   1702.36,855.013 1723.53,855.013 
   "/>
-<polyline clip-path="url(#clip5501)" style="stroke:#000000; stroke-width:4; stroke-opacity:1; fill:none" points="
+<polyline clip-path="url(#clip7301)" style="stroke:#000000; stroke-width:4; stroke-opacity:1; fill:none" points="
   1702.36,619.843 1723.53,619.843 
   "/>
-<polyline clip-path="url(#clip5501)" style="stroke:#000000; stroke-width:4; stroke-opacity:1; fill:none" points="
+<polyline clip-path="url(#clip7301)" style="stroke:#000000; stroke-width:4; stroke-opacity:1; fill:none" points="
   1702.36,384.672 1723.53,384.672 
   "/>
-<polyline clip-path="url(#clip5501)" style="stroke:#000000; stroke-width:4; stroke-opacity:1; fill:none" points="
+<polyline clip-path="url(#clip7301)" style="stroke:#000000; stroke-width:4; stroke-opacity:1; fill:none" points="
   1702.36,149.501 1723.53,149.501 
   "/>
-<g clip-path="url(#clip5501)">
+<g clip-path="url(#clip7301)">
 <text style="fill:#000000; fill-opacity:1; font-family:Arial,Helvetica Neue,Helvetica,sans-serif; font-size:48px; text-anchor:middle;" transform="rotate(0, 1914.02, 1595.01)" x="1914.02" y="1595.01">5</text>
 </g>
-<g clip-path="url(#clip5501)">
+<g clip-path="url(#clip7301)">
 <text style="fill:#000000; fill-opacity:1; font-family:Arial,Helvetica Neue,Helvetica,sans-serif; font-size:48px; text-anchor:middle;" transform="rotate(0, 2149.19, 1595.01)" x="2149.19" y="1595.01">10</text>
 </g>
-<g clip-path="url(#clip5501)">
+<g clip-path="url(#clip7301)">
 <text style="fill:#000000; fill-opacity:1; font-family:Arial,Helvetica Neue,Helvetica,sans-serif; font-size:48px; text-anchor:middle;" transform="rotate(0, 2384.36, 1595.01)" x="2384.36" y="1595.01">15</text>
 </g>
-<g clip-path="url(#clip5501)">
+<g clip-path="url(#clip7301)">
 <text style="fill:#000000; fill-opacity:1; font-family:Arial,Helvetica Neue,Helvetica,sans-serif; font-size:48px; text-anchor:middle;" transform="rotate(0, 2619.53, 1595.01)" x="2619.53" y="1595.01">20</text>
 </g>
-<g clip-path="url(#clip5501)">
+<g clip-path="url(#clip7301)">
 <text style="fill:#000000; fill-opacity:1; font-family:Arial,Helvetica Neue,Helvetica,sans-serif; font-size:48px; text-anchor:middle;" transform="rotate(0, 2854.7, 1595.01)" x="2854.7" y="1595.01">25</text>
 </g>
-<g clip-path="url(#clip5501)">
+<g clip-path="url(#clip7301)">
 <text style="fill:#000000; fill-opacity:1; font-family:Arial,Helvetica Neue,Helvetica,sans-serif; font-size:48px; text-anchor:middle;" transform="rotate(0, 3089.87, 1595.01)" x="3089.87" y="1595.01">30</text>
 </g>
-<g clip-path="url(#clip5501)">
+<g clip-path="url(#clip7301)">
 <text style="fill:#000000; fill-opacity:1; font-family:Arial,Helvetica Neue,Helvetica,sans-serif; font-size:48px; text-anchor:end;" transform="rotate(0, 1670.36, 1342.85)" x="1670.36" y="1342.85">5</text>
 </g>
-<g clip-path="url(#clip5501)">
+<g clip-path="url(#clip7301)">
 <text style="fill:#000000; fill-opacity:1; font-family:Arial,Helvetica Neue,Helvetica,sans-serif; font-size:48px; text-anchor:end;" transform="rotate(0, 1670.36, 1107.68)" x="1670.36" y="1107.68">10</text>
 </g>
-<g clip-path="url(#clip5501)">
+<g clip-path="url(#clip7301)">
 <text style="fill:#000000; fill-opacity:1; font-family:Arial,Helvetica Neue,Helvetica,sans-serif; font-size:48px; text-anchor:end;" transform="rotate(0, 1670.36, 872.513)" x="1670.36" y="872.513">15</text>
 </g>
-<g clip-path="url(#clip5501)">
+<g clip-path="url(#clip7301)">
 <text style="fill:#000000; fill-opacity:1; font-family:Arial,Helvetica Neue,Helvetica,sans-serif; font-size:48px; text-anchor:end;" transform="rotate(0, 1670.36, 637.343)" x="1670.36" y="637.343">20</text>
 </g>
-<g clip-path="url(#clip5501)">
+<g clip-path="url(#clip7301)">
 <text style="fill:#000000; fill-opacity:1; font-family:Arial,Helvetica Neue,Helvetica,sans-serif; font-size:48px; text-anchor:end;" transform="rotate(0, 1670.36, 402.172)" x="1670.36" y="402.172">25</text>
 </g>
-<g clip-path="url(#clip5501)">
+<g clip-path="url(#clip7301)">
 <text style="fill:#000000; fill-opacity:1; font-family:Arial,Helvetica Neue,Helvetica,sans-serif; font-size:48px; text-anchor:end;" transform="rotate(0, 1670.36, 167.001)" x="1670.36" y="167.001">30</text>
 </g>
-<g clip-path="url(#clip5501)">
+<g clip-path="url(#clip7301)">
 <text style="fill:#000000; fill-opacity:1; font-family:Arial,Helvetica Neue,Helvetica,sans-serif; font-size:82px; text-anchor:middle;" transform="rotate(0, 2407.87, 72)" x="2407.87" y="72">periodic boundary</text>
 </g>
-<g clip-path="url(#clip5504)">
+<g clip-path="url(#clip7304)">
 <image width="1411" height="1411" xlink:href="data:image/png;base64,
 iVBORw0KGgoAAAANSUhEUgAABYMAAAWDCAYAAACN8iuDAAAgAElEQVR4nOza0W1iWRBFUXvELxFU
 /qHdBEiACWDULY/ddPl5rxXB+UBw2ar3x+PxfGPFzGxPAAD4knPO9gQA+DF0AuDV/tkeAAAAAADA
@@ -1263,16 +1264,18 @@ AAAASUVORK5CYII=
 </svg>
 </div><p>In these plots, black indicates the low state, and white the high state.  A lot of local clustering is occurring in the samples due to the neighbor effects.</p><p>To see the long-run differences between the two models, we can look at the marginal probabilities. They can be estimated by drawing many samples and averaging them (note that running this code chunk can take a couple of minutes):</p><pre><code class="language-julia">marg1 = sample(M1, 500, method=perfect_bounding_chain, verbose=true, average=true)
 marg2 = sample(M2, 500, method=perfect_bounding_chain, verbose=true, average=true)
-pl3 = heatmap(reshape(marg1, n, n), c=:grays, colorbar=false, title=&quot;regular boundary&quot;);
-pl4 = heatmap(reshape(marg2, n, n), c=:grays, colorbar=false, title=&quot;periodic boundary&quot;);
+pl3 = heatmap(reshape(marg1, n, n), c=:grays,
+              colorbar=false, title=&quot;regular boundary&quot;);
+pl4 = heatmap(reshape(marg2, n, n), c=:grays,
+              colorbar=false, title=&quot;periodic boundary&quot;);
 plot(pl3, pl4, size=(800,400), aspect_ratio=1)
-savefig(&quot;marginal-probs.png&quot;)</code></pre><p>The figure <code>marginal-probs.png</code> looks like this:</p><p><img src="../assets/marginal-probs.png" alt="marginal-probs.png"/></p><p>Although the differences between the two marginal distributions are not striking, the extra edges connecting top to bottom and left to right do have some influence on the probabilities at the periphery of the square.</p><p>As a final demonstration, perform Gibbs sampling for model <code>M2</code>, starting from a random state.  Display a gif animation of the progress.</p><pre><code class="language-julia">nframes = 150
+savefig(&quot;marginal-probs.png&quot;)</code></pre><p>The figure <code>marginal-probs.png</code> looks like this:</p><p><img src="../assets/marginal-probs.png" alt="marginal-probs.png"/></p><p>Although the differences between the two marginal distributions are not striking, the extra edges connecting top/bottom and left/right do have some influence on the probabilities at the periphery of the square.</p><p>As a final demonstration, perform Gibbs sampling for model <code>M2</code>, starting from a random state.  Display a gif animation of the progress.</p><pre><code class="language-julia">nframes = 150
 gibbs_steps = sample(M2, nframes, method=Gibbs)
 anim = @animate for i =  1:nframes
     heatmap(reshape(gibbs_steps[:,i], n, n), c=:grays, colorbar=false, 
             aspect_ratio=1, title=&quot;Gibbs sampling: step $(i)&quot;)
 end
-gif(anim, &quot;ising_gif.gif&quot;, fps=10)</code></pre><p><img src="../assets/ising_gif.gif" alt="ising_gif.gif"/></p><h2><a class="nav-anchor" id="Clustered-Binary-Data-(Small-n)-1" href="#Clustered-Binary-Data-(Small-n)-1">Clustered Binary Data (Small <span>$n$</span>)</a></h2><p>The <em>retinitis pigmentosa</em> data set <a href="https://sites.google.com/a/channing.harvard.edu/bernardrosner/channing/regression-method-when-the-eye-is-the-unit-of-analysis">obtained here</a> is an opthalmology data set.  The data comes from 444 patients that had both eyes examined.  The data can be loaded with <code>Autologistic.datasets</code>:</p><pre><code class="language-julia-repl">julia&gt; using Autologistic, DataFrames, LightGraphs
+gif(anim, &quot;ising_gif.gif&quot;, fps=10)</code></pre><p><img src="../assets/ising_gif.gif" alt="ising_gif.gif"/></p><h2><a class="nav-anchor" id="Clustered-Binary-Data-(Small-n)-1" href="#Clustered-Binary-Data-(Small-n)-1">Clustered Binary Data (Small <span>$n$</span>)</a></h2><p>The <em>retinitis pigmentosa</em> data set (obtained from <a href="https://sites.google.com/a/channing.harvard.edu/bernardrosner/channing/regression-method-when-the-eye-is-the-unit-of-analysis">this source</a>) is an opthalmology data set.  The data comes from 444 patients that had both eyes examined.  The data can be loaded with <code>Autologistic.datasets</code>:</p><pre><code class="language-julia-repl">julia&gt; using Autologistic, DataFrames, LightGraphs
 
 julia&gt; df = Autologistic.datasets(&quot;pigmentosa&quot;);
 
@@ -1301,18 +1304,21 @@ julia&gt; describe(df)
 │ 6   │ sex      │ 0.576577  │ 0     │ 1.0     │ 1     │         │ 0        │
 │ 7   │ psc      │ 0.432432  │ 0     │ 0.0     │ 1     │         │ 0        │
 │ 8   │ eye      │ 0.5       │ 0     │ 0.5     │ 1     │         │ 0        │
-│ 9   │ va       │ 0.504505  │ 0     │ 1.0     │ 1     │         │ 0        │</code></pre><p>The response for each eye is <strong>va</strong>, an indicator of poor visual acuity (coded 0 = no, 1 = yes in the loaded data set). Seven covariates were also recorded for each eye:</p><ul><li><strong>aut_dom</strong>: autosomal dominant (0=no, 1=yes)</li><li><strong>aut_rec</strong>: autosomal recessive (0=no, 1=yes)</li><li><strong>sex_link</strong>: sex-linked (0=no, 1=yes)</li><li><strong>age</strong>: age (years, range 6-80)</li><li><strong>sex</strong>: gender (0=female, 1=male)</li><li><strong>psc</strong>: posterior subscapsular cataract (0=no, 1=yes)</li><li><strong>eye</strong>: which eye is it? (0=left, 1=right)</li></ul><p>The last four factors are relevant clinical observations, and the first three are genetic factors. The data set also includes an <strong>ID</strong> column with an ID number specific to each patient.  Eyes with the same ID come from the same person.</p><p>The natural unit of analysis is the eye, but pairs of observations from the same patient are &quot;clustered&quot; because the occurrence of acuity loss in the left and right eye is probably correlated. We can model each person&#39;s two eyes&#39; <strong>va</strong> outcomes as two dichotomous random variables with a 2-vertex, 1-edge graph.</p><div><pre><code class="language-julia">G = Graph(2,1)</code></pre><pre><code class="language-none">{2, 1} undirected simple Int64 graph</code></pre></div><p>Each of the 444 observations has this graph, and each has its own set of covariates.</p><p>If we include all seven predictors, plus intercept, in our model, we have 2 variables per observation, 8 predictors, and 444 obsrevations. </p><p>Before creating the model we need to re-structure the covariates. The data in <code>df</code> has one row per eye, with the variable <code>ID</code> indicating which eyes belong to the same patient.  We need to rearrange the responses (<code>Y</code>) and the predictors (<code>X</code>) into arrays suitable for our autologistic models, namely:</p><ul><li><code>Y</code> is <span>$2 \times 444$</span> with one observation per column.</li><li><code>X</code> is <span>$2 \times 8 \times 444$</span> with one <span>$2 \times 8$</span> matrix of predictors for each observation.  The first column of each predictor matrix is an intercept column, and   columns 2 through 8 are for <code>aut_dom</code>, <code>aut_rec</code>, <code>sex_link</code>, <code>age</code>, <code>sex</code>, <code>psc</code>, and <code>eye</code>, respectively.</li></ul><div><pre><code class="language-julia">X = Array{Float64,3}(undef, 2, 8, 444);
+│ 9   │ va       │ 0.504505  │ 0     │ 1.0     │ 1     │         │ 0        │</code></pre><p>The response for each eye is <strong>va</strong>, an indicator of poor visual acuity (coded 0 = no, 1 = yes in the data set). Seven covariates were also recorded for each eye:</p><ul><li><strong>aut_dom</strong>: autosomal dominant (0=no, 1=yes)</li><li><strong>aut_rec</strong>: autosomal recessive (0=no, 1=yes)</li><li><strong>sex_link</strong>: sex-linked (0=no, 1=yes)</li><li><strong>age</strong>: age (years, range 6-80)</li><li><strong>sex</strong>: gender (0=female, 1=male)</li><li><strong>psc</strong>: posterior subscapsular cataract (0=no, 1=yes)</li><li><strong>eye</strong>: which eye is it? (0=left, 1=right)</li></ul><p>The last four factors are relevant clinical observations, and the first three are genetic factors. The data set also includes an <strong>ID</strong> column with an ID number specific to each patient.  Eyes with the same ID come from the same person.</p><p>The natural unit of analysis is the eye, but pairs of observations from the same patient are &quot;clustered&quot; because the occurrence of acuity loss in the left and right eye is probably correlated. We can model each person&#39;s two <strong>va</strong> outcomes as two dichotomous random variables with a 2-vertex, 1-edge graph.</p><pre><code class="language-julia-repl">julia&gt; G = Graph(2,1)
+{2, 1} undirected simple Int64 graph</code></pre><p>Each of the 444 bivariate observations has this graph, and each has its own set of covariates.</p><p>If we include all seven predictors, plus intercept, in our model, we have 2 variables per observation, 8 predictors, and 444 observations.</p><p>Before creating the model we need to re-structure the covariates. The data in <code>df</code> has one row per eye, with the variable <code>ID</code> indicating which eyes belong to the same patient.  We need to rearrange the responses (<code>Y</code>) and the predictors (<code>X</code>) into arrays suitable for our autologistic models, namely:</p><ul><li><code>Y</code> is <span>$2 \times 444$</span> with one observation per column.</li><li><code>X</code> is <span>$2 \times 8 \times 444$</span> with one <span>$2 \times 8$</span> matrix of predictors for each observation.  The first column of each predictor matrix is an intercept column, and   columns 2 through 8 are for <code>aut_dom</code>, <code>aut_rec</code>, <code>sex_link</code>, <code>age</code>, <code>sex</code>, <code>psc</code>, and <code>eye</code>, respectively.</li></ul><div><pre><code class="language-julia">X = Array{Float64,3}(undef, 2, 8, 444);
 Y = Array{Float64,2}(undef, 2, 444);
 for i in 1:2:888
-    subject = Int((i+1)/2)
-    X[1,:,subject] = [1 permutedims(Vector(df[i,2:8]))]
-    X[2,:,subject] = [1 permutedims(Vector(df[i+1,2:8]))]
-    Y[:,subject] = convert(Array, df[i:i+1, 9])
-end</code></pre></div><p>For example, patient 100 had responses</p><div><pre><code class="language-julia">Y[:,100]</code></pre><pre><code class="language-none">2-element Array{Float64,1}:
+    patient = Int((i+1)/2)
+    X[1,:,patient] = [1 permutedims(Vector(df[i,2:8]))]
+    X[2,:,patient] = [1 permutedims(Vector(df[i+1,2:8]))]
+    Y[:,patient] = convert(Array, df[i:i+1, 9])
+end</code></pre></div><p>For example, patient 100 had responses</p><pre><code class="language-julia-repl">julia&gt; Y[:,100]
+2-element Array{Float64,1}:
  1.0
- 0.0</code></pre></div><p>Indicating visual acuity loss in the left eye, but not in the right. The predictors for this individual are</p><div><pre><code class="language-julia">X[:,:,100]</code></pre><pre><code class="language-none">2×8 Array{Float64,2}:
+ 0.0</code></pre><p>Indicating visual acuity loss in the left eye, but not in the right. The predictors for this individual are</p><pre><code class="language-julia-repl">julia&gt; X[:,:,100]
+2×8 Array{Float64,2}:
  1.0  0.0  0.0  0.0  18.0  1.0  1.0  0.0
- 1.0  0.0  0.0  0.0  18.0  1.0  1.0  1.0</code></pre></div><p>Now we can create our autologistic regression model.</p><div><pre><code class="language-julia">model = ALRsimple(G, X, Y=Y)</code></pre><pre><code class="language-none">Autologistic regression model of type ALRsimple with parameter vector [β; λ].
+ 1.0  0.0  0.0  0.0  18.0  1.0  1.0  1.0</code></pre><p>Now we can create our autologistic regression model.</p><div><pre><code class="language-julia">model = ALRsimple(G, X, Y=Y)</code></pre><pre><code class="language-none">Autologistic regression model of type ALRsimple with parameter vector [β; λ].
 Fields:
   responses    2×444 Bool array
   unary        2×444 LinPredUnary with fields:
@@ -1326,7 +1332,8 @@ Fields:
   centering    none
   coding       (-1, 1)
   labels       (&quot;low&quot;, &quot;high&quot;)
-  coordinates  2-element vector of Tuple{Float64,Float64}</code></pre></div><p>This creates a model with the &quot;simple pairwise&quot; structure, using a single association parameter. The default is to use no centering adjustment, and to use coding <span>$(-1,1)$</span> for the responses.  This &quot;symmetric&quot; version of the model is recommended for <a href="https://doi.org/10.3389/fams.2017.00024">a variety of reasons</a>.  Using different coding or centering choices is only recommended if you have a thorough understanding of what you are doing; but if you wish to use different choices, this can easily be done using keyword arguments. For example, <code>ALRsimple(G, X, Y=Y, coding=(0,1), centering=expectation)</code> creates the &quot;centered autologistic model&quot; that has appeared in the literature, e.g. <a href="https://link.springer.com/article/10.1198/jabes.2009.07032">here</a> and <a href="https://doi.org/10.1002/env.1102">here</a></p><p>The model has nine parameters (eight regression coefficients plus the association parameter).  All parameters are initialized to zero:</p><div><pre><code class="language-julia">getparameters(model)</code></pre><pre><code class="language-none">9-element Array{Float64,1}:
+  coordinates  2-element vector of Tuple{Float64,Float64}</code></pre></div><p>This creates a model with the &quot;simple pairwise&quot; structure, using a single association parameter. The default is to use no centering adjustment, and to use coding <span>$(-1,1)$</span> for the responses.  This &quot;symmetric&quot; version of the model is recommended for <a href="https://doi.org/10.3389/fams.2017.00024">a variety of reasons</a>.  Using different coding or centering choices is only recommended if you have a thorough understanding of what you are doing; but if you wish to use different choices, this can easily be done using keyword arguments. For example, <code>ALRsimple(G, X, Y=Y, coding=(0,1), centering=expectation)</code> creates the &quot;centered autologistic model&quot; that has appeared in the literature (e.g., <a href="https://link.springer.com/article/10.1198/jabes.2009.07032">here</a> and <a href="https://doi.org/10.1002/env.1102">here</a>).</p><p>The model has nine parameters (eight regression coefficients plus the association parameter).  All parameters are initialized to zero:</p><pre><code class="language-julia-repl">julia&gt; getparameters(model)
+9-element Array{Float64,1}:
  0.0
  0.0
  0.0
@@ -1335,7 +1342,7 @@ Fields:
  0.0
  0.0
  0.0
- 0.0</code></pre></div><p>When we call <code>getparameters</code>, the vector returned always has the unary parameters first, with the pairwise parameter(s) appended at the end.</p><p>Because there are only two vertices in the graph, we can use the full likelihood (<code>fit_ml!</code> function) to do parameter estimation.  This function returns a structure with the estimates as well as standard errors, p-values, and 95% confidence intervals for the  parameter estimates.</p><div><pre><code class="language-julia">out = fit_ml!(model)</code></pre><pre><code class="language-none">Autologistic model fitting results. Its non-empty fields are:
+ 0.0</code></pre><p>When we call <code>getparameters</code>, the vector returned always has the unary parameters first, with the pairwise parameter(s) appended at the end.</p><p>Because there are only two vertices in the graph, we can use the full likelihood (<code>fit_ml!</code> function) to do parameter estimation.  This function returns a structure with the estimates as well as standard errors, p-values, and 95% confidence intervals for the  parameter estimates.</p><div><pre><code class="language-julia">out = fit_ml!(model)</code></pre><pre><code class="language-none">Autologistic model fitting results. Its non-empty fields are:
   estimate       9-element vector of parameter estimates
   se             9-element vector of standard errors
   pvalues        9-element vector of 2-sided p-values
@@ -1355,7 +1362,7 @@ age         0.00492   0.00184   0.00764   (0.00131, 0.00853)
 sex         0.0207    0.0557    0.711     (-0.0885, 0.13)
 psc         0.139     0.0589    0.0185     (0.0233, 0.254)
 eye         0.0273    0.12      0.819      (-0.207, 0.262)
-λ           0.818     0.0656    0.0          (0.69, 0.947)</code></pre></div><p>From this we see that the association parameter is fairly large (0.818), supporting the idea that the left and right eyes are associated.  It is also highly statistically significant.  Among the covariates, <code>sex_link</code>, <code>age</code>, and <code>psc</code> are all statistically significant.</p><h2><a class="nav-anchor" id="Spatial-Binary-Regression-1" href="#Spatial-Binary-Regression-1">Spatial Binary Regression</a></h2><p>Autologistic regression is a natural candidate for analysis of spatial binary data, where locations in the same neighborhood are more likely to have the same outcome than sites that are far apart. The <a href="https://doi.org/10.1016/j.ecolmodel.2007.04.024">hydrocotyle data</a> provide a typical example.  The response in this data set is the presence/absence of a certain plant species in a grid of 2995 regions covering Germany. The data set is included in Autologistic.jl:</p><pre><code class="language-julia-repl">julia&gt; using Autologistic, DataFrames, LightGraphs
+λ           0.818     0.0656    0.0          (0.69, 0.947)</code></pre></div><p>From this we see that the association parameter is fairly large (0.818), supporting the idea that the left and right eyes are associated.  It is also highly statistically significant.  Among the covariates, <code>sex_link</code>, <code>age</code>, and <code>psc</code> are all statistically significant.</p><h2><a class="nav-anchor" id="Spatial-Binary-Regression-1" href="#Spatial-Binary-Regression-1">Spatial Binary Regression</a></h2><p>ALR models are natural candidates for analysis of spatial binary data, where locations in the same neighborhood are more likely to have the same outcome than sites that are far apart. The <a href="https://doi.org/10.1016/j.ecolmodel.2007.04.024">hydrocotyle data</a> provide a typical example.  The response in this data set is the presence/absence of a certain plant species in a grid of 2995 regions covering Germany. The data set is included in Autologistic.jl:</p><pre><code class="language-julia-repl">julia&gt; using Autologistic, DataFrames, LightGraphs
 
 julia&gt; df = Autologistic.datasets(&quot;hydrocotyle&quot;)
 2995×5 DataFrame
@@ -1378,7 +1385,7 @@ julia&gt; df = Autologistic.datasets(&quot;hydrocotyle&quot;)
 │ 2993 │ 32     │ 78     │ 15.4025  │ -0.5        │ 0      │
 │ 2994 │ 33     │ 78     │ 16.3698  │ 0.281726    │ 0      │
 │ 2995 │ 27     │ 79     │ 18.23    │ 1.95685     │ 0      │</code></pre><p>In the data frame, the variables <code>X</code> and <code>Y</code> give the spatial coordinates of each region (in dimensionless integer units), <code>obs</code> gives the presence/absence data (1 = presence), and <code>altitude</code> and <code>temperature</code> are covariates.</p><p>We will use an <code>ALRsimple</code> model for these data.  The graph can be formed using <a href="@ref"><code>makespatialgraph</code></a>:</p><div><pre><code class="language-julia">locations = [(df.X[i], df.Y[i]) for i in 1:size(df,1)]
-g = makespatialgraph(locations, 1.0)</code></pre></div><p><code>makespatialgraph</code> takes an array of tuples giving the spatial coodinates, and a distance threshold. It returns a named tuple with the graph and the array of coordinates.  The graph has one vertex for each spatial location, and edge for every pair of locations that are within the threshold distance of each other. For these data arranged on a grid, a threshold of 1.0 will make a 4-nearest-neighbors lattice. Letting the threshold be <code>sqrt(2)</code> would make an 8-nearest-neighbors lattice.</p><p>We can visualize the graph, the responses, and the predictors using <a href="https://github.com/JuliaPlots/GraphRecipes.jl">GraphRecipes.jl</a> (there are <a href="http://juliagraphs.github.io/LightGraphs.jl/latest/plotting.html">several other</a> options for plotting graphs as well).</p><pre><code class="language-">using GraphRecipes, Plots
+g = makespatialgraph(locations, 1.0)</code></pre></div><p><code>makespatialgraph</code> creates the graph by adding edges between any vertices with Euclidean distance smaller than a cutoff distance (Lightgraphs.jl has a <code>euclidean_graph</code> function that does the same thing).  For these data arranged on a grid, a threshold of 1.0 will make a 4-nearest-neighbors lattice. Letting the threshold be <code>sqrt(2)</code> would make an 8-nearest-neighbors lattice.</p><p>We can visualize the graph, the responses, and the predictors using <a href="https://github.com/JuliaPlots/GraphRecipes.jl">GraphRecipes.jl</a> (there are <a href="http://juliagraphs.github.io/LightGraphs.jl/latest/plotting.html">several other</a> options for plotting graphs as well).</p><pre><code class="language-">using GraphRecipes, Plots
 
 # Function to convert a value to a gray shade
 makegray(x, lo, hi) = RGB([(x-lo)/(hi-lo) for i=1:3]...)  
@@ -1400,7 +1407,7 @@ end
 plot(myplot(df.obs), myplot(df.altitude), myplot(df.temperature),
      layout=(1,3), size=(800,300), titlefontsize=8,
      title=hcat(&quot;Species Presence (white = yes)&quot;, &quot;Altitude (lighter = higher)&quot;,
-                &quot;Temperature (lighter = higher)&quot;))</code></pre><h3><a class="nav-anchor" id="Constructing-the-model-1" href="#Constructing-the-model-1">Constructing the model</a></h3><p>We can see that the species primarily is found at low-altidude locations. To model the effect of altitude and temperature on species presence, construct an <code>ALRsimple</code> model.</p><div><pre><code class="language-julia"># Autologistic.jl requres predictors to be a matrix of Float64
+                &quot;Temperature (lighter = higher)&quot;))</code></pre><h3><a class="nav-anchor" id="Constructing-the-model-1" href="#Constructing-the-model-1">Constructing the model</a></h3><p>We can see that the species primarily is found at low-altitude locations. To model the effect of altitude and temperature on species presence, construct an <code>ALRsimple</code> model.</p><div><pre><code class="language-julia"># Autologistic.jl requres predictors to be a matrix of Float64
 Xmatrix = Array{Float64}([ones(2995) df.altitude df.temperature])
 
 # Create the model
@@ -1418,7 +1425,7 @@ Fields:
   centering    none
   coding       (-1, 1)
   labels       (&quot;low&quot;, &quot;high&quot;)
-  coordinates  2995-element vector of Tuple{Float64,Float64}</code></pre></div><p>The model <code>hydro</code> has four parameters: three regression coefficients (interceept, altitude, and temperature) plus an association parameter.  It is a &quot;symmetric&quot; autologistic model, because it has a coding symmetric around zero and no centering term.</p><h3><a class="nav-anchor" id="Fitting-the-model-by-pseudolikelihood-1" href="#Fitting-the-model-by-pseudolikelihood-1">Fitting the model by pseudolikelihood</a></h3><p>With 2995 nodes in the graph, the likelihood is intractable for this case.  Use <code>fit_pl!</code> to do parameter estimation by pseudolikelihood instead.  The fitting function uses the BFGS algorithm via <a href="http://julianlsolvers.github.io/Optim.jl/stable/"><code>Optim.jl</code></a>.  Any of Optim&#39;s <a href="http://julianlsolvers.github.io/Optim.jl/stable/#user/config/">general options</a> can be passed to <code>fit_pl!</code> to control the optimization.  We have found that <code>allow_f_increases</code> often aids convergence; it is used here:</p><pre><code class="language-julia-repl">julia&gt; fit1 = fit_pl!(hydro, allow_f_increases=true)
+  coordinates  2995-element vector of Tuple{Float64,Float64}</code></pre></div><p>The model <code>hydro</code> has four parameters: three regression coefficients (interceept, altitude, and temperature) plus an association parameter.  It is a &quot;symmetric&quot; autologistic model, because it has a coding symmetric around zero and no centering term.</p><h3><a class="nav-anchor" id="Fitting-the-model-by-pseudolikelihood-1" href="#Fitting-the-model-by-pseudolikelihood-1">Fitting the model by pseudolikelihood</a></h3><p>With 2995 nodes in the graph, the likelihood is intractable for this case.  Use <code>fit_pl!</code> to do parameter estimation by pseudolikelihood instead.  The fitting function uses the BFGS algorithm via <a href="http://julianlsolvers.github.io/Optim.jl/stable/"><code>Optim.jl</code></a>.  Any of Optim&#39;s <a href="http://julianlsolvers.github.io/Optim.jl/stable/#user/config/">general options</a> can be passed to <code>fit_pl!</code> to control the optimization.  We have found that <code>allow_f_increases</code> often aids convergence.  It is used here:</p><pre><code class="language-julia-repl">julia&gt; fit1 = fit_pl!(hydro, allow_f_increases=true)
 Autologistic model fitting results. Its non-empty fields are:
   estimate       4-element vector of parameter estimates
   optim          the output of the call to optimize()
@@ -1434,7 +1441,7 @@ name          est       se   p-value   95% CI
 intercept     -0.192                         
 altitude      -0.0573                        
 temperature    0.0498                        
-association    0.361</code></pre><p><code>fit_pl!</code> sets the parameters of the model object to the optimal values, and also returns an object of type <code>ALfit</code>, with fields holding useful information.  Calling <code>summary(fit1)</code> produces a summary table of the estimates.  For now there are no standard errors.  This will be addressed below.</p><p>To quickly visualize the quality of the fitted model, we can use sampling to get the marginal probabilities:</p><pre><code class="language-"># Average 500 samples to estimate marginal probability of species presence
+association    0.361</code></pre><p><code>fit_pl!</code> mutates the model object by setting its parameters to the optimal values. It also returns an object, of type <code>ALfit</code>, which holds information about the result. Calling <code>summary(fit1)</code> produces a summary table of the estimates.  For now there are no standard errors.  This will be addressed below.</p><p>To quickly visualize the quality of the fitted model, we can use sampling to get the marginal probabilities, and to observe specific samples.</p><pre><code class="language-"># Average 500 samples to estimate marginal probability of species presence
 marginal1 = sample(hydro, 500, method=perfect_bounding_chain, average=true)
 
 # Draw 2 random samples for visualizing generated data.
@@ -1443,41 +1450,56 @@ draws = sample(hydro, 2, method=perfect_bounding_chain)
 # Plot them
 plot(myplot(marginal1, (0,1)), myplot(draws[:,1]), myplot(draws[:,2]),
      layout=(1,3), size=(800,300), titlefontsize=8,
-     title=[&quot;Marginal Probability&quot; &quot;Random sample 1&quot; &quot;Random Sample 2&quot;])</code></pre><p>In the above code, perfect sampling was used to draw samples from the fitted distribution. The marginal plot shows consistency with the observed data, and the two generated data sets show a level of spatial clustering similar to the observed data.</p><h3><a class="nav-anchor" id="Error-estimation-1:-bootstrap-after-the-fact-1" href="#Error-estimation-1:-bootstrap-after-the-fact-1">Error estimation 1: bootstrap after the fact</a></h3><p>A parametric bootstrap can be used to get an estimate of the precision of the estimates returned by <code>fit_pl!</code>.  The function <a href="@ref"><code>oneboot</code></a> has been included in the package to facilitate this.  Each call of <code>oneboot</code> draws a random sample from the fitted distribution, then re-fits the model using this sample as the responses. It returns a named tuple giving the sample, the parameter estimates, and a convergence flag.  Extra keyword arguments are passed to <code>sample</code> or <code>optimize</code> as appropriate to control the process:</p><pre><code class="language-julia-repl">julia&gt; oneboot(hydro, allow_f_increases=true, method=perfect_bounding_chain)
+     title=[&quot;Marginal Probability&quot; &quot;Random sample 1&quot; &quot;Random Sample 2&quot;])</code></pre><p>In the above code, perfect sampling was used to draw samples from the fitted distribution. The marginal plot shows consistency with the observed data, and the two generated data sets show a level of spatial clustering similar to the observed data.</p><h3><a class="nav-anchor" id="Error-estimation-1:-bootstrap-after-the-fact-1" href="#Error-estimation-1:-bootstrap-after-the-fact-1">Error estimation 1: bootstrap after the fact</a></h3><p>A parametric bootstrap can be used to get an estimate of the precision of the estimates returned by <code>fit_pl!</code>.  The function <a href="@ref"><code>oneboot</code></a> has been included in the package to facilitate this.  Each call of <code>oneboot</code> draws a random sample from the fitted distribution, then re-fits the model using this sample as the responses. It returns a named tuple giving the sample, the parameter estimates, and a convergence flag.  Any extra keyword arguments are passed on to <code>sample</code> or <code>optimize</code> as appropriate to control the process.</p><pre><code class="language-julia-repl">julia&gt; # Do one bootstrap replication for demonstration purposes.
+       oneboot(hydro, allow_f_increases=true, method=perfect_bounding_chain)
 (sample = [1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0  …  -1.0, -1.0, -1.0, -1.0, -1.0, -1.0, -1.0, -1.0, -1.0, -1.0], estimate = [0.175889, -0.0675047, 0.00827358, 0.349993], convergence = true)</code></pre><p>An array of the tuples produced by <code>oneboot</code> can be fed to <a href="@ref"><code>addboot!</code></a> to update the fitting summary with precision estimates:</p><pre><code class="language-julia">nboot = 2000
 boots = [oneboot(hydro, allow_f_increases=true, method=perfect_bounding_chain) for i=1:nboot]
-addboot!(fit1, boots)</code></pre><p>On the author&#39;s workstation, this took about 5.7 minutes.  After adding the bootstrap information, the fitting results look like this:</p><pre><code class="language-none">julia&gt; summary(fit1,parnames=parnames)
+addboot!(fit1, boots)</code></pre><p>At the time of writing, this took about 5.7 minutes on the author&#39;s workstation. After adding the bootstrap information, the fitting results look like this:</p><pre><code class="language-none">julia&gt; summary(fit1,parnames=parnames)
 name          est       se       95% CI
 intercept     -0.192    0.319     (-0.858, 0.4)
 altitude      -0.0573   0.015    (-0.0887, -0.0296)
 temperature    0.0498   0.0361   (-0.0163, 0.126)
-association    0.361    0.018      (0.326, 0.397)</code></pre><p>Confidence intervals for altitude and the association parameter both exclude zero, so we conclude that they are statistically significant.</p><h3><a class="nav-anchor" id="Error-estimation-2:-(parallel)-bootstrap-when-fitting-1" href="#Error-estimation-2:-(parallel)-bootstrap-when-fitting-1">Error estimation 2: (parallel) bootstrap when fitting</a></h3><p>Alternatively, the bootstrap inference procedure can be done at the same time as fitting by providing the keyword argument <code>nboot</code> (which specifies the number of bootstrap samles to generate) when calling <code>fit_pl!</code>. If you do this, <em>and</em> you have more than one worker process available, then the bootstrap will be done in parallel across the workers (using an <code>@distributed for</code> loop).  This makes it easy to achieve speed gains from parallelism on multicore workstations.</p><pre><code class="language-julia">using Distributed                  # needed for parallel computing
+association    0.361    0.018      (0.326, 0.397)</code></pre><p>Confidence intervals for altitude and the association parameter both exclude zero, so we conclude that they are statistically significant.</p><h3><a class="nav-anchor" id="Error-estimation-2:-(parallel)-bootstrap-when-fitting-1" href="#Error-estimation-2:-(parallel)-bootstrap-when-fitting-1">Error estimation 2: (parallel) bootstrap when fitting</a></h3><p>Alternatively, the bootstrap inference procedure can be done at the same time as fitting by providing the keyword argument <code>nboot</code> (which specifies the number of bootstrap samples to generate) when calling <code>fit_pl!</code>. If you do this, <strong>and</strong> you have more than one worker process available, then the bootstrap will be done in parallel across the workers (using an <code>@distributed for</code> loop).  This makes it easy to achieve speed gains from parallelism on multicore workstations.</p><pre><code class="language-julia">using Distributed                  # needed for parallel computing
 addprocs(6)                        # create 6 worker processes
 @everywhere using Autologistic     # workers need the package loaded
-fit2 = fit_pl!(hydro, nboot=2000, 
+fit2 = fit_pl!(hydro, nboot=2000,
                allow_f_increases=true, method=perfect_bounding_chain)</code></pre><p>In this case the 2000 bootstrap replications took about 1.1 minutes on the same 6-core workstation. The output object <code>fit2</code> already includes the confidence intervals:</p><pre><code class="language-none">julia&gt; summary(fit2, parnames=parnames)
 name          est       se       95% CI
 intercept     -0.192    0.33        (-0.9, 0.407)
 altitude      -0.0573   0.0157   (-0.0897, -0.0297)
 temperature    0.0498   0.0372   (-0.0169, 0.13)
-association    0.361    0.0179     (0.327, 0.396)</code></pre><p>For parallel computing of the bootstrap in other settings (eg. on a cluster), it should be fairly simple implement in a script, using the <code>oneboot</code>/<code>addboot!</code> approach of the previous section.</p><h3><a class="nav-anchor" id="Comparison-to-the-centered-model-1" href="#Comparison-to-the-centered-model-1">Comparison to the centered model</a></h3><p>(blah) (local minimia, need to provide starting values)</p><pre><code class="language-julia">centered_hydro = deepcopy(hydro)
+association    0.361    0.0179     (0.327, 0.396)</code></pre><p>For parallel computing of the bootstrap in other settings (eg. on a cluster), it should be fairly simple implement in a script, using the <code>oneboot</code>/<code>addboot!</code> approach of the previous section.</p><h3><a class="nav-anchor" id="Comparison-to-logistic-regression-1" href="#Comparison-to-logistic-regression-1">Comparison to logistic regression</a></h3><p>If we ignore spatial association, and just fit the model with ordinary logistic regression, we get the following result:</p><pre><code class="language-">using GLM
+LR = glm(@formula(obs ~ altitude + temperature), df, Bernoulli(), LogitLink());
+coef(LR)</code></pre><p>The logistic regression coefficients are not directly comparable to the ALR coefficients, because the ALR model uses coding <span>$(-1, 1)$</span>.  If we want to compare the two models, we can transform the symmetric model to use the <span>$(0, 1)$</span> coding.</p><div class="admonition note"><div class="admonition-title">The symmetric ALR model with (0,1) coding</div><div class="admonition-text"><p>The symmetric ALR model with <span>$(-1, 1)$</span> coding is equivalent to a model with <span>$(0,1)$</span> coding and a constant centering adjustment of 0.5.  If the original model has coefficients <span>$(β, λ)$</span>, the transformed model has coefficients <span>$(2β, 4λ)$</span>.</p><p>To compare the symmetric ALR model to a logistic regression model, either</p><ol><li><p>(recommended) Fit the <span>$(-1,1)$</span> <code>ALRsimple</code> model and transform the parameters, or</p></li><li><p>Fit an <code>ALRsimple</code> model with <code>coding=(0,1)</code> and <code>centering=onehalf</code>.</p></li></ol></div></div><p>Using option 1 with model <code>hydro</code>, we have</p><div><pre><code class="language-julia">transformed_pars = [2*getunaryparameters(hydro); 4*getpairwiseparameters(hydro)]</code></pre><pre><code class="language-none">4-element Array{Float64,1}:
+ -0.38312438898118634
+ -0.1146065636064973
+  0.09962289635802735
+  1.4457110223407608</code></pre></div><p>We see that the association parameter is large (1.45), but the regression parameters are small compared to the logistic regression model.  This is typical: ignoring spatial association tends to result in overestimation of the regression effects.</p><p>To see that option 2 is also valid, we can fit the transformed model directly:</p><div><pre><code class="language-julia">same_as_hydro = ALRsimple(g.G, Xmatrix, Y=df.obs, coding=(0,1), centering=onehalf)
+fit3 = fit_pl!(same_as_hydro, allow_f_increases=true)
+fit3.estimate</code></pre><pre><code class="language-none">4-element Array{Float64,1}:
+ -0.3831243968133005
+ -0.11460656310781416
+  0.0996228970830672
+  1.445711022729387</code></pre></div><p>We see that the parameter estimates from <code>same_as_hydro</code> are equal to the <code>hydro</code> estimates after transformation.</p><h3><a class="nav-anchor" id="Comparison-to-the-centered-model-1" href="#Comparison-to-the-centered-model-1">Comparison to the centered model</a></h3><p>The centered autologistic model can be easily constructed for comparison with the symmetric one.  We can start with a copy of the symmetric model we have already created.</p><p>The pseudolikelihood function for the centered model is not convex.  Three different local optima were found.  For this demonstration we are using the <code>start</code> argument to let optimization start from a point close to the best minimum found.</p><pre><code class="language-julia">centered_hydro = deepcopy(hydro)
 centered_hydro.coding = (0,1)
 centered_hydro.centering = expectation
-fit3 = fit_pl!(centered_hydro, nboot=2000, start=[-1.7, -0.17, 0.0, 1.5],
-               allow_f_increases=true, method=perfect_bounding_chain)</code></pre><pre><code class="language-none">julia&gt; summary(fit3, parnames=parnames)
+fit4 = fit_pl!(centered_hydro, nboot=2000, start=[-1.7, -0.17, 0.0, 1.5],
+               allow_f_increases=true, method=perfect_bounding_chain)</code></pre><pre><code class="language-none">julia&gt; summary(fit4, parnames=parnames)
 name          est       se       95% CI
 intercept     -2.29     1.07       (-4.6, -0.345)
 altitude      -0.16     0.0429   (-0.258, -0.088)
 temperature    0.0634   0.115    (-0.138, 0.32)
-association    1.51     0.0505     (1.42, 1.61)</code></pre><p>(fit the model and show predictions for assoc=0)</p><p>(**** TODO: need marginals plot to color scale always from 0 to 1****)</p><pre><code class="language-julia"># Make modified parameter vectors
-centered_pars = getparameters(centered_hydro)
-centered_pars[4] = 0.0
-symmetric_pars = getparameters(hydro)
-symmetric_pars[4] = 0.0
+association    1.51     0.0505     (1.42, 1.61)
 
-# Change models to have the new parameters
-setparameters!(centered_hydro, centered_pars)
-setparameters!(hydro, symmetric_pars)
+julia&gt; round.([fit3.estimate fit4.estimate], digits=3)
+4×2 Array{Float64,2}:
+ -0.383  -2.29
+ -0.115  -0.16
+  0.1     0.063
+  1.446   1.506</code></pre><p>The main difference between the symmetric ALR model and the centered one is the intercept, which changes from -0.383 to -2.29 when changing to the centered model.  This is not a small difference.  To see this, compare what the two models predict in the absence of spatial association.</p><pre><code class="language-julia"># Change models to have association parameters equal to zero
+# Remember parameters are always Array{Float64,1}.
+setpairwiseparameters!(centered_hydro, [0.0])
+setpairwiseparameters!(hydro, [0.0])
 
 # Sample to estimate marginal probabilities
 centered_marg = sample(centered_hydro, 500, method=perfect_bounding_chain, average=true)
@@ -1486,5 +1508,4 @@ symmetric_marg = sample(hydro, 500, method=perfect_bounding_chain, average=true)
 # Plot to compare
 plot(myplot(centered_marg, (0,1)), myplot(symmetric_marg, (0,1)),
      layout=(1,2), size=(500,300), titlefontsize=8,
-     title=[&quot;Centered Model&quot; &quot;Symmetric Model&quot;])</code></pre><h3><a class="nav-anchor" id="Comparison-to-logistic-regression-1" href="#Comparison-to-logistic-regression-1">Comparison to logistic regression</a></h3><p>(include a tip about getting logistic-comparable coefficients: either use symmetric model and transform after, or use zero-one/model with centering=1/2)</p><pre><code class="language-julia">using GLM
-tst = glm(@formula(obs ~ altitude + temperature), df, Bernoulli(), LogitLink())</code></pre><footer><hr/><a class="previous" href="../BasicUsage/"><span class="direction">Previous</span><span class="title">Basic Usage</span></a><a class="next" href="../api/"><span class="direction">Next</span><span class="title">Reference</span></a></footer></article></body></html>
+     title=[&quot;Centered Model&quot; &quot;Symmetric Model&quot;])</code></pre><p><img src="../assets/noassociation.png" alt="noassociation.png"/></p><p>If we remove the spatial association term, the centered model predicts a very low probability of seeing the plant anywhere–including in locations with low elevation, where the plant is plentiful in reality. This is a manifestation of a problem with the centered model, where parameter interpretability is lost when association becomes strong.</p><footer><hr/><a class="previous" href="../BasicUsage/"><span class="direction">Previous</span><span class="title">Basic Usage</span></a><a class="next" href="../api/"><span class="direction">Next</span><span class="title">Reference</span></a></footer></article></body></html>
