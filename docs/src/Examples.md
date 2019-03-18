@@ -25,7 +25,7 @@ decreases the chance of getting a ``+1`` state at that vertex; and there's a sin
 parameter that controls the strength of interaction between neighbor states.
 
 In our terminology it's just an autologistic model with the appropriate graph.
-Specifically, it's an `ARsimple` model: one with `FullUnary` type unary parameter, and
+Specifically, it's an `ALsimple` model: one with `FullUnary` type unary parameter, and
 `SimplePairwise` type pairwise parameter.
 
 We can create such a model once we have the graph.  For example, let's create two 30-by-30
@@ -52,10 +52,15 @@ Random.seed!(8888)
 α = randn(n^2)
 M1 = ALsimple(G1, α)
 M2 = ALsimple(G2, α)
+nothing #hide
 ```
 
-The REPL output shows information about the model.  It's an `ALsimple` type with one
+Typing `M2` at the REPL shows information about the model.  It's an `ALsimple` type with one
 observation of length 900.
+
+```@repl Ising
+M2
+```
 
 The `conditionalprobabilities` function returns the probablity of observing a ``+1`` state
 at each vertex, conditional on the vertex's neighbor values. These can be visualized
@@ -83,8 +88,7 @@ nothing # hide
 
 A quick way to see the effect of this parameter is to observe random samples from the
 models. The `sample` function can be used to do this. For this example, use perfect
-sampling using a bounding chain algorithm (the enumeration
-[`SamplingMethods`](@ref) lists the available sampling options).
+sampling using a bounding chain algorithm.
 
 ```@example Ising
 s1 = sample(M1, method=perfect_bounding_chain)
@@ -92,7 +96,8 @@ s2 = sample(M2, method=perfect_bounding_chain)
 nothing #hide
 ```
 
-The samples can also be visualized using `heatmap`:
+Other options are available for sampling.  The enumeration [`SamplingMethods`](@ref) lists
+them. The samples we have just drawn can also be visualized using `heatmap`:
 
 ```@example Ising
 pl1 = heatmap(reshape(s1, n, n), c=:grays, colorbar=false, title="regular boundary");
@@ -110,8 +115,10 @@ probabilities. They can be estimated by drawing many samples and averaging them
 ```julia
 marg1 = sample(M1, 500, method=perfect_bounding_chain, verbose=true, average=true)
 marg2 = sample(M2, 500, method=perfect_bounding_chain, verbose=true, average=true)
-pl3 = heatmap(reshape(marg1, n, n), c=:grays, colorbar=false, title="regular boundary");
-pl4 = heatmap(reshape(marg2, n, n), c=:grays, colorbar=false, title="periodic boundary");
+pl3 = heatmap(reshape(marg1, n, n), c=:grays,
+              colorbar=false, title="regular boundary");
+pl4 = heatmap(reshape(marg2, n, n), c=:grays,
+              colorbar=false, title="periodic boundary");
 plot(pl3, pl4, size=(800,400), aspect_ratio=1)
 savefig("marginal-probs.png")
 ```
@@ -121,7 +128,7 @@ The figure `marginal-probs.png` looks like this:
 ![marginal-probs.png](../assets/marginal-probs.png)
 
 Although the differences between the two marginal distributions are not striking, the
-extra edges connecting top to bottom and left to right do have some influence on the
+extra edges connecting top/bottom and left/right do have some influence on the
 probabilities at the periphery of the square.
 
 As a final demonstration, perform Gibbs sampling for model `M2`, starting from
@@ -141,8 +148,8 @@ gif(anim, "ising_gif.gif", fps=10)
 
 ## Clustered Binary Data (Small ``n``)
 
-The *retinitis pigmentosa* data set
-[obtained here](https://sites.google.com/a/channing.harvard.edu/bernardrosner/channing/regression-method-when-the-eye-is-the-unit-of-analysis)
+The *retinitis pigmentosa* data set (obtained from
+[this source](https://sites.google.com/a/channing.harvard.edu/bernardrosner/channing/regression-method-when-the-eye-is-the-unit-of-analysis))
 is an opthalmology data set.  The data comes from 444 patients that had both eyes
 examined.  The data can be loaded with `Autologistic.datasets`:
 
@@ -154,7 +161,7 @@ describe(df)
 ```
 
 The response for each eye is **va**, an indicator of poor visual acuity (coded 0 = no,
-1 = yes in the loaded data set). Seven covariates were also recorded for each eye:
+1 = yes in the data set). Seven covariates were also recorded for each eye:
 
 * **aut_dom**: autosomal dominant (0=no, 1=yes)
 * **aut_rec**: autosomal recessive (0=no, 1=yes)
@@ -170,17 +177,18 @@ patient.  Eyes with the same ID come from the same person.
 
 The natural unit of analysis is the eye, but pairs of observations from the same
 patient are "clustered" because the occurrence of acuity loss in the left and right eye
-is probably correlated. We can model each person's two eyes' **va** outcomes as two
+is probably correlated. We can model each person's two **va** outcomes as two
 dichotomous random variables with a 2-vertex, 1-edge graph.
 
-```@example pigmentosa
+```@repl pigmentosa
 G = Graph(2,1)
 ```
 
-Each of the 444 observations has this graph, and each has its own set of covariates.
+Each of the 444 bivariate observations has this graph, and each has its own set of
+covariates.
 
 If we include all seven predictors, plus intercept, in our model, we have 2 variables per
-observation, 8 predictors, and 444 obsrevations. 
+observation, 8 predictors, and 444 observations.
 
 Before creating the model we need to re-structure the covariates. The data in `df` has one
 row per eye, with the variable `ID` indicating which eyes belong to the same patient.  We
@@ -197,23 +205,23 @@ autologistic models, namely:
 X = Array{Float64,3}(undef, 2, 8, 444);
 Y = Array{Float64,2}(undef, 2, 444);
 for i in 1:2:888
-    subject = Int((i+1)/2)
-    X[1,:,subject] = [1 permutedims(Vector(df[i,2:8]))]
-    X[2,:,subject] = [1 permutedims(Vector(df[i+1,2:8]))]
-    Y[:,subject] = convert(Array, df[i:i+1, 9])
+    patient = Int((i+1)/2)
+    X[1,:,patient] = [1 permutedims(Vector(df[i,2:8]))]
+    X[2,:,patient] = [1 permutedims(Vector(df[i+1,2:8]))]
+    Y[:,patient] = convert(Array, df[i:i+1, 9])
 end
 ```
 
 For example, patient 100 had responses
 
-```@example pigmentosa
+```@repl pigmentosa
 Y[:,100]
 ```
 
 Indicating visual acuity loss in the left eye, but not in the right. The predictors for
 this individual are
 
-```@example pigmentosa
+```@repl pigmentosa
 X[:,:,100]
 ```
 
@@ -230,14 +238,14 @@ the responses.  This "symmetric" version of the model is recommended for
 or centering choices is only recommended if you have a thorough understanding of what
 you are doing; but if you wish to use different choices, this can easily be done using
 keyword arguments. For example, `ALRsimple(G, X, Y=Y, coding=(0,1), centering=expectation)`
-creates the "centered autologistic model" that has appeared in the literature, e.g.
+creates the "centered autologistic model" that has appeared in the literature (e.g.,
 [here](https://link.springer.com/article/10.1198/jabes.2009.07032) and
-[here](https://doi.org/10.1002/env.1102)
+[here](https://doi.org/10.1002/env.1102)).
 
 The model has nine parameters (eight regression coefficients plus the association
 parameter).  All parameters are initialized to zero:
 
-```@example pigmentosa
+```@repl pigmentosa
 getparameters(model)
 ```
 
@@ -267,7 +275,7 @@ significant.
 
 ## Spatial Binary Regression
 
-Autologistic regression is a natural candidate for analysis of spatial binary data, where
+ALR models are natural candidates for analysis of spatial binary data, where
 locations in the same neighborhood are more likely to have the same outcome than sites that
 are far apart.
 The [hydrocotyle data](https://doi.org/10.1016/j.ecolmodel.2007.04.024) provide a typical
@@ -292,10 +300,9 @@ g = makespatialgraph(locations, 1.0)
 nothing # hide
 ```
 
-`makespatialgraph` takes an array of tuples giving the spatial coodinates, and a distance
-threshold. It returns a named tuple with the graph and the array of coordinates.  The graph
-has one vertex for each spatial location, and edge for every pair of locations that are
-within the threshold distance of each other. For these data arranged on a grid, a threshold
+`makespatialgraph` creates the graph by adding edges between any vertices with Euclidean
+distance smaller than a cutoff distance (Lightgraphs.jl has a `euclidean_graph` function
+that does the same thing).  For these data arranged on a grid, a threshold
 of 1.0 will make a 4-nearest-neighbors lattice. Letting the threshold be `sqrt(2)` would
 make an 8-nearest-neighbors lattice.
 
@@ -332,7 +339,7 @@ plot(myplot(df.obs), myplot(df.altitude), myplot(df.temperature),
 
 ### Constructing the model
 
-We can see that the species primarily is found at low-altidude locations. To model the
+We can see that the species primarily is found at low-altitude locations. To model the
 effect of altitude and temperature on species presence, construct an `ALRsimple` model.
 
 ```@example hydro
@@ -341,7 +348,6 @@ Xmatrix = Array{Float64}([ones(2995) df.altitude df.temperature])
 
 # Create the model
 hydro = ALRsimple(g.G, Xmatrix, Y=df.obs)
-
 ```
 
 The model `hydro` has four parameters: three regression coefficients (interceept, altitude,
@@ -355,7 +361,7 @@ do parameter estimation by pseudolikelihood instead.  The fitting function uses 
 algorithm via [`Optim.jl`](http://julianlsolvers.github.io/Optim.jl/stable/).  Any of
 Optim's [general options](http://julianlsolvers.github.io/Optim.jl/stable/#user/config/)
 can be passed to `fit_pl!` to control the optimization.  We have found that
-`allow_f_increases` often aids convergence; it is used here:
+`allow_f_increases` often aids convergence.  It is used here:
 
 ```@repl hydro
 fit1 = fit_pl!(hydro, allow_f_increases=true)
@@ -363,13 +369,13 @@ parnames = ["intercept", "altitude", "temperature", "association"];
 summary(fit1, parnames=parnames)
 ```
 
-`fit_pl!` sets the parameters of the model object to the optimal values, and also returns
-an object of type `ALfit`, with fields holding useful information.  Calling `summary(fit1)`
-produces a summary table of the estimates.  For now there are no standard errors.  This
-will be addressed below.
+`fit_pl!` mutates the model object by setting its parameters to the optimal values. It also
+returns an object, of type `ALfit`, which holds information about the result. Calling
+`summary(fit1)` produces a summary table of the estimates.  For now there are no standard
+errors.  This will be addressed below.
 
 To quickly visualize the quality of the fitted model, we can use sampling to get the
-marginal probabilities:
+marginal probabilities, and to observe specific samples.
 
 ```@example hydro
 # Average 500 samples to estimate marginal probability of species presence
@@ -394,10 +400,11 @@ A parametric bootstrap can be used to get an estimate of the precision of the es
 returned by `fit_pl!`.  The function [`oneboot`](@ref) has been included in the package to
 facilitate this.  Each call of `oneboot` draws a random sample from the fitted distribution,
 then re-fits the model using this sample as the responses. It returns a named tuple giving
-the sample, the parameter estimates, and a convergence flag.  Extra keyword arguments are
-passed to `sample` or `optimize` as appropriate to control the process:
+the sample, the parameter estimates, and a convergence flag.  Any extra keyword arguments
+are passed on to `sample` or `optimize` as appropriate to control the process.
 
 ```@repl hydro
+# Do one bootstrap replication for demonstration purposes.
 oneboot(hydro, allow_f_increases=true, method=perfect_bounding_chain)
 ```
 
@@ -410,8 +417,8 @@ boots = [oneboot(hydro, allow_f_increases=true, method=perfect_bounding_chain) f
 addboot!(fit1, boots)
 ```
 
-On the author's workstation, this took about 5.7 minutes.  After adding the bootstrap
-information, the fitting results look like this:
+At the time of writing, this took about 5.7 minutes on the author's workstation.
+After adding the bootstrap information, the fitting results look like this:
 
 ```
 julia> summary(fit1,parnames=parnames)
@@ -425,12 +432,11 @@ association    0.361    0.018      (0.326, 0.397)
 Confidence intervals for altitude and the association parameter both exclude zero, so we
 conclude that they are statistically significant.
 
-
 ### Error estimation 2: (parallel) bootstrap when fitting
 
 Alternatively, the bootstrap inference procedure can be done at the same time as fitting by
-providing the keyword argument `nboot` (which specifies the number of bootstrap samles to
-generate) when calling `fit_pl!`. If you do this, *and* you have more than one worker
+providing the keyword argument `nboot` (which specifies the number of bootstrap samples to
+generate) when calling `fit_pl!`. If you do this, **and** you have more than one worker
 process available, then the bootstrap will be done in parallel across the workers (using an
 `@distributed for` loop).  This makes it easy to achieve speed gains from parallelism on
 multicore workstations.
@@ -439,7 +445,7 @@ multicore workstations.
 using Distributed                  # needed for parallel computing
 addprocs(6)                        # create 6 worker processes
 @everywhere using Autologistic     # workers need the package loaded
-fit2 = fit_pl!(hydro, nboot=2000, 
+fit2 = fit_pl!(hydro, nboot=2000,
                allow_f_increases=true, method=perfect_bounding_chain)
 ```
 
@@ -459,42 +465,97 @@ For parallel computing of the bootstrap in other settings (eg. on a cluster), it
 fairly simple implement in a script, using the `oneboot`/`addboot!` approach of the previous
 section.
 
+### Comparison to logistic regression
+
+If we ignore spatial association, and just fit the model with ordinary logistic regression,
+we get the following result:
+
+```@example hydro
+using GLM
+LR = glm(@formula(obs ~ altitude + temperature), df, Bernoulli(), LogitLink());
+coef(LR)
+```
+
+The logistic regression coefficients are not directly comparable to the ALR coefficients,
+because the ALR model uses coding ``(-1, 1)``.  If we want to compare the two models,
+we can transform the symmetric model to use the ``(0, 1)`` coding.
+
+!!! note "The symmetric ALR model with (0,1) coding"
+
+    The symmetric ALR model with ``(-1, 1)`` coding is equivalent to a model with ``(0,1)``
+    coding and a constant centering adjustment of 0.5.  If the original model has
+    coefficients ``(β, λ)``, the transformed model has coefficients ``(2β, 4λ)``.
+
+    To compare the symmetric ALR model to a logistic regression model, either
+
+    1. (recommended) Fit the ``(-1,1)`` `ALRsimple` model and transform the parameters, or
+
+    2. Fit an `ALRsimple` model with `coding=(0,1)` and `centering=onehalf`.
+
+Using option 1 with model `hydro`, we have
+
+```@example hydro
+transformed_pars = [2*getunaryparameters(hydro); 4*getpairwiseparameters(hydro)]
+```
+
+We see that the association parameter is large (1.45), but the regression parameters are
+small compared to the logistic regression model.  This is typical: ignoring spatial
+association tends to result in overestimation of the regression effects.
+
+To see that option 2 is also valid, we can fit the transformed model directly:
+
+```@example hydro
+same_as_hydro = ALRsimple(g.G, Xmatrix, Y=df.obs, coding=(0,1), centering=onehalf)
+fit3 = fit_pl!(same_as_hydro, allow_f_increases=true)
+fit3.estimate
+```
+
+We see that the parameter estimates from `same_as_hydro` are equal to the `hydro` estimates
+after transformation.
+
 ### Comparison to the centered model
 
-(blah) (local minimia, need to provide starting values)
+The centered autologistic model can be easily constructed for comparison with the
+symmetric one.  We can start with a copy of the symmetric model we have already created.
+
+The pseudolikelihood function for the centered model is not convex.  Three different local
+optima were found.  For this demonstration we are using the `start` argument to let
+optimization start from a point close to the best minimum found.
 
 ```julia
 centered_hydro = deepcopy(hydro)
 centered_hydro.coding = (0,1)
 centered_hydro.centering = expectation
-fit3 = fit_pl!(centered_hydro, nboot=2000, start=[-1.7, -0.17, 0.0, 1.5],
+fit4 = fit_pl!(centered_hydro, nboot=2000, start=[-1.7, -0.17, 0.0, 1.5],
                allow_f_increases=true, method=perfect_bounding_chain)
 ```
 
 ```
-julia> summary(fit3, parnames=parnames)
+julia> summary(fit4, parnames=parnames)
 name          est       se       95% CI
 intercept     -2.29     1.07       (-4.6, -0.345)
 altitude      -0.16     0.0429   (-0.258, -0.088)
 temperature    0.0634   0.115    (-0.138, 0.32)
 association    1.51     0.0505     (1.42, 1.61)
+
+julia> round.([fit3.estimate fit4.estimate], digits=3)
+4×2 Array{Float64,2}:
+ -0.383  -2.29
+ -0.115  -0.16
+  0.1     0.063
+  1.446   1.506
 ```
 
-
-(fit the model and show predictions for assoc=0)
-
-(**** TODO: need marginals plot to color scale always from 0 to 1****)
+The main difference between the symmetric ALR model and the centered one is the intercept,
+which changes from -0.383 to -2.29 when changing to the centered model.  This is not a small
+difference.  To see this, compare what the two models predict in the absence of spatial
+association.
 
 ```julia
-# Make modified parameter vectors
-centered_pars = getparameters(centered_hydro)
-centered_pars[4] = 0.0
-symmetric_pars = getparameters(hydro)
-symmetric_pars[4] = 0.0
-
-# Change models to have the new parameters
-setparameters!(centered_hydro, centered_pars)
-setparameters!(hydro, symmetric_pars)
+# Change models to have association parameters equal to zero
+# Remember parameters are always Array{Float64,1}.
+setpairwiseparameters!(centered_hydro, [0.0])
+setpairwiseparameters!(hydro, [0.0])
 
 # Sample to estimate marginal probabilities
 centered_marg = sample(centered_hydro, 500, method=perfect_bounding_chain, average=true)
@@ -506,14 +567,9 @@ plot(myplot(centered_marg, (0,1)), myplot(symmetric_marg, (0,1)),
      title=["Centered Model" "Symmetric Model"])
 ```
 
+![noassociation.png](../assets/noassociation.png)
 
-### Comparison to logistic regression
-
-(include a tip about getting logistic-comparable coefficients: either use symmetric model
-and transform after, or use zero-one/model with centering=1/2)
-
-```julia
-using GLM
-tst = glm(@formula(obs ~ altitude + temperature), df, Bernoulli(), LogitLink())
-```
-
+If we remove the spatial association term, the centered model predicts a very low
+probability of seeing the plant anywhere--including in locations with low elevation, where
+the plant is plentiful in reality. This is a manifestation of a problem with the centered
+model, where parameter interpretability is lost when association becomes strong.
