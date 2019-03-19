@@ -1,6 +1,3 @@
-# NOTE: @test_warn and @test_nowarn give Base.IOError exception when this 
-# file is included in jupyter notebook.
-
 # TODO: 
 # [ ] Add more tests for getindex() with simplepairwise (many methods)
 
@@ -351,4 +348,21 @@ end
     model3.responses = makebool(Y)
     fit = fit_pl!(model3, nboot=100)
     @test isapprox(fit.estimate, [-0.26976, -0.06015], atol=0.001)
+end
+
+@testset "ALfit type" begin
+    tst = ALfit()
+    @test Autologistic.showfields(tst) == "(all fields empty)\n"
+    tst.estimate = rand(10)
+    @test Autologistic.showfields(tst) == 
+          "estimate       10-element vector of parameter estimates\n"
+    sm = ["yes"    "no"     "maybe"; 
+          "1.2345" "123.45" "12345";
+          "12.345" "1.2345" "12345"]
+    Autologistic.align!(sm, 1, '.')
+    Autologistic.align!(sm, 2, '.')
+    Autologistic.align!(sm, 3, 'x')
+    @test sm[:,1] == ["yes"; " 1.2345"; "12.345"]
+    @test sm[:,2] == ["no"; "123.45"; "  1.2345"]
+    @test sm[:,3] == ["maybe"; "12345"; "12345"]
 end

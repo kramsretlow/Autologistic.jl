@@ -1,11 +1,8 @@
 """
     AbstractAutologisticModel
 
-Abstract type representing autologistic models.  This type has methods defined for most
-operations one will want to perform, so that concrete subtypes should not have to define
-too many methods unless more specialized and efficient algorithms for the specific subtype.
-
-All concrete subtypes should have the following fields:
+Abstract type representing autologistic models. All concrete subtypes should have the
+following fields:
 
 *   `responses::Array{Bool,2}` -- The binary observations. Rows are for nodes in the 
     graph, and columns are for independent (vector) observations.  It is a 2D array even if 
@@ -19,23 +16,20 @@ All concrete subtypes should have the following fields:
 *   `coordinates<:SpatialCoordinates` -- Provides 2D or 3D coordinates for each vertex in 
     the graph.
 
-The following functions are defined for the abstract type, and are considered part of the 
-type's interface (in this list, `M` is of type inheriting from `AbstractAutologisticModel`).
+This type has the following functions defined, considered part of the type's interface.
+They cover most operations one will want to perform.  Concrete subtypes should not have to
+define custom overrides unless more specialized or efficient algorithms exist for the 
+subtype.
 
-*   `getparameters(M)` and `setparameters!(M, newpars::Vector{Float64})`
-*   `getunaryparameters(M)` and `setunaryparameters!(M, newpars::Vector{Float64})`
-*   `getpairwiseparameters(M)` and `setpairwiseparameters!(M, newpars::Vector{Float64})`
-*   `centeringterms(M, kind::Union{Nothing,CenteringKinds})`
-*   `pseudolikelihood(M)`
-*   `negpotential(M)`
-*   `fullPMF(M; indices, force::Bool)`
-*   `marginalprobabilities(M; indices, force::Bool)`
-*   `conditionalprobabilities(M; vertices, indices)`
-*   `sample(M, k::Int, method::SamplingMethods, indices::Int, average::Bool, config, 
-    burnin::Int, verbose::Bool)`
-
-The `sample()` function is a wrapper for a variety of random sampling algorithms enumerated
-in `SamplingMethods`.
+*   `getparameters` and `setparameters!`
+*   `getunaryparameters` and `setunaryparameters!`
+*   `getpairwiseparameters` and `setpairwiseparameters!`
+*   `centeringterms`
+*   `negpotential`, `pseudolikelihood`, and `loglikelihood`
+*   `fullPMF`, `marginalprobabilities`, and `conditionalprobabilities`
+*   `fit_pl!` and `fit_ml!`
+*   `sample` and `oneboot`
+*   `showfields`
 
 # Examples
 ```jldoctest
@@ -68,7 +62,6 @@ end
 
 
 # === show methods =============================================================
-
 Base.show(io::IO, m::AbstractAutologisticModel) = print(io, "$(typeof(m))")
 
 function Base.show(io::IO, ::MIME"text/plain", m::AbstractAutologisticModel)
@@ -87,7 +80,7 @@ end
 
 # === centering adjustment =====================================================
 # centeringterms(M) returns an Array{Float64,2} of the same dimension as 
-# M.unary, giving the centering adjustments for AutologisticModel M.
+# M.unary, giving the centering adjustments for AbstractAutologisticModel M.
 # centeringterms(M,kind) returns the centering adjustment that would be 
 #   if centering were of type kind.
 # TODO: consider performance implications of calculating this each time instead
@@ -112,7 +105,7 @@ end
 
 # === pseudolikelihood =========================================================
 # pseudolikelihood(M) computes the negative log pseudolikelihood for the given 
-# AutologisticModel with its responses.  Returns a Float64.
+# AbstractAutologisticModel with its responses.  Returns a Float64.
 function pseudolikelihood(M::AbstractAutologisticModel)
     out = 0.0
     Y = makecoded(M)
@@ -139,26 +132,6 @@ function pslik!(θ::Vector{Float64}, M::AbstractAutologisticModel)
     return pseudolikelihood(M)
 end
 
-
-# Takes a named tuple (arising from keyword argument list) and produces two named tuples:
-# one with the arguments for optimise(), and one for arguments to sample()
-# Usage: optimargs, sampleargs = splitkw(keyword_tuple)
-# (tests done)
-splitkw = function(kwargs)
-    optimnames = fieldnames(typeof(Optim.Options()))
-    samplenames = (:method, :indices, :average, :config, :burnin, :verbose)
-    optimargs = Dict{Symbol,Any}()
-    sampleargs = Dict{Symbol,Any}()
-    for (symb, val) in pairs(kwargs)
-        if symb in optimnames
-            push!(optimargs, symb => val)
-        end
-        if symb in samplenames
-            push!(sampleargs, symb => val)
-        end
-    end
-    return (;optimargs...), (;sampleargs...)
-end
 
 # (tests done)
 function oneboot(M::AbstractAutologisticModel; 
@@ -283,10 +256,11 @@ end
 
 Compute the PMF of an AbstractAutologisticModel, and return a `NamedTuple` `(:table, :partition)`.
 
-For an AutologisticModel with ``n`` variables and ``m`` observations, `:table` is a ``2^n×(n+1)×m`` 
-array of `Float64`. Each page of the 3D array holds a probability table for an observation.  
-Each row of the table holds a specific configuration of the responses, with the 
-corresponding probability in the last column.  In the ``m=1`` case,  `:table` is a 2D array.
+For an AbstractAutologisticModel with ``n`` variables and ``m`` observations, `:table` is a
+``2^n×(n+1)×m`` array of `Float64`. Each page of the 3D array holds a probability table for 
+an observation.  Each row of the table holds a specific configuration of the responses, with
+the corresponding probability in the last column.  In the ``m=1`` case,  `:table` is a 2D 
+array.
 
 Output `:partition` is a vector of normalizing constant (a.k.a. partition function) values.
 In the ``m=1`` case, it is a scalar `Float64`.

@@ -1,5 +1,5 @@
 #----- FullUnary ---------------------------------------------------------------
-# A unary part with one parameter per variable per replicate.
+# A unary part with one parameter per variable per observation.
 mutable struct FullUnary <: AbstractUnaryParameter
     α::Array{Float64,2}
 end

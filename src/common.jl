@@ -241,3 +241,23 @@ function hess(fcn, x, h=1e-6)
     # Fill the bottom half of H (use symmetry), and return
     return H + LinearAlgebra.triu(H,1)'
 end
+
+# Takes a named tuple (arising from keyword argument list) and produces two named tuples:
+# one with the arguments for optimise(), and one for arguments to sample()
+# Usage: optimargs, sampleargs = splitkw(keyword_tuple)
+# (tests done)
+splitkw = function(kwargs)
+    optimnames = fieldnames(typeof(Optim.Options()))
+    samplenames = (:method, :indices, :average, :config, :burnin, :verbose)
+    optimargs = Dict{Symbol,Any}()
+    sampleargs = Dict{Symbol,Any}()
+    for (symb, val) in pairs(kwargs)
+        if symb in optimnames
+            push!(optimargs, symb => val)
+        end
+        if symb in samplenames
+            push!(sampleargs, symb => val)
+        end
+    end
+    return (;optimargs...), (;sampleargs...)
+end

@@ -7,20 +7,20 @@ object of this type.
 Depending on the fitting method, some fields might not be set.  Fields that are not used
 are set to `nothing` or to zero-dimensional arrays.  The fields are:
 
-* `estimate`: A vector of parameter estimates
-* `se`: A vector of standard errors for the estimates
+* `estimate`: A vector of parameter estimates.
+* `se`: A vector of standard errors for the estimates.
 * `pvalues`: A vector of p-values for testing the null hypothesis that the parameters equal
   zero (one-at-a time hypothesis tests).
 * `CIs`: A vector of 95% confidence intervals for the parameters (a vector of 2-tuples).
 * `optim`: the output of the call to `optimize` used to get the estimates.
 * `Hinv` (used by `fit_ml!`): The inverse of the Hessian matrix of the objective function, 
   evaluated at the estimate.
-* `nboot` - (`fit_pl!`) number of bootstrap samples to use for error estimation
-* `kwargs` - (`fit_pl!`) A ***TODO-what type?***** of extra keyword arguments passed in the call
-  (a record of which arguments were passed to `sample`)
-* `bootsamples` - (`fit_pl!`) the bootstrap samples
-* `bootestimates` - (`fit_pl!`) the bootstrap parameter estimates
-* `convergence` - either a Boolean indicating optimization convergence ( for `fit_ml!`), or
+* `nboot` (`fit_pl!`): number of bootstrap samples to use for error estimation.
+* `kwargs` (`fit_pl!`): holds extra keyword arguments passed in the call to the fitting
+  function.
+* `bootsamples` (`fit_pl!`): the bootstrap samples.
+* `bootestimates` (`fit_pl!`): the bootstrap parameter estimates.
+* `convergence`: either a Boolean indicating optimization convergence ( for `fit_ml!`), or
   a vector of such values for the optimizations done to estimate bootstrap replicates.
 
 The empty constructor `ALfit()` will initialize an object with all fields empty, so the
@@ -49,7 +49,7 @@ ALfit() = ALfit(zeros(Float64,0),
                 nothing,
                 zeros(Float64,0,0),
                 0,
-                "",
+                nothing,
                 nothing,
                 nothing,
                 nothing)
@@ -95,7 +95,7 @@ function showfields(f::ALfit, leadspaces=0)
         out *= spc * "nboot          " * 
                "the number of bootstrap replicates drawn\n"
     end
-    if f.kwargs !== ""
+    if f.kwargs !== nothing
         out *= spc * "kwargs         " * 
                "extra keyword arguments passed to sample()\n"
     end
@@ -228,12 +228,6 @@ function addboot!(fit::ALfit, bootresults::Array{T,1}) where
     addboot!(fit, bootsamples, bootestimates, convergence)
 end
 
-#TODO: make this function append samples to any that currently exist, rather than replace.
-#TODO: handle non-converged cases (here and elsewhere).  Maybe make se, CI, etc. computed
-# from the info, rather than stored?
-    # Compute se, and CIs and fill in.  (Proper handling of p-values requires that 
-    # bootstrap samples were drawn from the appropriate null hypothesis scenario. Leave 
-    # them out.)
 function addboot!(fit::ALfit, 
                   bootsamples::Array{Float64,3}, 
                   bootestimates::Array{Float64,2}, 

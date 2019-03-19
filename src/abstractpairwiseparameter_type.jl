@@ -1,19 +1,3 @@
-#AbstractPairwiseParameter is the Λ (which could be parametrized)
-# We make it a 3D AbstractArray for maximum flexibility, so that in the
-# case of e.g. adaptive pairwise paramettrization with multiple observations, 
-# we can have separate Λ values for each observation.
-# ***TODO***
-# [x] Should this type be a subtype of a sparse array?  And a symmetric type? 
-#    Or should we allow subtypes of AbstractPairwiseParameter to decide if they should be 
-#    sparse or not? This is especially important if we make it a 3D array with 
-#    observations.
-#      ==> Decided, keep it just a subtype of AbstractArray{Float64,3}, and let
-#          concrete types decide how to handle their behavior.  Sparse arrays
-#          and symmetric matrices are subtypes  of AbstractArray, so no problems
-#          there.  
-# [ ] Consider making neighborsums() part of the pairwise interface so they can
-#     be efficiently calculated by each concrete type.
-
 """
     AbstractPairwiseParameter
 

@@ -1,5 +1,30 @@
 #AbstractUnaryParameter is the α (which could be parametrized, e.g. by β)
 # We make it a 2D AbstractArray so that we can handle observations.
+
+
+"""
+    AbstractUnaryParameter
+
+Abstract type representing the unary part of an autologistic regression model.
+
+This type inherits from AbstractArray{Float64, 2}. The first dimension is for
+vertices/variables in the graph, and the second dimension is for observations.  It is
+two-dimensional even if there is only one observation. 
+
+Implementation details are left to concrete subtypes, and will depend on how the unary
+terms are parametrized.  Note that indexing is performance-critical.
+
+Concrete subtypes should implement `getparameters`, `setparameters!`, and `showfields`.
+
+# Examples
+```jldoctest
+julia> M = ALsimple(Graph(4,4));
+julia> typeof(M.unary)
+FullUnary
+julia> isa(M.unary, AbstractUnaryParameter)
+true
+```
+"""
 abstract type AbstractUnaryParameter <: AbstractArray{Float64, 2} end
 Base.IndexStyle(::Type{<:AbstractUnaryParameter}) = IndexCartesian()
 
