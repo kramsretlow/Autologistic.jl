@@ -1,12 +1,14 @@
 # Type Aliases
+""" Type alias for `Union{Array{T,1}, Array{T,2}} where T` """
 const VecOrMat = Union{Array{T,1}, Array{T,2}} where T
-const Float1D2D = Union{Array{Float64,1},Array{Float64,2}}
-const Float2D3D = Union{Array{Float64,2},Array{Float64,3}}
-"""
-    SpatialCoordinates
 
-A type alias for `Union{Array{NTuple{2,T},1},Array{NTuple{3,T},1}} where T<:Real`.
-"""
+""" Type alias for `Union{Array{Float64,1},Array{Float64,2}}` """
+const Float1D2D = Union{Array{Float64,1},Array{Float64,2}}
+
+""" Type alias for `Union{Array{Float64,2},Array{Float64,3}}` """
+const Float2D3D = Union{Array{Float64,2},Array{Float64,3}}
+
+""" Type alias for `Union{Array{NTuple{2,T},1},Array{NTuple{3,T},1}} where T<:Real` """
 const SpatialCoordinates = Union{Array{NTuple{2,T},1},Array{NTuple{3,T},1}} where T<:Real
 
 # Enumerations

@@ -1,7 +1,6 @@
-# TODO: figure out how to properly handle dependencies.
-using Documenter
 using Autologistic
 using LightGraphs, DataFrames, CSV, Plots
+using Documenter
 makedocs(
     sitename = "Autologistic.jl",
     modules = [Autologistic],

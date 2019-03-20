@@ -2,6 +2,7 @@
 
 ```@meta
 CurrentModule = Autologistic
+DocTestSetup = :(using Autologistic, LightGraphs)
 ```
 
 ## Index
@@ -13,7 +14,7 @@ CurrentModule = Autologistic
 
 ```@autodocs
 Modules = [Autologistic]
-Order   = [:type]
+Order   = [:type, :constant]
 ```
 
 ## Methods
