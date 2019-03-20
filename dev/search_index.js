@@ -205,7 +205,7 @@ var documenterSearchIndex = {"docs": [
     "page": "Reference",
     "title": "Reference",
     "category": "section",
-    "text": "CurrentModule = Autologistic"
+    "text": "CurrentModule = Autologistic\r\nDocTestSetup = :(using Autologistic, LightGraphs)"
 },
 
 {
@@ -221,23 +221,7 @@ var documenterSearchIndex = {"docs": [
     "page": "Reference",
     "title": "Autologistic.ALRsimple",
     "category": "type",
-    "text": "ALRsimple\n\nAn autologistic regression model with \"simple smoothing\":  the unary parameter is of type LinPredUnary, and the pairwise parameter is of type SimplePairwise.\n\n\n\n\n\n"
-},
-
-{
-    "location": "api/#Autologistic.ALRsimple-Tuple{LinPredUnary,SimplePairwise}",
-    "page": "Reference",
-    "title": "Autologistic.ALRsimple",
-    "category": "method",
-    "text": "ALRsimple(\n    unary::LinPredUnary,\n    pairwise::SimplePairwise;\n    Y::Union{Nothing,<:VecOrMat}=nothing,\n    centering::CenteringKinds=none, \n    coding::Tuple{Real,Real}=(-1,1),\n    labels::Tuple{String,String}=(\"low\",\"high\"), \n    coordinates::SpatialCoordinates=[(0.0,0.0) for i=1:size(unary,1)]\n)\n\nConstructs an ALRsimple autologistic regression model, with unary part unary and pairwise part pairwise.\n\nKeyword arguments\n\nY is the array of dichotomous responses.  Any array with 2 unique values will work. If the array has only one unique value, it must equal one of th coding values. The  supplied object will be internally represented as a Boolean array.\n\ncentering controls what form of centering to use.\n\ncoding determines the numeric coding of the dichotomous responses. \n\nlabels is a 2-tuple of text labels describing the meaning of Y. The first element is the label corresponding to the lower coding value.\n\ncoordinates is an array of 2- or 3-tuples giving spatial coordinates of each vertex in the graph. Default is to set all coordinates to zero.\n\nExamples\n\njulia> u = LinPredUnary(rand(10,3));\njulia> p = SimplePairwise(Graph(10,20));\njulia> model = ALRsimple(u, p, Y = rand([-2, 3], 10))\nAutologistic regression model of type ALRsimple with parameter vector [β; λ].\nFields:\n  responses    10×1 Bool array\n  unary        10×1 LinPredUnary with fields:\n                 X  10×3×1 array (covariates)\n                 β  3-element vector (regression coefficients)\n  pairwise     10×10×1 SimplePairwise with fields:\n                 λ      [0.0] (association parameter)\n                 G      the graph (10 vertices, 20 edges)\n                 count  1 (the number of observations)\n                 A      10×10 SparseMatrixCSC (the adjacency matrix)\n  centering    none\n  coding       (-1, 1)\n  labels       (\"low\", \"high\")\n  coordinates  10-element vector of Tuple{Float64,Float64}\n\n\n\n\n\n"
-},
-
-{
-    "location": "api/#Autologistic.ALRsimple-Tuple{SimpleGraph{Int64},Union{Array{Float64,2}, Array{Float64,3}}}",
-    "page": "Reference",
-    "title": "Autologistic.ALRsimple",
-    "category": "method",
-    "text": "ALRsimple(\n    graph::SimpleGraph{Int}, \n    X::Float2D3D; \n    Y::VecOrMat=Array{Bool,2}(undef,nv(graph),size(X,3)),\n    β::Vector{Float64}=zeros(size(X,2)),\n    λ::Float64=0.0, \n    centering::CenteringKinds=none, \n    coding::Tuple{Real,Real}=(-1,1),\n    labels::Tuple{String,String}=(\"low\",\"high\"),\n    coordinates::SpatialCoordinates=[(0.0,0.0) for i=1:nv(graph)]\n)\n\nConstructs an ALRsimple autologistic regression model from a graph and an X array of predictors. Use Lightgraphs.jl functions to make the graph. X is n×p×m, where n is the number of vertices in the graph, p is the number of predictors, and m is the number of  (multivariate) observations.  If m == 1, X can be 2D.\n\nKeyword arguments\n\nY is the array of dichotomous responses.  Any array with 2 unique values will work. If the array has only one unique value, it must equal one of th coding values. The  supplied object will be internally represented as a Boolean array.\n\nβ is the regression coefficients.\n\nλ is the association parameter.\n\ncentering controls what form of centering to use.\n\ncoding determines the numeric coding of the dichotomous responses. \n\nlabels is a 2-tuple of text labels describing the meaning of Y. The first element is the label corresponding to the lower coding value.\n\ncoordinates is an array of 2- or 3-tuples giving spatial coordinates of each vertex in the graph. Default is to set all coordinates to zero.\n\nExamples\n\njulia> model = ALRsimple(Graph(10,20), rand(10,3), β=[0.5, 0.75, 1.0], λ=1.1)\nAutologistic regression model of type ALRsimple with parameter vector [β; λ].\n    Fields:\n      responses    10×1 Bool array\n      unary        10×1 LinPredUnary with fields:\n                     X  10×3×1 array (covariates)\n                     β  3-element vector (regression coefficients)\n      pairwise     10×10×1 SimplePairwise with fields:\n                     λ      [1.1] (association parameter)\n                     G      the graph (10 vertices, 20 edges)\n                     count  1 (the number of observations)\n                     A      10×10 SparseMatrixCSC (the adjacency matrix)\n      centering    none\n      coding       (-1, 1)\n      labels       (\"low\", \"high\")\n      coordinates  10-element vector of Tuple{Float64,Float64}\n\n\n\n\n\n"
+    "text": "ALRsimple\n\nAn autologistic regression model with \"simple smoothing\":  the unary parameter is of type LinPredUnary, and the pairwise parameter is of type SimplePairwise.\n\nConstructors\n\nALRsimple(unary::LinPredUnary, pairwise::SimplePairwise;\n    Y::Union{Nothing,<:VecOrMat} = nothing,\n    centering::CenteringKinds = none, \n    coding::Tuple{Real,Real} = (-1,1),\n    labels::Tuple{String,String} = (\"low\",\"high\"), \n    coordinates::SpatialCoordinates = [(0.0,0.0) for i=1:size(unary,1)]\n)\nALRsimple(graph::SimpleGraph{Int}, X::Float2D3D; \n    Y::VecOrMat = Array{Bool,2}(undef,nv(graph),size(X,3)),\n    β::Vector{Float64} = zeros(size(X,2)),\n    λ::Float64 = 0.0, \n    centering::CenteringKinds = none, \n    coding::Tuple{Real,Real} = (-1,1),\n    labels::Tuple{String,String} = (\"low\",\"high\"),\n    coordinates::SpatialCoordinates = [(0.0,0.0) for i=1:nv(graph)]\n)\n\nArguments\n\nY: the array of dichotomous responses.  Any array with 2 unique values will work. If the array has only one unique value, it must equal one of th coding values. The  supplied object will be internally represented as a Boolean array.\nβ: the regression coefficients.\nλ: the association parameter.\ncentering: controls what form of centering to use.\ncoding: determines the numeric coding of the dichotomous responses. \nlabels: a 2-tuple of text labels describing the meaning of Y. The first element is the label corresponding to the lower coding value.\ncoordinates: an array of 2- or 3-tuples giving spatial coordinates of each vertex in the graph. \n\nExamples\n\nX = rand(10,3);            #-predictors\nY = rand([-2, 3], 10);     #-responses\ng = Graph(10,20);          #-graph\nu = LinPredUnary(X);\np = SimplePairwise(g);\nmodel1 = ALRsimple(u, p, Y=Y);\nmodel2 = ALRsimple(g, X, Y=Y);\nall([getfield(model1, fn)==getfield(model2, fn) for fn in fieldnames(ALRsimple)])\n\n# output\ntrue\n\n\n\n\n\n"
 },
 
 {
@@ -253,31 +237,7 @@ var documenterSearchIndex = {"docs": [
     "page": "Reference",
     "title": "Autologistic.ALsimple",
     "category": "type",
-    "text": "ALsimple\n\nAn autologistic model with a FullUnary unary parameter type and a SimplePairwise pairwise parameter type.   This model has the maximum number of unary parameters  (one parameter per variable per observation), and a single association parameter.\n\n\n\n\n\n"
-},
-
-{
-    "location": "api/#Autologistic.ALsimple",
-    "page": "Reference",
-    "title": "Autologistic.ALsimple",
-    "category": "type",
-    "text": "ALsimple(graph::SimpleGraph{Int}, count::Int=1; ...)\n\nConstruct an ALsimple autologistic model from a graph, with count undefined observations.  Keyword arguments are the same as the  ALsimple(graph::SimpleGraph{Int}, alpha::Float1D2D; ...) constructor.\n\nExamples\n\njulia> g = Graph(10,20);\njulia> model1 = ALsimple(g);\njulia> model2 = ALsimple(g, 4);\njulia> size(model1.responses)\n(10, 1)\n\njulia> size(model2.responses)\n(10, 4)\n\n\n\n\n\n"
-},
-
-{
-    "location": "api/#Autologistic.ALsimple-Tuple{FullUnary,SimplePairwise}",
-    "page": "Reference",
-    "title": "Autologistic.ALsimple",
-    "category": "method",
-    "text": "ALsimple(\n    unary::FullUnary, \n    pairwise::SimplePairwise; \n    Y::Union{Nothing,<:VecOrMat}=nothing, \n    centering::CenteringKinds=none, \n    coding::Tuple{Real,Real}=(-1,1),\n    labels::Tuple{String,String}=(\"low\",\"high\"), \n    coordinates::SpatialCoordinates=[(0.0,0.0) for i=1:size(unary,1)]\n)\n\nConstructs an ALsimple autologistic model with unary part unary and pairwise part pairwise.\n\nKeyword arguments\n\nY is the array of dichotomous responses.  Any array with 2 unique values will work. If the array has only one unique value, it must equal one of th coding values. The  supplied object will be internally represented as a Boolean array.\n\ncentering controls what form of centering to use.\n\ncoding determines the numeric coding of the dichotomous responses. \n\nlabels is a 2-tuple of text labels describing the meaning of Y. The first element is the label corresponding to the lower coding value.\n\ncoordinates is an array of 2- or 3-tuples giving spatial coordinates of each vertex in the graph. Default is to set all coordinates to zero.\n\nExamples\n\njulia> u = FullUnary(rand(10));\njulia> p = SimplePairwise(Graph(10,20));\njulia> model = ALsimple(u, p)\nAutologistic model of type ALsimple with parameter vector [α; λ].\nFields:\n  responses    10×1 Bool array\n  unary        10×1 FullUnary with fields:\n                 α  10×1 array (unary parameter values)\n  pairwise     10×10×1 SimplePairwise with fields:\n                 λ      [0.0] (association parameter)\n                 G      the graph (10 vertices, 20 edges)\n                 count  1 (the number of observations)\n                 A      10×10 SparseMatrixCSC (the adjacency matrix)\n  centering    none\n  coding       (-1, 1)\n  labels       (\"low\", \"high\")\n  coordinates  10-element vector of Tuple{Float64,Float64}\n\n\n\n\n\n"
-},
-
-{
-    "location": "api/#Autologistic.ALsimple-Tuple{SimpleGraph{Int64},Union{Array{Float64,1}, Array{Float64,2}}}",
-    "page": "Reference",
-    "title": "Autologistic.ALsimple",
-    "category": "method",
-    "text": "ALsimple(\n    graph::SimpleGraph{Int}, \n    alpha::Float1D2D; \n    Y::VecOrMat=Array{Bool,2}(undef,nv(graph),size(alpha,2)), \n    λ::Float64=0.0, \n    centering::CenteringKinds=none, \n    coding::Tuple{Real,Real}=(-1,1),\n    labels::Tuple{String,String}=(\"low\",\"high\"),\n    coordinates::SpatialCoordinates=[(0.0,0.0) for i=1:nv(graph)]\n)\n\nConstructs an ALsimple autologistic model from a graph and unary parameter values alpha.\n\nKeyword arguments\n\nY is the array of dichotomous responses.  Any array with 2 unique values will work. If the array has only one unique value, it must equal one of th coding values. The  supplied object will be internally represented as a Boolean array.\n\nλ is the association parameter.\n\ncentering controls what form of centering to use.\n\ncoding determines the numeric coding of the dichotomous responses. \n\nlabels is a 2-tuple of text labels describing the meaning of Y. The first element is the label corresponding to the lower coding value.\n\ncoordinates is an array of 2- or 3-tuples giving spatial coordinates of each vertex in the graph. Default is to set all coordinates to zero.\n\nExamples\n\njulia> model = ALsimple(Graph(10,20), rand(10))\nAutologistic model of type ALsimple with parameter vector [α; λ].\nFields:\n  responses    10×1 Bool array\n  unary        10×1 FullUnary with fields:\n                 α  10×1 array (unary parameter values)\n  pairwise     10×10×1 SimplePairwise with fields:\n                 λ      [0.0] (association parameter)\n                 G      the graph (10 vertices, 20 edges)\n                 count  1 (the number of observations)\n                 A      10×10 SparseMatrixCSC (the adjacency matrix)\n  centering    none\n  coding       (-1, 1)\n  labels       (\"low\", \"high\")\n  coordinates  10-element vector of Tuple{Float64,Float64}\n\n\n\n\n\n"
+    "text": "ALsimple\n\nAn autologistic model with a FullUnary unary parameter type and a SimplePairwise pairwise parameter type.   This model has the maximum number of unary parameters  (one parameter per variable per observation), and a single association parameter.\n\nConstructors\n\nALsimple(unary::FullUnary, pairwise::SimplePairwise; \n    Y::Union{Nothing,<:VecOrMat} = nothing, \n    centering::CenteringKinds = none, \n    coding::Tuple{Real,Real} = (-1,1),\n    labels::Tuple{String,String} = (\"low\",\"high\"), \n    coordinates::SpatialCoordinates = [(0.0,0.0) for i=1:size(unary,1)]\n)\nALsimple(graph::SimpleGraph{Int}, alpha::Float1D2D; \n    Y::VecOrMat = Array{Bool,2}(undef,nv(graph),size(alpha,2)), \n    λ::Float64 = 0.0, \n    centering::CenteringKinds = none, \n    coding::Tuple{Real,Real} = (-1,1),\n    labels::Tuple{String,String} = (\"low\",\"high\"),\n    coordinates::SpatialCoordinates = [(0.0,0.0) for i=1:nv(graph)]\n)\nALsimple(graph::SimpleGraph{Int}, count::Int = 1; \n    Y::VecOrMat = Array{Bool,2}(undef,nv(graph),size(alpha,2)), \n    λ::Float64=0.0, \n    centering::CenteringKinds=none, \n    coding::Tuple{Real,Real}=(-1,1),\n    labels::Tuple{String,String}=(\"low\",\"high\"),\n    coordinates::SpatialCoordinates=[(0.0,0.0) for i=1:nv(graph)]\n)\n\nArguments\n\nY: the array of dichotomous responses.  Any array with 2 unique values will work. If the array has only one unique value, it must equal one of th coding values. The  supplied object will be internally represented as a Boolean array.\nλ: the association parameter.\ncentering: controls what form of centering to use.\ncoding: determines the numeric coding of the dichotomous responses. \nlabels: a 2-tuple of text labels describing the meaning of Y. The first element is the label corresponding to the lower coding value.\ncoordinates: an array of 2- or 3-tuples giving spatial coordinates of each vertex in the graph. \n\nExamples\n\njulia> alpha = zeros(10, 4);       #-unary parameter values\njulia> Y = rand([0, 1], 10, 4);    #-responses\njulia> g = Graph(10, 20);          #-graph\njulia> u = FullUnary(alpha);\njulia> p = SimplePairwise(g, 4);\njulia> model1 = ALsimple(u, p, Y=Y);\njulia> model2 = ALsimple(g, alpha, Y=Y);\njulia> model3 = ALsimple(g, 4, Y=Y);\njulia> all([getfield(model1, fn)==getfield(model2, fn)==getfield(model3, fn)\n            for fn in fieldnames(ALsimple)])\ntrue\n\n\n\n\n\n"
 },
 
 {
@@ -309,7 +269,7 @@ var documenterSearchIndex = {"docs": [
     "page": "Reference",
     "title": "Autologistic.CenteringKinds",
     "category": "type",
-    "text": "CenteringKinds\n\nAn enumeration to facilitate choosing a form of centering for the model.  Available choices are: \n\nnone: no centering (centering adjustment equals zero).\nexpectation: the centering adjustment is the expected value of the response under the   assumption of independence (this is what has been used in the \"centered autologistic    model\").\nonehalf: a constant value of centering adjustment equal to 0.5.\n\n\n\n\n\n"
+    "text": "CenteringKinds\n\nAn enumeration to facilitate choosing a form of centering for the model.  Available choices are: \n\nnone: no centering (centering adjustment equals zero).\nexpectation: the centering adjustment is the expected value of the response under the assumption of independence (this is what has been used in the \"centered autologistic  model\").\nonehalf: a constant value of centering adjustment equal to 0.5 (this produces the \"symmetric autologistic model\" when used with 0,1 coding).\n\nThe default/recommended model has centering of none with (-1, 1) coding.\n\nExamples\n\njulia> CenteringKinds\nEnum CenteringKinds:\nnone = 0\nexpectation = 1\nonehalf = 2\n\n\n\n\n\n"
 },
 
 {
@@ -317,7 +277,23 @@ var documenterSearchIndex = {"docs": [
     "page": "Reference",
     "title": "Autologistic.FullPairwise",
     "category": "type",
-    "text": "FullPairwise\n\nA type representing an association matrix with a \"saturated\" parametrization–one parameter  for each edge in the graph.\n\nIn this type, the association matrix for each observation is a symmetric matrix with the  same pattern of nonzeros as the graph\'s adjacency matrix, but with arbitrary values in those locations. The package convention is to provide parameters as a vector of Float64.  So  getparameters and setparameters! use a vector of ne(G) values that correspond to the  nonzero locations in the upper triangle of the adjacency matrix, in the same (lexicographic) order as edges(G).\n\nThe association matrix is stored as a SparseMatrixCSC{Float64,Int64} in the field Λ.\n\nAs with SimplePairwise, the association matrix can not be different for different observations.  So while size returns a 3-dimensional result, the third index is ignored when accessing the array\'s elements.\n\n\n\n\n\n"
+    "text": "FullPairwise\n\nA type representing an association matrix with a \"saturated\" parametrization–one parameter  for each edge in the graph.\n\nIn this type, the association matrix for each observation is a symmetric matrix with the  same pattern of nonzeros as the graph\'s adjacency matrix, but with arbitrary values in those locations. The package convention is to provide parameters as a vector of Float64.  So  getparameters and setparameters! use a vector of ne(G) values that correspond to the  nonzero locations in the upper triangle of the adjacency matrix, in the same (lexicographic) order as edges(G).\n\nThe association matrix is stored as a SparseMatrixCSC{Float64,Int64} in the field Λ.\n\nAs with SimplePairwise, the association matrix can not be different for different observations.  So while size returns a 3-dimensional result, the third index is ignored when accessing the array\'s elements.\n\nConstructors\n\nFullPairwise(G::SimpleGraph, count::Int=1)\nFullPairwise(n::Int, count::Int=1)\nFullPairwise(λ::Real, G::SimpleGraph)\nFullPairwise(λ::Real, G::SimpleGraph, count::Int)\nFullPairwise(λ::Vector{Float64}, G::SimpleGraph)\n\nIf provide only a graph, set λ = zeros(nv(G)). If provide only an integer, set λ to zeros and make a totally disconnected graph. If provide a graph and a scalar, convert the scalar to a vector of the right length.\n\nExamples\n\njulia> g = makegrid4(2,2).G;\njulia> λ = [1.0, 2.0, -1.0, -2.0];\njulia> p = FullPairwise(λ, g);\njulia> typeof(p.Λ)\nSparseArrays.SparseMatrixCSC{Float64,Int64}\n\njulia> Matrix(p[:,:])\n4×4 Array{Float64,2}:\n 0.0   1.0   2.0   0.0\n 1.0   0.0   0.0  -1.0\n 2.0   0.0   0.0  -2.0\n 0.0  -1.0  -2.0   0.0\n\n\n\n\n\n"
+},
+
+{
+    "location": "api/#Autologistic.FullUnary",
+    "page": "Reference",
+    "title": "Autologistic.FullUnary",
+    "category": "type",
+    "text": "FullUnary\n\nThe unary part of an autologistic model, with one parameter per vertex per observation. The type has only a single field, for holding an array of parameters.\n\nConstructors\n\nFullUnary(alpha::Array{Float64,1}) \nFullUnary(n::Int)                     #-initializes parameters to zeros\nFullUnary(n::Int, m::Int)             #-initializes parameters to zeros\n\nExamples\n\njulia> u = FullUnary(5, 3);\njulia> u[:,:]\n5×3 Array{Float64,2}:\n 0.0  0.0  0.0\n 0.0  0.0  0.0\n 0.0  0.0  0.0\n 0.0  0.0  0.0\n 0.0  0.0  0.0\n\n\n\n\n\n"
+},
+
+{
+    "location": "api/#Autologistic.LinPredUnary",
+    "page": "Reference",
+    "title": "Autologistic.LinPredUnary",
+    "category": "type",
+    "text": "LinPredUnary\n\nThe unary part of an autologistic model, parametrized as a regression linear predictor. Its fields are X, an n-by-p-by-m matrix (n obs, p predictors, m observations), and β, a p-vector of parameters (the same for all observations).\n\nConstructors\n\nLinPredUnary(X::Matrix{Float64}, β::Vector{Float64})\nLinPredUnary(X::Matrix{Float64})\nLinPredUnary(X::Array{Float64, 3})\nLinPredUnary(n::Int,p::Int)\nLinPredUnary(n::Int,p::Int,m::Int)\n\nAny quantities not provided in the constructors are initialized to zeros.\n\nExamples\n\njulia> u = LinPredUnary(ones(5,3,2), [1.0, 2.0, 3.0]);\njulia> u[:,:]\n5×2 Array{Float64,2}:\n 6.0  6.0\n 6.0  6.0\n 6.0  6.0\n 6.0  6.0\n 6.0  6.0\n\n\n\n\n\n"
 },
 
 {
@@ -325,7 +301,47 @@ var documenterSearchIndex = {"docs": [
     "page": "Reference",
     "title": "Autologistic.SamplingMethods",
     "category": "type",
-    "text": "SamplingMethods\n\nAn enumeration to facilitate choosing a method for sampling. Available choices are:\n\nGibbs  TODO\nperfect_bounding_chain  TODO\nperfect_reuse_samples  TODO \nperfect_reuse_seeds  TODO\nperfect_read_once  TODO \n\n\n\n\n\n"
+    "text": "SamplingMethods\n\nAn enumeration to facilitate choosing a method for random sampling from autologistic models. Available choices are:\n\nGibbs:  Gibbs sampling.\nperfect_bounding_chain: Perfect sampling, using a bounding chain algorithm.\nperfect_reuse_samples: Perfect sampling. CFTP implemented by reusing random numbers.\nperfect_reuse_seeds: Perfect sampling. CFTP implemented by reusing RNG seeds.\nperfect_read_once: Perfect sampling. Read-once CFTP implementation.\n\nAll of the perfect sampling methods are implementations of coupling from the past (CFTP). perfect_bounding_chain uses a bounding chain approach that holds even when Λ contains negative elements; the other three options rely on a monotonicity argument that requires Λ to have only positive elements (though they should work similar to Gibbs sampling in that case).\n\nDifferent perfect sampling implementations might work best for different models, and parameter settings exist where perfect sampling coalescence might take a prohibitively long time.  For these reasons, Gibbs sampling is the default in sample.\n\nExamples\n\njulia> SamplingMethods\nEnum SamplingMethods:\nGibbs = 0\nperfect_reuse_samples = 1\nperfect_reuse_seeds = 2\nperfect_read_once = 3\nperfect_bounding_chain = 4\n\n\n\n\n\n"
+},
+
+{
+    "location": "api/#Autologistic.SimplePairwise",
+    "page": "Reference",
+    "title": "Autologistic.SimplePairwise",
+    "category": "type",
+    "text": "SimplePairwise\n\nPairwise association matrix, parametrized as a scalar parameter times the adjacency matrix.\n\nConstructors\n\nSimplePairwise(G::SimpleGraph, count::Int=1) SimplePairwise(n::Int, count::Int=1) SimplePairwise(λ::Real, G::SimpleGraph) SimplePairwise(λ::Real, G::SimpleGraph, count::Int)\n\nIf provide only a graph, set λ = 0. If provide only an integer, set λ = 0 and make a totally disconnected graph. If provide a graph and a scalar, convert the scalar to a length-1 vector.\n\nUnlike FullPairwise, every observation must have the same association matrix in this case. So while we internally treat it like an n-by-n-by-m matrix, just return a 2D n-by-n matrix to the user. \n\nExamples\n\njulia> g = makegrid4(2,2).G;\njulia> λ = 1.0;\njulia> p = SimplePairwise(λ, g, 4);    #-4 observations\njulia> size(p)\n(4, 4, 4)\n\njulia> Matrix(p[:,:,:])\n4×4 Array{Float64,2}:\n 0.0  1.0  1.0  0.0\n 1.0  0.0  0.0  1.0\n 1.0  0.0  0.0  1.0\n 0.0  1.0  1.0  0.0\n\n\n\n\n\n"
+},
+
+{
+    "location": "api/#Autologistic.SpatialCoordinates",
+    "page": "Reference",
+    "title": "Autologistic.SpatialCoordinates",
+    "category": "constant",
+    "text": "Type alias for Union{Array{NTuple{2,T},1},Array{NTuple{3,T},1}} where T<:Real \n\n\n\n\n\n"
+},
+
+{
+    "location": "api/#Autologistic.Float1D2D",
+    "page": "Reference",
+    "title": "Autologistic.Float1D2D",
+    "category": "constant",
+    "text": "Type alias for Union{Array{Float64,1},Array{Float64,2}} \n\n\n\n\n\n"
+},
+
+{
+    "location": "api/#Autologistic.Float2D3D",
+    "page": "Reference",
+    "title": "Autologistic.Float2D3D",
+    "category": "constant",
+    "text": "Type alias for Union{Array{Float64,2},Array{Float64,3}} \n\n\n\n\n\n"
+},
+
+{
+    "location": "api/#Autologistic.VecOrMat",
+    "page": "Reference",
+    "title": "Autologistic.VecOrMat",
+    "category": "constant",
+    "text": "Type alias for Union{Array{T,1}, Array{T,2}} where T \n\n\n\n\n\n"
 },
 
 {
@@ -333,7 +349,7 @@ var documenterSearchIndex = {"docs": [
     "page": "Reference",
     "title": "Types and Constructors",
     "category": "section",
-    "text": "Modules = [Autologistic]\r\nOrder   = [:type]"
+    "text": "Modules = [Autologistic]\r\nOrder   = [:type, :constant]"
 },
 
 {
