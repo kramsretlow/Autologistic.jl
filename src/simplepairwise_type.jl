@@ -1,17 +1,39 @@
-#----- SimplePairwise ----------------------------------------------------------
-# Association matrix is a parameter times the adjacency matrix.
-# For this case, the association matrix Λ can not be different for different
-# observations.  So while we internally treat it like an n-by-n-by-m matrix, just
-# return a 2D n-by-n matrix to the user. 
+"""
+	SimplePairwise
 
-# ***TODO*** 
-# [x] Make constructor with graph only (initialize λ to zero) 
-# [ ] (here and elsewhere) make setparameters! functions return the modified object?
+Pairwise association matrix, parametrized as a scalar parameter times the adjacency matrix.
 
-# Type definition
-#    Note: made this mutable so I could set λ.  Not sure how best to handle.
-#    Note: decided that *all parameters should be Vector{Float64}* for type 
-#          stability (even though here λ is scalar).
+# Constructors
+
+SimplePairwise(G::SimpleGraph, count::Int=1)
+SimplePairwise(n::Int, count::Int=1)
+SimplePairwise(λ::Real, G::SimpleGraph)
+SimplePairwise(λ::Real, G::SimpleGraph, count::Int)
+
+If provide only a graph, set λ = 0. If provide only an integer, set λ = 0 and make a totally
+disconnected graph. If provide a graph and a scalar, convert the scalar to a length-1
+vector.
+
+Unlike `FullPairwise`, every observation must have the same association matrix in this case.
+So while we internally treat it like an n-by-n-by-m matrix, just return a 2D n-by-n matrix
+to the user. 
+
+# Examples
+```jldoctests
+julia> g = makegrid4(2,2).G;
+julia> λ = 1.0;
+julia> p = SimplePairwise(λ, g, 4);    #-4 observations
+julia> size(p)
+(4, 4, 4)
+
+julia> Matrix(p[:,:,:])
+4×4 Array{Float64,2}:
+ 0.0  1.0  1.0  0.0
+ 1.0  0.0  0.0  1.0
+ 1.0  0.0  0.0  1.0
+ 0.0  1.0  1.0  0.0
+```
+"""
 mutable struct SimplePairwise <: AbstractPairwiseParameter
 	λ::Vector{Float64}
 	G::SimpleGraph{Int}

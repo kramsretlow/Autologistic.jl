@@ -1,5 +1,26 @@
-#----- FullUnary ---------------------------------------------------------------
-# A unary part with one parameter per variable per observation.
+"""
+    FullUnary
+
+The unary part of an autologistic model, with one parameter per vertex per observation. The
+type has only a single field, for holding an array of parameters.
+
+# Constructors
+    FullUnary(alpha::Array{Float64,1}) 
+    FullUnary(n::Int)                     #-initializes parameters to zeros
+    FullUnary(n::Int, m::Int)             #-initializes parameters to zeros
+
+# Examples
+```jldoctest
+julia> u = FullUnary(5, 3);
+julia> u[:,:]
+5×3 Array{Float64,2}:
+ 0.0  0.0  0.0
+ 0.0  0.0  0.0
+ 0.0  0.0  0.0
+ 0.0  0.0  0.0
+ 0.0  0.0  0.0
+```
+"""
 mutable struct FullUnary <: AbstractUnaryParameter
     α::Array{Float64,2}
 end

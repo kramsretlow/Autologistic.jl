@@ -1,15 +1,3 @@
-
-#= ***NOTES--DELETE LATER*** 
-- edges(G) returns a SimpleEdgeIter that seems not possible to index into.  But can
-  do for loops over them.  The fields of this type are :src and :dst 
-- Need to look at LightGraphs handling of edges and see what way makes sense for this
-  type.  Must be some way to get an edge list or find the source and dest nodes of a  
-  particular edge. 
-- incidence_matrix(G) returns a SparseMatrixCSC giving the incidence matrix: a nv(G)*ne(G) 
-  matrix where (i,j) = 1 if vertex i is involved in edge j.
-- **Use collect(edges(G)) to get the set of edges from the iterator**
-- Also has_edge()
-=#
 """
 	FullPairwise
 
@@ -28,6 +16,34 @@ The association matrix is stored as a `SparseMatrixCSC{Float64,Int64}` in the fi
 As with `SimplePairwise`, the association matrix can not be different for different
 observations.  So while `size` returns a 3-dimensional result, the third index is ignored
 when accessing the array's elements.
+
+# Constructors
+
+	FullPairwise(G::SimpleGraph, count::Int=1)
+	FullPairwise(n::Int, count::Int=1)
+	FullPairwise(λ::Real, G::SimpleGraph)
+	FullPairwise(λ::Real, G::SimpleGraph, count::Int)
+	FullPairwise(λ::Vector{Float64}, G::SimpleGraph)
+
+If provide only a graph, set λ = zeros(nv(G)).
+If provide only an integer, set λ to zeros and make a totally disconnected graph.
+If provide a graph and a scalar, convert the scalar to a vector of the right length.
+
+# Examples
+```jldoctest
+julia> g = makegrid4(2,2).G;
+julia> λ = [1.0, 2.0, -1.0, -2.0];
+julia> p = FullPairwise(λ, g);
+julia> typeof(p.Λ)
+SparseArrays.SparseMatrixCSC{Float64,Int64}
+
+julia> Matrix(p[:,:])
+4×4 Array{Float64,2}:
+ 0.0   1.0   2.0   0.0
+ 1.0   0.0   0.0  -1.0
+ 2.0   0.0   0.0  -2.0
+ 0.0  -1.0  -2.0   0.0
+```
 """
 mutable struct FullPairwise <: AbstractPairwiseParameter
 	λ::Vector{Float64}

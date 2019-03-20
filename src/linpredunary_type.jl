@@ -1,8 +1,31 @@
-#----- LinPredUnary ------------------------------------------------------------
+"""
+    LinPredUnary
 
-# The unary part containing a regression linear predictor.
-# X is an n-by-p-by-m matrix (n obs, p predictors, m observations)
-# β is a p-vector of parameters (same for all observations)
+The unary part of an autologistic model, parametrized as a regression linear predictor.
+Its fields are `X`, an n-by-p-by-m matrix (n obs, p predictors, m observations), and `β`,
+a p-vector of parameters (the same for all observations).
+
+# Constructors
+    LinPredUnary(X::Matrix{Float64}, β::Vector{Float64})
+    LinPredUnary(X::Matrix{Float64})
+    LinPredUnary(X::Array{Float64, 3})
+    LinPredUnary(n::Int,p::Int)
+    LinPredUnary(n::Int,p::Int,m::Int)
+
+Any quantities not provided in the constructors are initialized to zeros.
+
+# Examples
+```jldoctest
+julia> u = LinPredUnary(ones(5,3,2), [1.0, 2.0, 3.0]);
+julia> u[:,:]
+5×2 Array{Float64,2}:
+ 6.0  6.0
+ 6.0  6.0
+ 6.0  6.0
+ 6.0  6.0
+ 6.0  6.0
+```
+"""
 struct LinPredUnary <: AbstractUnaryParameter
     X::Array{Float64, 3}
     β::Vector{Float64}

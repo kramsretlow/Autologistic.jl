@@ -2,6 +2,11 @@
 const VecOrMat = Union{Array{T,1}, Array{T,2}} where T
 const Float1D2D = Union{Array{Float64,1},Array{Float64,2}}
 const Float2D3D = Union{Array{Float64,2},Array{Float64,3}}
+"""
+    SpatialCoordinates
+
+A type alias for `Union{Array{NTuple{2,T},1},Array{NTuple{3,T},1}} where T<:Real`.
+"""
 const SpatialCoordinates = Union{Array{NTuple{2,T},1},Array{NTuple{3,T},1}} where T<:Real
 
 # Enumerations
@@ -11,24 +16,58 @@ const SpatialCoordinates = Union{Array{NTuple{2,T},1},Array{NTuple{3,T},1}} wher
 An enumeration to facilitate choosing a form of centering for the model.  Available
 choices are: 
 
-*   `none`: no centering (centering adjustment equals zero).
-*   `expectation`: the centering adjustment is the expected value of the response under the
-    assumption of independence (this is what has been used in the "centered autologistic 
-    model").
-*   `onehalf`: a constant value of centering adjustment equal to 0.5.
+- `none`: no centering (centering adjustment equals zero).
+- `expectation`: the centering adjustment is the expected value of the response under the
+  assumption of independence (this is what has been used in the "centered autologistic 
+  model").
+- `onehalf`: a constant value of centering adjustment equal to 0.5 (this produces the
+  "symmetric autologistic model" when used with 0,1 coding).
+
+The default/recommended model has centering of `none` with (-1, 1) coding.
+
+# Examples
+```jldoctest
+julia> CenteringKinds
+Enum CenteringKinds:
+none = 0
+expectation = 1
+onehalf = 2
+```
 """
 @enum CenteringKinds none expectation onehalf
 
 """
     SamplingMethods
 
-An enumeration to facilitate choosing a method for sampling. Available choices are:
+An enumeration to facilitate choosing a method for random sampling from autologistic models.
+Available choices are:
 
-*   `Gibbs`  TODO
-*   `perfect_bounding_chain`  TODO
-*   `perfect_reuse_samples`  TODO 
-*   `perfect_reuse_seeds`  TODO
-*   `perfect_read_once`  TODO 
+- `Gibbs`:  Gibbs sampling.
+- `perfect_bounding_chain`: Perfect sampling, using a bounding chain algorithm.
+- `perfect_reuse_samples`: Perfect sampling. CFTP implemented by reusing random numbers.
+- `perfect_reuse_seeds`: Perfect sampling. CFTP implemented by reusing RNG seeds.
+- `perfect_read_once`: Perfect sampling. Read-once CFTP implementation.
+
+All of the perfect sampling methods are implementations of coupling from the past (CFTP).
+`perfect_bounding_chain` uses a bounding chain approach that holds even when Λ contains
+negative elements; the other three options rely on a monotonicity argument that requires
+Λ to have only positive elements (though they should work similar to Gibbs sampling in
+that case).
+
+Different perfect sampling implementations might work best for different models, and
+parameter settings exist where perfect sampling coalescence might take a prohibitively long
+time.  For these reasons, Gibbs sampling is the default in `sample`.
+
+# Examples
+```jldoctest
+julia> SamplingMethods
+Enum SamplingMethods:
+Gibbs = 0
+perfect_reuse_samples = 1
+perfect_reuse_seeds = 2
+perfect_read_once = 3
+perfect_bounding_chain = 4
+```
 """
 @enum SamplingMethods Gibbs perfect_reuse_samples perfect_reuse_seeds perfect_read_once perfect_bounding_chain
 
