@@ -221,7 +221,7 @@ var documenterSearchIndex = {"docs": [
     "page": "Reference",
     "title": "Autologistic.ALRsimple",
     "category": "type",
-    "text": "ALRsimple\n\nAn autologistic regression model with \"simple smoothing\":  the unary parameter is of type LinPredUnary, and the pairwise parameter is of type SimplePairwise.\n\nConstructors\n\nALRsimple(unary::LinPredUnary, pairwise::SimplePairwise;\n    Y::Union{Nothing,<:VecOrMat} = nothing,\n    centering::CenteringKinds = none, \n    coding::Tuple{Real,Real} = (-1,1),\n    labels::Tuple{String,String} = (\"low\",\"high\"), \n    coordinates::SpatialCoordinates = [(0.0,0.0) for i=1:size(unary,1)]\n)\nALRsimple(graph::SimpleGraph{Int}, X::Float2D3D; \n    Y::VecOrMat = Array{Bool,2}(undef,nv(graph),size(X,3)),\n    β::Vector{Float64} = zeros(size(X,2)),\n    λ::Float64 = 0.0, \n    centering::CenteringKinds = none, \n    coding::Tuple{Real,Real} = (-1,1),\n    labels::Tuple{String,String} = (\"low\",\"high\"),\n    coordinates::SpatialCoordinates = [(0.0,0.0) for i=1:nv(graph)]\n)\n\nArguments\n\nY: the array of dichotomous responses.  Any array with 2 unique values will work. If the array has only one unique value, it must equal one of th coding values. The  supplied object will be internally represented as a Boolean array.\nβ: the regression coefficients.\nλ: the association parameter.\ncentering: controls what form of centering to use.\ncoding: determines the numeric coding of the dichotomous responses. \nlabels: a 2-tuple of text labels describing the meaning of Y. The first element is the label corresponding to the lower coding value.\ncoordinates: an array of 2- or 3-tuples giving spatial coordinates of each vertex in the graph. \n\nExamples\n\nX = rand(10,3);            #-predictors\nY = rand([-2, 3], 10);     #-responses\ng = Graph(10,20);          #-graph\nu = LinPredUnary(X);\np = SimplePairwise(g);\nmodel1 = ALRsimple(u, p, Y=Y);\nmodel2 = ALRsimple(g, X, Y=Y);\nall([getfield(model1, fn)==getfield(model2, fn) for fn in fieldnames(ALRsimple)])\n\n# output\ntrue\n\n\n\n\n\n"
+    "text": "ALRsimple\n\nAn autologistic regression model with \"simple smoothing\":  the unary parameter is of type LinPredUnary, and the pairwise parameter is of type SimplePairwise.\n\nConstructors\n\nALRsimple(unary::LinPredUnary, pairwise::SimplePairwise;\n    Y::Union{Nothing,<:VecOrMat} = nothing,\n    centering::CenteringKinds = none, \n    coding::Tuple{Real,Real} = (-1,1),\n    labels::Tuple{String,String} = (\"low\",\"high\"), \n    coordinates::SpatialCoordinates = [(0.0,0.0) for i=1:size(unary,1)]\n)\nALRsimple(graph::SimpleGraph{Int}, X::Float2D3D; \n    Y::VecOrMat = Array{Bool,2}(undef,nv(graph),size(X,3)),\n    β::Vector{Float64} = zeros(size(X,2)),\n    λ::Float64 = 0.0, \n    centering::CenteringKinds = none, \n    coding::Tuple{Real,Real} = (-1,1),\n    labels::Tuple{String,String} = (\"low\",\"high\"),\n    coordinates::SpatialCoordinates = [(0.0,0.0) for i=1:nv(graph)]\n)\n\nArguments\n\nY: the array of dichotomous responses.  Any array with 2 unique values will work. If the array has only one unique value, it must equal one of the coding values. The  supplied object will be internally represented as a Boolean array.\nβ: the regression coefficients.\nλ: the association parameter.\ncentering: controls what form of centering to use.\ncoding: determines the numeric coding of the dichotomous responses. \nlabels: a 2-tuple of text labels describing the meaning of Y. The first element is the label corresponding to the lower coding value.\ncoordinates: an array of 2- or 3-tuples giving spatial coordinates of each vertex in the graph. \n\nExamples\n\njulia> using LightGraphs\njulia> X = rand(10,3);            #-predictors\njulia> Y = rand([-2, 3], 10);     #-responses\njulia> g = Graph(10,20);          #-graph\njulia> u = LinPredUnary(X);\njulia> p = SimplePairwise(g);\njulia> model1 = ALRsimple(u, p, Y=Y);\njulia> model2 = ALRsimple(g, X, Y=Y);\njulia> all([getfield(model1, fn)==getfield(model2, fn) for fn in fieldnames(ALRsimple)])\ntrue\n\n\n\n\n\n"
 },
 
 {
@@ -353,11 +353,171 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
+    "location": "api/#Autologistic.addboot!-Tuple{ALfit,Array{Float64,3},Array{Float64,2},Array{Bool,1}}",
+    "page": "Reference",
+    "title": "Autologistic.addboot!",
+    "category": "method",
+    "text": "addboot!(fit::ALfit, bootsamples::Array{Float64,3}, \n         bootestimates::Array{Float64,2}, convergence::Vector{Bool})\n\nAdd parametric bootstrap information in arrays bootsamples, bootestimates, and convergence to model fitting information fit.  If fit already contains bootstrap data, the new data is appended to the existing data, and statistics are recomputed.\n\nExamples\n\njulia> using Random;\njulia> Random.seed!(1234);\njulia> G = makegrid4(4,3).G;\njulia> Y=[[fill(-1,4); fill(1,8)] [fill(-1,3); fill(1,9)] [fill(-1,5); fill(1,7)]];\njulia> model = ALRsimple(G, ones(12,1,3), Y=Y);\njulia> fit = fit_pl!(model, start=[-0.4, 1.1]);\njulia> samps = zeros(12,3,10);\njulia> ests = zeros(2,10);\njulia> convs = fill(false, 10);\njulia> for i = 1:10\n           temp = oneboot(model, start=[-0.4, 1.1])\n           samps[:,:,i] = temp.sample\n           ests[:,i] = temp.estimate\n           convs[i] = temp.convergence\n       end\njulia> addboot!(fit, samps, ests, convs)\njulia> summary(fit)\nname          est     se      95% CI\nparameter 1   -0.39   0.442      (-1.09, 0.263)\nparameter 2    1.1    0.279   (-0.00664, 0.84)\n\n\n\n\n\n"
+},
+
+{
+    "location": "api/#Autologistic.addboot!-Union{Tuple{T}, Tuple{ALfit,Array{T,1}}} where T<:(NamedTuple{(:sample, :estimate, :convergence),T} where T<:Tuple)",
+    "page": "Reference",
+    "title": "Autologistic.addboot!",
+    "category": "method",
+    "text": "addboot!(fit::ALfit, bootresults::Array{T,1}) where \n    T <: NamedTuple{(:sample, :estimate, :convergence)}\n\nAn addboot! method taking bootstrap data as an array of named tuples. Tuples are of the form produced by oneboot.\n\nExamples\n\njulia>     using Random;\njulia>     Random.seed!(1234);\njulia>     G = makegrid4(4,3).G;\njulia>     Y=[[fill(-1,4); fill(1,8)] [fill(-1,3); fill(1,9)] [fill(-1,5); fill(1,7)]];\njulia>     model = ALRsimple(G, ones(12,1,3), Y=Y);\njulia>     fit = fit_pl!(model, start=[-0.4, 1.1]);\njulia>     boots = [oneboot(model, start=[-0.4, 1.1]) for i = 1:10];\njulia>     addboot!(fit, boots)\njulia>     summary(fit)\nname          est     se      95% CI\nparameter 1   -0.39   0.442      (-1.09, 0.263)\nparameter 2    1.1    0.279   (-0.00664, 0.84)\n\n\n\n\n\n"
+},
+
+{
+    "location": "api/#Autologistic.centeringterms",
+    "page": "Reference",
+    "title": "Autologistic.centeringterms",
+    "category": "function",
+    "text": "centeringterms(M::AbstractAutologisticModel, kind::Union{Nothing,CenteringKinds}=nothing)\n\nReturns an Array{Float64,2} of the same dimension as M.unary, giving the centering adjustments for autologistic model M. centeringterms(M,kind) returns the centering adjustment that would be used if centering were of type kind.\n\nExamples\n\njulia> G = makegrid8(2,2).G;\njulia> X = [ones(4) [-2; -1; 1; 2]];\njulia> M1 = ALRsimple(G, X, β=[-1.0, 2.0]);                 #-No centering (default)\njulia> M2 = ALRsimple(G, X, β=[-1.0, 2.0], centering=expectation);  #-Centered model\njulia> [centeringterms(M1) centeringterms(M2) centeringterms(M1, onehalf)]\n4×3 Array{Float64,2}:\n 0.0  -0.999909  0.5\n 0.0  -0.995055  0.5\n 0.0   0.761594  0.5\n 0.0   0.995055  0.5\n\n\n\n\n\n"
+},
+
+{
+    "location": "api/#Autologistic.conditionalprobabilities-Tuple{AbstractAutologisticModel}",
+    "page": "Reference",
+    "title": "Autologistic.conditionalprobabilities",
+    "category": "method",
+    "text": "conditionalprobabilities(M::AbstractAutologisticModel; vertices=1:size(M.unary)[1], \n                         indices=1:size(M.unary,2))\n\nCompute the conditional probability that variables in autologistic model M take the high state, given the current values of all of their neighbors. If vertices or indices are provided, the results are only computed for the desired variables & observations.   Otherwise results are computed for all variables and observations.\n\nExamples\n\njulia> Y = [ones(9) zeros(9)];\njulia> G = makegrid4(3,3).G;\njulia> model = ALsimple(G, ones(9,2), Y=Y, λ=0.5);    #-Variables on a 3×3 grid, 2 obs.\njulia> conditionalprobabilities(model, vertices=5)    #-Cond. probs. of center vertex.\n1×2 Array{Float64,2}:\n 0.997527  0.119203\n\njulia> conditionalprobabilities(model, indices=2)     #-Cond probs, 2nd observation.\n9×1 Array{Float64,2}:\n 0.5\n 0.26894142136999516\n 0.5\n 0.26894142136999516\n 0.11920292202211756\n 0.26894142136999516\n 0.5\n 0.26894142136999516\n 0.5\n\n\n\n\n\n"
+},
+
+{
+    "location": "api/#Autologistic.fit_ml!-Tuple{AbstractAutologisticModel}",
+    "page": "Reference",
+    "title": "Autologistic.fit_ml!",
+    "category": "method",
+    "text": "fit_ml!(M::AbstractAutologisticModel;\n    start=zeros(length(getparameters(M))),\n    verbose::Bool=false,\n    force::Bool=false,\n    kwargs...\n)\n\nFit autologistic model M using maximum likelihood. Will fail for models with more than  20 vertices, unless force=true.  Use fit_pl! for larger models.\n\nArguments\n\nstart: initial value to use for optimization.\nverbose: should progress information be printed to the console?\nforce: set to true to force computation of the likelihood for large models.\nkwargs... extra keyword arguments that are passed on to optimize().\n\nExamples\n\njulia> G = makegrid4(4,3).G;\njulia> model = ALRsimple(G, ones(12,1), Y=[fill(-1,4); fill(1,8)]);\njulia> mle = fit_ml!(model);\njulia> summary(mle)\nname          est      se      p-value   95% CI\nparameter 1   0.0791   0.163   0.628       (-0.241, 0.399)\nparameter 2   0.425    0.218   0.0511    (-0.00208, 0.852)\n\n\n\n\n\n"
+},
+
+{
+    "location": "api/#Autologistic.fit_pl!-Tuple{AbstractAutologisticModel}",
+    "page": "Reference",
+    "title": "Autologistic.fit_pl!",
+    "category": "method",
+    "text": "fit_pl!(M::AbstractAutologisticModel;\n    start=zeros(length(getparameters(M))), \n    verbose::Bool=false,\n    nboot::Int = 0,\n    kwargs...)\n\nFit autologistic model M using maximum pseudolikelihood. \n\nArguments\n\nstart: initial value to use for optimization.\nverbose: should progress information be printed to the console?\nnboot: number of samples to use for parametric bootstrap error estimation. If nboot=0 (the default), no bootstrap is run.\nkwargs... extra keyword arguments that are passed on to optimize() or sample(), as appropriate.\n\nExamples\n\njulia> Y=[[fill(-1,4); fill(1,8)] [fill(-1,3); fill(1,9)] [fill(-1,5); fill(1,7)]];\njulia> model = ALRsimple(G, ones(12,1,3), Y=Y);\njulia> fit = fit_pl!(model, start=[-0.4, 1.1]);\njulia> summary(fit)\nname          est     se   p-value   95% CI\nparameter 1   -0.39\nparameter 2    1.1\n\n\n\n\n\n"
+},
+
+{
     "location": "api/#Autologistic.fullPMF-Tuple{AbstractAutologisticModel}",
     "page": "Reference",
     "title": "Autologistic.fullPMF",
     "category": "method",
-    "text": "fullPMF(M::AbstractAutologisticModel; indices=1:size(M.unary,2), force::Bool=false)\n\nCompute the PMF of an AbstractAutologisticModel, and return a NamedTuple (:table, :partition).\n\nFor an AbstractAutologisticModel with n variables and m observations, :table is a 2^n(n+1)m array of Float64. Each page of the 3D array holds a probability table for  an observation.  Each row of the table holds a specific configuration of the responses, with the corresponding probability in the last column.  In the m=1 case,  :table is a 2D  array.\n\nOutput :partition is a vector of normalizing constant (a.k.a. partition function) values. In the m=1 case, it is a scalar Float64.\n\nArguments\n\nM: an autologistic model.\nindices: indices of specific observations from which to obtain the output. By  default, all observations are used.\nforce: calling the function with n20 will throw an error unless  force=true. \n\nExamples\n\njulia> M = ALRsimple(Graph(3,0),ones(3,1));\njulia> pmf = fullPMF(M);\njulia> pmf.table\n8×4 Array{Float64,2}:\n -1.0  -1.0  -1.0  0.125\n -1.0  -1.0   1.0  0.125\n -1.0   1.0  -1.0  0.125\n -1.0   1.0   1.0  0.125\n  1.0  -1.0  -1.0  0.125\n  1.0  -1.0   1.0  0.125\n  1.0   1.0  -1.0  0.125\n  1.0   1.0   1.0  0.125\njulia> pmf.partition\n 8.0\n\n\n\n\n\n"
+    "text": "fullPMF(M::AbstractAutologisticModel; \n    indices=1:size(M.unary,2), \n    force::Bool=false\n)\n\nCompute the PMF of an AbstractAutologisticModel, and return a NamedTuple (:table, :partition).\n\nFor an AbstractAutologisticModel with n variables and m observations, :table is a 2^n(n+1)m array of Float64. Each page of the 3D array holds a probability table for  an observation.  Each row of the table holds a specific configuration of the responses, with the corresponding probability in the last column.  In the m=1 case,  :table is a 2D  array.\n\nOutput :partition is a vector of normalizing constant (a.k.a. partition function) values. In the m=1 case, it is a scalar Float64.\n\nArguments\n\nindices: indices of specific observations from which to obtain the output. By  default, all observations are used.\nforce: calling the function with n20 will throw an error unless  force=true. \n\nExamples\n\njulia> M = ALRsimple(Graph(3,0),ones(3,1));\njulia> pmf = fullPMF(M);\njulia> pmf.table\n8×4 Array{Float64,2}:\n -1.0  -1.0  -1.0  0.125\n -1.0  -1.0   1.0  0.125\n -1.0   1.0  -1.0  0.125\n -1.0   1.0   1.0  0.125\n  1.0  -1.0  -1.0  0.125\n  1.0  -1.0   1.0  0.125\n  1.0   1.0  -1.0  0.125\n  1.0   1.0   1.0  0.125\njulia> pmf.partition\n 8.0\n\n\n\n\n\n"
+},
+
+{
+    "location": "api/#Autologistic.getpairwiseparameters-Tuple{AbstractAutologisticModel}",
+    "page": "Reference",
+    "title": "Autologistic.getpairwiseparameters",
+    "category": "method",
+    "text": "getpairwiseparameters(M::AbstractAutologisticModel)\n\nExtracts the pairwise parameters from an autologistic model. Parameters are always returned as an Array{Float64,1}.\n\n\n\n\n\n"
+},
+
+{
+    "location": "api/#Autologistic.getparameters-Tuple{AbstractAutologisticModel}",
+    "page": "Reference",
+    "title": "Autologistic.getparameters",
+    "category": "method",
+    "text": "getparameters(x)\n\nA generic function for extracting the parameters from an autologistic model, a unary term, or a pairwise term.  Parameters are always returned as an Array{Float64,1}.  If  typeof(x) <: AbstractAutologisticModel, the returned vector is partitioned with the unary parameters first.\n\n\n\n\n\n"
+},
+
+{
+    "location": "api/#Autologistic.getunaryparameters-Tuple{AbstractAutologisticModel}",
+    "page": "Reference",
+    "title": "Autologistic.getunaryparameters",
+    "category": "method",
+    "text": "getunaryparameters(M::AbstractAutologisticModel)\n\nExtracts the unary parameters from an autologistic model. Parameters are always returned as an Array{Float64,1}.\n\n\n\n\n\n"
+},
+
+{
+    "location": "api/#Autologistic.loglikelihood-Tuple{AbstractAutologisticModel}",
+    "page": "Reference",
+    "title": "Autologistic.loglikelihood",
+    "category": "method",
+    "text": "loglikelihood(M::AbstractAutologisticModel; \n    force::Bool=false\n)\n\nCompute the natural logarithm of the likelihood for autologistic model M.  This will throw an error for models with more than 20 vertices, unless force=true.\n\nExamples\n\njulia> model = ALRsimple(makegrid4(2,2)[1], ones(4,2,3), centering = expectation,\n                         coding = (0,1), Y = repeat([true, true, false, false],1,3));\njulia> setparameters!(model, [1.0, 1.0, 1.0]);\njulia> loglikelihood(model)\n-11.86986109487605\n\n\n\n\n\n"
+},
+
+{
+    "location": "api/#Autologistic.makebool",
+    "page": "Reference",
+    "title": "Autologistic.makebool",
+    "category": "function",
+    "text": "makebool(v::VecOrMat, vals=nothing)\n\nMakes a 2D array of Booleans out of a 1- or 2-D input.  The 2nd argument vals optionally can be a 2-tuple (low, high) specifying the two possible values in v (useful for the case where all elements of v take one value or the other).\n\nIf v has more than 2 unique values, throws an error.\nIf v has exactly 2 unique values, use those to set the coding (ignore vals).\nIf v has 1 unique value, use vals to determine if it\'s the high or low value (throw an error if the single value isn\'t in vals).\n\nExamples\n\njulia> makebool([1.0 2.0; 1.0 2.0])\n2×2 Array{Bool,2}:\n false  true\n false  true\n\njulia> makebool([\"yes\", \"no\", \"no\"])\n3×1 Array{Bool,2}:\n  true\n false\n false\n\njulia> [makebool([1, 1, 1], (-1,1)) makebool([1, 1, 1], (1, 2))]\n3×2 Array{Bool,2}:\n true  false\n true  false\n true  false\n\n\n\n\n\n"
+},
+
+{
+    "location": "api/#Autologistic.makecoded-Tuple{AbstractAutologisticModel}",
+    "page": "Reference",
+    "title": "Autologistic.makecoded",
+    "category": "method",
+    "text": "makecoded(M::AbstractAutologisticModel)\n\nA convenience method for makecoded(M.responses, M.coding).  Use it to retrieve a model\'s responses in coded form.\n\nExamples\n\njulia> M = ALRsimple(Graph(4,3), rand(4,2), Y=[true, false, false, true], coding=(-1,1));\njulia> makecoded(M)\n4×1 Array{Float64,2}:\n  1.0\n -1.0\n -1.0\n  1.0\n\n\n\n\n\n"
+},
+
+{
+    "location": "api/#Autologistic.makecoded-Tuple{Union{Array{T,1}, Array{T,2}} where T,Tuple{Real,Real}}",
+    "page": "Reference",
+    "title": "Autologistic.makecoded",
+    "category": "method",
+    "text": "makecoded(b::VecOrMat, coding::Tuple{Real,Real})\n\nConvert Boolean responses into coded values.  The first argument is boolean. Returns a 2D array of Float64.  \n\nExamples\n\njulia> makecoded([true, false, false, true], (-1, 1))\n4×1 Array{Float64,2}:\n  1.0\n -1.0\n -1.0\n  1.0\n\n\n\n\n\n"
+},
+
+{
+    "location": "api/#Autologistic.makegrid4",
+    "page": "Reference",
+    "title": "Autologistic.makegrid4",
+    "category": "function",
+    "text": "makegrid4(r::Int, c::Int, xlim::Tuple{Real,Real}=(0.0,1.0), \n          ylim::Tuple{Real,Real}=(0.0,1.0))\n\nReturns a named tuple (:G, :locs), where :G is a graph, and :locs is an array of  numeric tuples.  Vertices of :G are laid out in a rectangular, 4-connected grid with  r rows and c columns.  The tuples in :locs contain the spatial coordinates of each vertex.  Optional arguments xlim and ylim determine the bounds of the rectangular  layout.\n\nExamples\n\njulia> out4 = makegrid4(11, 21, (-1,1), (-10,10));\njulia> nv(out4.G) == 11*21                  #231\ntrue\njulia> ne(out4.G) == 11*20 + 21*10          #430\ntrue\njulia> out4.locs[11*10 + 6] == (0.0, 0.0)   #location of center vertex.\ntrue\n\n\n\n\n\n"
+},
+
+{
+    "location": "api/#Autologistic.makegrid8",
+    "page": "Reference",
+    "title": "Autologistic.makegrid8",
+    "category": "function",
+    "text": "makegrid8(r::Int, c::Int, xlim::Tuple{Real,Real}=(0.0,1.0), \n          ylim::Tuple{Real,Real}=(0.0,1.0))\n\nReturns a named tuple (:G, :locs), where :G is a graph, and :locs is an array of  numeric tuples.  Vertices of :G are laid out in a rectangular, 8-connected grid with  r rows and c columns.  The tuples in :locs contain the spatial coordinates of each vertex.  Optional arguments xlim and ylim determine the bounds of the rectangular  layout.\n\nExamples\n\njulia> out8 = makegrid8(11, 21, (-1,1), (-10,10));\njulia> nv(out8.G) == 11*21                      #231\ntrue\njulia> ne(out8.G) == 11*20 + 21*10 + 2*20*10    #830\ntrue\njulia> out8.locs[11*10 + 6] == (0.0, 0.0)       #location of center vertex.\ntrue\n\n\n\n\n\n"
+},
+
+{
+    "location": "api/#Autologistic.makespatialgraph-Union{Tuple{C}, Tuple{C,Real}} where C<:(Union{Array{Tuple{T,T},1}, Array{Tuple{T,T,T},1}} where T<:Real)",
+    "page": "Reference",
+    "title": "Autologistic.makespatialgraph",
+    "category": "method",
+    "text": "makespatialgraph(coords::C, δ::Real) where C<:SpatialCoordinates\n\nReturns a named tuple (:G, :locs), where :G is a graph, and :locs is an array of  numeric tuples.  Each element of coords is a 2- or 3-tuple of spatial coordinates, and this argument is returned unchanged as :locs.  The graph :G has length(coords) vertices, with edges connecting every pair of vertices within Euclidean distance δ of each other. \n\nExamples\n\njulia> c = [(Float64(i), Float64(j)) for i = 1:5 for j = 1:5];\njulia> out = makespatialgraph(c, sqrt(2));\njulia> out.G\n{25, 72} undirected simple Int64 graph\n\njulia> length(out.locs)\n25\n\n\n\n\n\n"
+},
+
+{
+    "location": "api/#Autologistic.marginalprobabilities-Tuple{AbstractAutologisticModel}",
+    "page": "Reference",
+    "title": "Autologistic.marginalprobabilities",
+    "category": "method",
+    "text": "marginalprobabilities(M::AbstractAutologisticModel;\n    indices=1:size(M.unary,2), \n    force::Bool=false\n)\n\nCompute the marginal probability that variables in autologistic model M takes the high state. For a model with n vertices and m observations, returns an n-by-m array  (or an n-vector if  m==1). The [i,j]th element is the marginal probability of the high state in the ith variable at the jth observation.  \n\nThis function computes the exact marginals. For large models, approximate the marginal  probabilities by sampling, e.g. sample(M, ..., average=true).\n\nArguments\n\nindices: used to return only the probabilities for certain observations.  \nforce: the function will throw an error for n > 20 unless force=true.\n\nExamples\n\njulia> M = ALsimple(Graph(3,0), [[-1.0; 0.0; 1.0] [-1.0; 0.0; 1.0]])\njulia> marginalprobabilities(M)\n3×2 Array{Float64,2}:\n 0.119203  0.119203\n 0.5       0.5\n 0.880797  0.880797\n\n\n\n\n\n"
+},
+
+{
+    "location": "api/#Autologistic.negpotential-Tuple{AbstractAutologisticModel}",
+    "page": "Reference",
+    "title": "Autologistic.negpotential",
+    "category": "method",
+    "text": "negpotential(M::AbstractAutologisticModel)\n\nReturns an m-vector of Float64 negpotential values, where m is the number of observations found in M.responses.\n\nExamples\n\njulia> M = ALsimple(makegrid4(3,3).G, ones(9));\njulia> f = fullPMF(M);\njulia> exp(negpotential(M)[1])/f.partition ≈ exp(loglikelihood(M))\ntrue\n\n\n\n\n\n"
+},
+
+{
+    "location": "api/#Autologistic.oneboot-Tuple{AbstractAutologisticModel,Array{Float64,1}}",
+    "page": "Reference",
+    "title": "Autologistic.oneboot",
+    "category": "method",
+    "text": "oneboot(M::AbstractAutologisticModel, params::Vector{Float64};\n    start=zeros(length(getparameters(M))),\n    verbose::Bool=false,\n    kwargs...\n)\n\nComputes one bootstrap replicate using model M, but using parameters params for  generating samples, instead of getparameters(M).\n\n\n\n\n\n"
+},
+
+{
+    "location": "api/#Autologistic.oneboot-Tuple{AbstractAutologisticModel}",
+    "page": "Reference",
+    "title": "Autologistic.oneboot",
+    "category": "method",
+    "text": "oneboot(M::AbstractAutologisticModel; \n    start=zeros(length(getparameters(M))),\n    verbose::Bool=false,\n    kwargs...\n)\n\nPerforms one parametric bootstrap replication from autologistic model M: draw a random sample from M, use that sample as the responses, and re-fit the model.  Returns a named tuple (:sample, :estimate, :convergence), where :sample holds the random sample, :estimate holds the parameter estimates, and :convergence holds a bool indicating whether or not the optimization converged.  The parameters of M remain unchanged by calling oneboot.\n\nArguments\n\nstart: starting parameter values to use for optimization\nverbose: should progress information be written to the console?\nkwargs...: extra keyword arguments that are passed to optimize() or sample(), as appropriate.\n\nExamples\n\njldoctest julia> G = makegrid4(4,3).G; julia> model = ALRsimple(G, ones(12,1), Y=[fill(-1,4); fill(1,8)]); julia> theboot = oneboot(model, method=Gibbs, burnin=250); julia> fieldnames(typeof(theboot)) (:sample, :estimate, :convergence)\n\n\n\n\n\n"
 },
 
 {
