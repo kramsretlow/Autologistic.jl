@@ -187,6 +187,21 @@ end
     M1 = ALRsimple(Graph(4,3), rand(4,2), Y=[true, false, false, true], coding=(-1,1))
     @test makecoded(M1) == reshape([1, -1, -1, 1], (4,1))
     @test makecoded([true, false, false, true], M1.coding) == reshape([1, -1, -1, 1], (4,1))
+
+    # --- makegrid4() and makegrid8() ---
+    out4 = makegrid4(11, 21, (-1,1), (-10,10))
+    @test out4.locs[11*10 + 6] == (0.0, 0.0)
+    @test nv(out4.G) == 11*21
+    @test ne(out4.G) == 11*20 + 21*10
+    out8 = makegrid8(11, 21, (-1,1), (-10,10))
+    @test out8.locs[11*10 + 6] == (0.0, 0.0)
+    @test nv(out8.G) == 11*21
+    @test ne(out8.G) == 11*20 + 21*10 + 2*20*10
+
+    # --- makespatialgraph() ---
+    coords = [(Float64(i), Float64(j)) for i = 1:5 for j = 1:5]
+    out = makespatialgraph(coords, sqrt(2))
+    @test ne(out.G) == 2*4*5 + 2*4*4
 end
 
 @testset "almodel_functions" begin
@@ -199,9 +214,14 @@ end
                    coding = (0,1), Y = repeat([true, true, false, false],1,3))
     @test centeringterms(M2) ≈ ℯ^2/(1+ℯ^2) .* ones(4,3)
 
-    # --- negpotential() ---
+    # --- negpotential(), loglikelihood(), and negloglik!---
     setpairwiseparameters!(M2, [1.0])
     @test negpotential(M2) ≈ 1.4768116880884703 * ones(3,1)
+    @test loglikelihood(M2) ≈ -11.86986109487605
+    @test Autologistic.negloglik!([1.0, 1.0, 1.0], M2) ≈ 11.86986109487605
+    M = ALsimple(makegrid4(3,3).G, ones(9))
+    f = fullPMF(M)
+    @test exp(negpotential(M)[1])/f.partition ≈ exp(loglikelihood(M))
     
     # --- pseudolikelihood() ---
     X = [1.1 2.2
@@ -238,6 +258,11 @@ end
     M = ALsimple(FullUnary([a, b, c]), SimplePairwise(lam, Graph(3,3)), Y=[y1,y2,y3])
     @test isapprox(conditionalprobabilities(M), [cp1, cp2, cp3])
     @test isapprox(conditionalprobabilities(M, vertices=[1,3]), [cp1, cp3])
+    Y = [ones(9) zeros(9)]
+    model = ALsimple(makegrid4(3,3).G, ones(9,2), Y=Y, λ=0.5)
+    @test isapprox(conditionalprobabilities(model, vertices=5), [0.997527377  0.119202922])
+    @test isapprox(conditionalprobabilities(model, indices=2), 
+                   [0.5; 0.26894142; 0.5; 0.2689414213; 0.119202922; 0.26894142; 0.5; 0.26894142; 0.5])
 end
 
 @testset "samplers" begin

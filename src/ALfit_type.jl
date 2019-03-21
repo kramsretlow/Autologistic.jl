@@ -207,27 +207,38 @@ function Base.summary(f::ALfit; parnames=nothing, sigdigits=3)
     Base.summary(stdout, f; parnames=parnames, sigdigits=sigdigits)
 end
 
+"""
+    addboot!(fit::ALfit, bootsamples::Array{Float64,3}, 
+             bootestimates::Array{Float64,2}, convergence::Vector{Bool})
 
-function addboot!(fit::ALfit, bootresults::Array{T,1}) where 
-    T <: NamedTuple{(:sample, :estimate, :convergence)}
+Add parametric bootstrap information in arrays `bootsamples`, `bootestimates`, and
+`convergence` to model fitting information `fit`.  If `fit` already contains bootstrap
+data, the new data is appended to the existing data, and statistics are recomputed.
 
-    nboot = length(bootresults)
-    npar = length(bootresults[1].estimate)
-    n = size(bootresults[1].sample, 1)
-    m = size(bootresults[1].sample, 2) #n,m = size(...) won't work (sample may be 1D or 2D)
-
-    bootsamples = Array{Float64}(undef, n, m, nboot)
-    bootestimates = Array{Float64}(undef, npar, nboot)
-    convergence = Array{Bool}(undef, nboot)
-    for i = 1:nboot
-        bootsamples[:,:,i] = bootresults[i].sample
-        bootestimates[:,i] = bootresults[i].estimate
-        convergence[i] = bootresults[i].convergence
-    end
-
-    addboot!(fit, bootsamples, bootestimates, convergence)
-end
-
+# Examples
+```jldoctest
+julia> using Random;
+julia> Random.seed!(1234);
+julia> G = makegrid4(4,3).G;
+julia> Y=[[fill(-1,4); fill(1,8)] [fill(-1,3); fill(1,9)] [fill(-1,5); fill(1,7)]];
+julia> model = ALRsimple(G, ones(12,1,3), Y=Y);
+julia> fit = fit_pl!(model, start=[-0.4, 1.1]);
+julia> samps = zeros(12,3,10);
+julia> ests = zeros(2,10);
+julia> convs = fill(false, 10);
+julia> for i = 1:10
+           temp = oneboot(model, start=[-0.4, 1.1])
+           samps[:,:,i] = temp.sample
+           ests[:,i] = temp.estimate
+           convs[i] = temp.convergence
+       end
+julia> addboot!(fit, samps, ests, convs)
+julia> summary(fit)
+name          est     se      95% CI
+parameter 1   -0.39   0.442      (-1.09, 0.263)
+parameter 2    1.1    0.279   (-0.00664, 0.84)
+```
+"""
 function addboot!(fit::ALfit, 
                   bootsamples::Array{Float64,3}, 
                   bootestimates::Array{Float64,2}, 
@@ -259,4 +270,47 @@ function addboot!(fit::ALfit,
         fit.CIs[i] = (quantile(bootestimates[i,ix],0.025), quantile(bootestimates[i,ix],0.975))
     end
 
+end
+
+"""
+    addboot!(fit::ALfit, bootresults::Array{T,1}) where 
+        T <: NamedTuple{(:sample, :estimate, :convergence)}
+
+An `addboot!` method taking bootstrap data as an array of named tuples. Tuples are of the
+form produced by `oneboot`.
+
+# Examples
+```jldoctest
+julia>     using Random;
+julia>     Random.seed!(1234);
+julia>     G = makegrid4(4,3).G;
+julia>     Y=[[fill(-1,4); fill(1,8)] [fill(-1,3); fill(1,9)] [fill(-1,5); fill(1,7)]];
+julia>     model = ALRsimple(G, ones(12,1,3), Y=Y);
+julia>     fit = fit_pl!(model, start=[-0.4, 1.1]);
+julia>     boots = [oneboot(model, start=[-0.4, 1.1]) for i = 1:10];
+julia>     addboot!(fit, boots)
+julia>     summary(fit)
+name          est     se      95% CI
+parameter 1   -0.39   0.442      (-1.09, 0.263)
+parameter 2    1.1    0.279   (-0.00664, 0.84)
+```
+"""
+function addboot!(fit::ALfit, bootresults::Array{T,1}) where 
+    T <: NamedTuple{(:sample, :estimate, :convergence)}
+
+    nboot = length(bootresults)
+    npar = length(bootresults[1].estimate)
+    n = size(bootresults[1].sample, 1)
+    m = size(bootresults[1].sample, 2) #n,m = size(...) won't work (sample may be 1D or 2D)
+
+    bootsamples = Array{Float64}(undef, n, m, nboot)
+    bootestimates = Array{Float64}(undef, npar, nboot)
+    convergence = Array{Bool}(undef, nboot)
+    for i = 1:nboot
+        bootsamples[:,:,i] = bootresults[i].sample
+        bootestimates[:,i] = bootresults[i].estimate
+        convergence[i] = bootresults[i].convergence
+    end
+
+    addboot!(fit, bootsamples, bootestimates, convergence)
 end

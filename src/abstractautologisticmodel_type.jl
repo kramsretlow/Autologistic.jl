@@ -43,8 +43,28 @@ true
 abstract type AbstractAutologisticModel end
 
 # === Getting/setting parameters ===============================================
+"""
+    getparameters(x)
+
+A generic function for extracting the parameters from an autologistic model, a unary term,
+or a pairwise term.  Parameters are always returned as an `Array{Float64,1}`.  If 
+`typeof(x) <: AbstractAutologisticModel`, the returned vector is partitioned with the unary
+parameters first.
+"""
 getparameters(M::AbstractAutologisticModel) = [getparameters(M.unary); getparameters(M.pairwise)]
+"""
+    getunaryparameters(M::AbstractAutologisticModel)
+
+Extracts the unary parameters from an autologistic model. Parameters are always returned as
+an `Array{Float64,1}`.
+"""
 getunaryparameters(M::AbstractAutologisticModel) = getparameters(M.unary)
+"""
+    getpairwiseparameters(M::AbstractAutologisticModel)
+
+Extracts the pairwise parameters from an autologistic model. Parameters are always returned as
+an `Array{Float64,1}`.
+"""
 getpairwiseparameters(M::AbstractAutologisticModel) = getparameters(M.pairwise)
 function setparameters!(M::AbstractAutologisticModel, newpars::Vector{Float64})
     p, q = (length(getunaryparameters(M)), length(getpairwiseparameters(M)))
@@ -78,13 +98,27 @@ function showfields(m::AbstractAutologisticModel, leadspaces=0)
 end
 
 
-# === centering adjustment =====================================================
-# centeringterms(M) returns an Array{Float64,2} of the same dimension as 
-# M.unary, giving the centering adjustments for AbstractAutologisticModel M.
-# centeringterms(M,kind) returns the centering adjustment that would be 
-#   if centering were of type kind.
-# TODO: consider performance implications of calculating this each time instead
-# of storing the value.
+"""
+    centeringterms(M::AbstractAutologisticModel, kind::Union{Nothing,CenteringKinds}=nothing)
+
+Returns an `Array{Float64,2}` of the same dimension as `M.unary`, giving the centering
+adjustments for autologistic model `M`. `centeringterms(M,kind)` returns the centering
+adjustment that would be used if centering were of type `kind`.
+
+# Examples
+```jldoctest
+julia> G = makegrid8(2,2).G;
+julia> X = [ones(4) [-2; -1; 1; 2]];
+julia> M1 = ALRsimple(G, X, β=[-1.0, 2.0]);                 #-No centering (default)
+julia> M2 = ALRsimple(G, X, β=[-1.0, 2.0], centering=expectation);  #-Centered model
+julia> [centeringterms(M1) centeringterms(M2) centeringterms(M1, onehalf)]
+4×3 Array{Float64,2}:
+ 0.0  -0.999909  0.5
+ 0.0  -0.995055  0.5
+ 0.0   0.761594  0.5
+ 0.0   0.995055  0.5
+```
+"""
 function centeringterms(M::AbstractAutologisticModel, kind::Union{Nothing,CenteringKinds}=nothing) 
     k = kind==nothing ? M.centering : kind
     if k == none
@@ -132,8 +166,34 @@ function pslik!(θ::Vector{Float64}, M::AbstractAutologisticModel)
     return pseudolikelihood(M)
 end
 
+"""
+    oneboot(M::AbstractAutologisticModel; 
+        start=zeros(length(getparameters(M))),
+        verbose::Bool=false,
+        kwargs...
+    )
 
-# (tests done)
+Performs one parametric bootstrap replication from autologistic model `M`: draw a
+random sample from `M`, use that sample as the responses, and re-fit the model.  Returns
+a named tuple `(:sample, :estimate, :convergence)`, where `:sample` holds the random
+sample, `:estimate` holds the parameter estimates, and `:convergence` holds a `bool`
+indicating whether or not the optimization converged.  The parameters of `M` remain
+unchanged by calling `oneboot`.
+
+# Arguments
+- `start`: starting parameter values to use for optimization
+- `verbose`: should progress information be written to the console?
+- `kwargs...`: extra keyword arguments that are passed to `optimize()` or `sample()`, as
+  appropriate.
+
+# Examples
+```jldoctest
+julia> G = makegrid4(4,3).G;
+julia> model = ALRsimple(G, ones(12,1), Y=[fill(-1,4); fill(1,8)]);
+julia> theboot = oneboot(model, method=Gibbs, burnin=250);
+julia> fieldnames(typeof(theboot))
+(:sample, :estimate, :convergence)```
+"""
 function oneboot(M::AbstractAutologisticModel; 
                  start=zeros(length(getparameters(M))),
                  verbose::Bool=false,
@@ -151,6 +211,16 @@ function oneboot(M::AbstractAutologisticModel;
     return (sample=yboot, estimate=thisfit.estimate, convergence=thisfit.convergence)
 end
 
+"""
+    oneboot(M::AbstractAutologisticModel, params::Vector{Float64};
+        start=zeros(length(getparameters(M))),
+        verbose::Bool=false,
+        kwargs...
+    )
+
+Computes one bootstrap replicate using model `M`, but using parameters `params` for 
+generating samples, instead of `getparameters(M)`.
+"""
 function oneboot(M::AbstractAutologisticModel, params::Vector{Float64};
                  start=zeros(length(getparameters(M))),
                  verbose::Bool=false,
@@ -161,6 +231,34 @@ function oneboot(M::AbstractAutologisticModel, params::Vector{Float64};
     return out
 end
 
+"""
+    fit_pl!(M::AbstractAutologisticModel;
+        start=zeros(length(getparameters(M))), 
+        verbose::Bool=false,
+        nboot::Int = 0,
+        kwargs...)
+
+Fit autologistic model `M` using maximum pseudolikelihood. 
+
+# Arguments
+- `start`: initial value to use for optimization.
+- `verbose`: should progress information be printed to the console?
+- `nboot`: number of samples to use for parametric bootstrap error estimation.
+  If `nboot=0` (the default), no bootstrap is run.
+- `kwargs...` extra keyword arguments that are passed on to `optimize()` or `sample()`,
+  as appropriate.
+
+# Examples
+```jldoctest
+julia> Y=[[fill(-1,4); fill(1,8)] [fill(-1,3); fill(1,9)] [fill(-1,5); fill(1,7)]];
+julia> model = ALRsimple(G, ones(12,1,3), Y=Y);
+julia> fit = fit_pl!(model, start=[-0.4, 1.1]);
+julia> summary(fit)
+name          est     se   p-value   95% CI
+parameter 1   -0.39
+parameter 2    1.1
+```
+"""
 function fit_pl!(M::AbstractAutologisticModel;
                  start=zeros(length(getparameters(M))), 
                  verbose::Bool=false,
@@ -231,11 +329,22 @@ function fit_pl!(M::AbstractAutologisticModel;
 end
 
 
-# === negpotential function ====================================================
-# negpotential(M) returns an m-vector of Float64 negpotential values, where 
-# m is the number of observations found in M.responses.
 # TODO: clean up for allocations/speed. Based on experience with sample(), might
-#       want to loop explicitly.
+#       want to loop explicitly.  
+"""
+    negpotential(M::AbstractAutologisticModel)
+
+Returns an m-vector of `Float64` negpotential values, where m is the number of observations
+found in `M.responses`.
+
+# Examples
+```jldoctest
+julia> M = ALsimple(makegrid4(3,3).G, ones(9));
+julia> f = fullPMF(M);
+julia> exp(negpotential(M)[1])/f.partition ≈ exp(loglikelihood(M))
+true
+```
+"""
 function negpotential(M::AbstractAutologisticModel)
     Y = makecoded(M)
     m = size(Y,2)
@@ -250,9 +359,11 @@ function negpotential(M::AbstractAutologisticModel)
 end
 
 
-# === fullPMF ==================================================================
 """
-    fullPMF(M::AbstractAutologisticModel; indices=1:size(M.unary,2), force::Bool=false)
+    fullPMF(M::AbstractAutologisticModel; 
+        indices=1:size(M.unary,2), 
+        force::Bool=false
+    )
 
 Compute the PMF of an AbstractAutologisticModel, and return a `NamedTuple` `(:table, :partition)`.
 
@@ -266,7 +377,6 @@ Output `:partition` is a vector of normalizing constant (a.k.a. partition functi
 In the ``m=1`` case, it is a scalar `Float64`.
 
 # Arguments
-- `M`: an autologistic model.
 - `indices`: indices of specific observations from which to obtain the output. By 
   default, all observations are used.
 - `force`: calling the function with ``n>20`` will throw an error unless 
@@ -327,7 +437,23 @@ function fullPMF(M::AbstractAutologisticModel; indices=1:size(M.unary,2),
     return (table=T, partition=partition)
 end
 
-# === maximum likelihood estimation ============================================
+"""
+    loglikelihood(M::AbstractAutologisticModel; 
+        force::Bool=false
+    )
+
+Compute the natural logarithm of the likelihood for autologistic model `M`.  This will throw
+an error for models with more than 20 vertices, unless `force=true`.
+
+# Examples
+```jldoctest
+julia> model = ALRsimple(makegrid4(2,2)[1], ones(4,2,3), centering = expectation,
+                         coding = (0,1), Y = repeat([true, true, false, false],1,3));
+julia> setparameters!(model, [1.0, 1.0, 1.0]);
+julia> loglikelihood(model)
+-11.86986109487605
+```
+"""
 function loglikelihood(M::AbstractAutologisticModel; force::Bool=false)
     parts = fullPMF(M, force=force).partition
     return sum(negpotential(M) .- log.(parts))
@@ -338,8 +464,34 @@ function negloglik!(θ::Vector{Float64}, M::AbstractAutologisticModel; force::Bo
     return -loglikelihood(M, force=force)
 end
 
-#TODO: documentation
-# kwargs are extra keyword arguments to pass on to optimise()
+"""
+    fit_ml!(M::AbstractAutologisticModel;
+        start=zeros(length(getparameters(M))),
+        verbose::Bool=false,
+        force::Bool=false,
+        kwargs...
+    )
+
+Fit autologistic model `M` using maximum likelihood. Will fail for models with more than 
+20 vertices, unless `force=true`.  Use `fit_pl!` for larger models.
+
+# Arguments
+- `start`: initial value to use for optimization.
+- `verbose`: should progress information be printed to the console?
+- `force`: set to `true` to force computation of the likelihood for large models.
+- `kwargs...` extra keyword arguments that are passed on to `optimize()`.
+
+# Examples
+```jldoctest
+julia> G = makegrid4(4,3).G;
+julia> model = ALRsimple(G, ones(12,1), Y=[fill(-1,4); fill(1,8)]);
+julia> mle = fit_ml!(model);
+julia> summary(mle)
+name          est      se      p-value   95% CI
+parameter 1   0.0791   0.163   0.628       (-0.241, 0.399)
+parameter 2   0.425    0.218   0.0511    (-0.00208, 0.852)
+```
+"""
 function fit_ml!(M::AbstractAutologisticModel;
                  start=zeros(length(getparameters(M))),
                  verbose::Bool=false,
@@ -398,9 +550,34 @@ function fit_ml!(M::AbstractAutologisticModel;
 end
 
 
-# ***TODO: documentation***
-#Returns an n-by-m array (or an n-vector if  m==1). The [i,j]th element is the 
-#marginal probability of the high state in the ith variable at the jth replciate.
+"""
+    marginalprobabilities(M::AbstractAutologisticModel;
+        indices=1:size(M.unary,2), 
+        force::Bool=false
+    )
+
+Compute the marginal probability that variables in autologistic model `M` takes the high
+state. For a model with n vertices and m observations, returns an n-by-m array 
+(or an n-vector if  m==1). The [i,j]th element is the marginal probability of the high state
+in the ith variable at the jth observation.  
+
+This function computes the exact marginals. For large models, approximate the marginal 
+probabilities by sampling, e.g. `sample(M, ..., average=true)`.
+
+# Arguments
+- `indices`: used to return only the probabilities for certain observations.  
+- `force`: the function will throw an error for n > 20 unless `force=true`.
+
+# Examples
+```jldoctest
+julia> M = ALsimple(Graph(3,0), [[-1.0; 0.0; 1.0] [-1.0; 0.0; 1.0]])
+julia> marginalprobabilities(M)
+3×2 Array{Float64,2}:
+ 0.119203  0.119203
+ 0.5       0.5
+ 0.880797  0.880797
+```
+"""
 function marginalprobabilities(M::AbstractAutologisticModel; indices=1:size(M.unary,2), 
                                force::Bool=false)
     n, m = size(M.unary)
@@ -430,12 +607,40 @@ function marginalprobabilities(M::AbstractAutologisticModel; indices=1:size(M.un
 end
 
 
-# Compute the conditional probability that variables take the high state, given the
-# current values of all of their neighbors. If vertices or indices are provided,
-# the results are only computed for the desired variables & observations.  Otherwise
-# results are computed for all variables and observations.
+
 # TODO: optimize for speed/efficiency
-function conditionalprobabilities(M::AbstractAutologisticModel; vertices=1:size(M.unary)[1], 
+"""
+    conditionalprobabilities(M::AbstractAutologisticModel; vertices=1:size(M.unary)[1], 
+                             indices=1:size(M.unary,2))
+
+Compute the conditional probability that variables in autologistic model `M` take the high
+state, given the current values of all of their neighbors. If `vertices` or `indices` are
+provided, the results are only computed for the desired variables & observations.  
+Otherwise results are computed for all variables and observations.
+
+# Examples
+```jldoctest
+julia> Y = [ones(9) zeros(9)];
+julia> G = makegrid4(3,3).G;
+julia> model = ALsimple(G, ones(9,2), Y=Y, λ=0.5);    #-Variables on a 3×3 grid, 2 obs.
+julia> conditionalprobabilities(model, vertices=5)    #-Cond. probs. of center vertex.
+1×2 Array{Float64,2}:
+ 0.997527  0.119203
+
+julia> conditionalprobabilities(model, indices=2)     #-Cond probs, 2nd observation.
+9×1 Array{Float64,2}:
+ 0.5
+ 0.26894142136999516
+ 0.5
+ 0.26894142136999516
+ 0.11920292202211756
+ 0.26894142136999516
+ 0.5
+ 0.26894142136999516
+ 0.5
+```
+"""
+function conditionalprobabilities(M::AbstractAutologisticModel; vertices=1:size(M.unary,1), 
                                   indices=1:size(M.unary,2))
     n, m = size(M.unary)
     if minimum(vertices)<1 || maximum(vertices)>n 
@@ -463,9 +668,9 @@ function conditionalprobabilities(M::AbstractAutologisticModel; vertices=1:size(
             loval = exp(lo*(M.unary[v,r] + ns))
             hival = exp(hi*(M.unary[v,r] + ns))
             if hival == Inf
-                out[i,r] = 1.0
+                out[i,j] = 1.0
             else
-                out[i,r] = hival / (loval + hival)
+                out[i,j] = hival / (loval + hival)
             end
         end
     end
@@ -620,7 +825,23 @@ function sample_one_index(M::AbstractAutologisticModel, k::Int = 1;
     end
 end
 
-# A convenience method for makecoded
+"""
+    makecoded(M::AbstractAutologisticModel)
+
+A convenience method for `makecoded(M.responses, M.coding)`.  Use it to retrieve a model's
+responses in coded form.
+
+# Examples
+```jldoctest
+julia> M = ALRsimple(Graph(4,3), rand(4,2), Y=[true, false, false, true], coding=(-1,1));
+julia> makecoded(M)
+4×1 Array{Float64,2}:
+  1.0
+ -1.0
+ -1.0
+  1.0
+```
+"""
 function makecoded(M::AbstractAutologisticModel)
     return makecoded(M.responses, M.coding)
 end

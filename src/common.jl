@@ -73,14 +73,39 @@ perfect_bounding_chain = 4
 """
 @enum SamplingMethods Gibbs perfect_reuse_samples perfect_reuse_seeds perfect_read_once perfect_bounding_chain
 
-# A function to make a 2D array of Booleans out of a 1- or 2-D input.
-# 2nd argument `values` optionally can be a 2-tuple (low, high) specifying the two values
-# we want to convert to boolean (useful for the case where all elements of `v` take one 
-# value or the other.)
-# - If v has more than 3 unique values, throw an error
-# - If v has exactly 2 unique values, use those to set the coding (ignore vals)
-# - If v has 1 unique value, use vals to determine if it's the high or low (throw an error
-#   if v's value isn't in vals)
+
+"""
+    makebool(v::VecOrMat, vals=nothing)
+
+Makes a 2D array of Booleans out of a 1- or 2-D input.  The 2nd argument `vals` optionally
+can be a 2-tuple (low, high) specifying the two possible values in `v` (useful for the case
+where all elements of `v` take one value or the other).
+
+- If `v` has more than 2 unique values, throws an error.
+- If `v` has exactly 2 unique values, use those to set the coding (ignore `vals`).
+- If `v` has 1 unique value, use `vals` to determine if it's the high or low value (throw
+  an error if the single value isn't in `vals`).
+
+# Examples
+```jldoctest
+julia> makebool([1.0 2.0; 1.0 2.0])
+2×2 Array{Bool,2}:
+ false  true
+ false  true
+
+julia> makebool(["yes", "no", "no"])
+3×1 Array{Bool,2}:
+  true
+ false
+ false
+
+julia> [makebool([1, 1, 1], (-1,1)) makebool([1, 1, 1], (1, 2))]
+3×2 Array{Bool,2}:
+ true  false
+ true  false
+ true  false
+```
+"""
 function makebool(v::VecOrMat, vals=nothing)
     if ndims(v)==1
         v = v[:,:]    #**convet to 2D, not sure the logic behind [:,:] index
@@ -108,10 +133,22 @@ function makebool(v::VecOrMat, vals=nothing)
     return out
 end
 
+"""
+    makecoded(b::VecOrMat, coding::Tuple{Real,Real})
 
-# A fcn to convert Boolean responses into coded values.  1st argument is boolean
-# Returns a 2D array of Float64.  If Y is not supplied, use the responses stored
-# in the 1st argument.
+Convert Boolean responses into coded values.  The first argument is boolean.
+Returns a 2D array of Float64.  
+
+# Examples
+```jldoctest
+julia> makecoded([true, false, false, true], (-1, 1))
+4×1 Array{Float64,2}:
+  1.0
+ -1.0
+ -1.0
+  1.0
+```
+"""
 function makecoded(b::VecOrMat, coding::Tuple{Real,Real})
     lo = Float64(coding[1])
     hi = Float64(coding[2])
@@ -129,12 +166,27 @@ function makecoded(b::VecOrMat, coding::Tuple{Real,Real})
 end
 
 
+"""
+    makegrid4(r::Int, c::Int, xlim::Tuple{Real,Real}=(0.0,1.0), 
+              ylim::Tuple{Real,Real}=(0.0,1.0))
 
-# A function to produce a graph with a 4-connected 2D grid structure, having r 
-# rows and c columns.  Returns a tuple containing the graph, and an array of 
-# vertex spatial coordinates.
-# NB: LightGraphs has a function Grid() for this case.
-# TODO: write tests
+Returns a named tuple `(:G, :locs)`, where `:G` is a graph, and `:locs` is an array of 
+numeric tuples.  Vertices of `:G` are laid out in a rectangular, 4-connected grid with 
+`r` rows and `c` columns.  The tuples in `:locs` contain the spatial coordinates of each
+vertex.  Optional arguments `xlim` and `ylim` determine the bounds of the rectangular 
+layout.
+
+# Examples
+```jldoctest
+julia> out4 = makegrid4(11, 21, (-1,1), (-10,10));
+julia> nv(out4.G) == 11*21                  #231
+true
+julia> ne(out4.G) == 11*20 + 21*10          #430
+true
+julia> out4.locs[11*10 + 6] == (0.0, 0.0)   #location of center vertex.
+true
+```
+"""
 function makegrid4(r::Int, c::Int, xlim::Tuple{Real,Real}=(0.0,1.0), 
                ylim::Tuple{Real,Real}=(0.0,1.0))
 
@@ -165,10 +217,27 @@ function makegrid4(r::Int, c::Int, xlim::Tuple{Real,Real}=(0.0,1.0),
 end
 
 
-# A function to produce a graph with an 8-connected 2D grid structure, having r 
-# rows and c columns.  Returns a tuple containing the graph, and an array of 
-# vertex spatial coordinates.
-# TODO: write tests
+"""
+    makegrid8(r::Int, c::Int, xlim::Tuple{Real,Real}=(0.0,1.0), 
+              ylim::Tuple{Real,Real}=(0.0,1.0))
+
+Returns a named tuple `(:G, :locs)`, where `:G` is a graph, and `:locs` is an array of 
+numeric tuples.  Vertices of `:G` are laid out in a rectangular, 8-connected grid with 
+`r` rows and `c` columns.  The tuples in `:locs` contain the spatial coordinates of each
+vertex.  Optional arguments `xlim` and `ylim` determine the bounds of the rectangular 
+layout.
+
+# Examples
+```jldoctest
+julia> out8 = makegrid8(11, 21, (-1,1), (-10,10));
+julia> nv(out8.G) == 11*21                      #231
+true
+julia> ne(out8.G) == 11*20 + 21*10 + 2*20*10    #830
+true
+julia> out8.locs[11*10 + 6] == (0.0, 0.0)       #location of center vertex.
+true
+```
+"""
 function makegrid8(r::Int, c::Int, xlim::Tuple{Real,Real}=(0.0,1.0), 
                ylim::Tuple{Real,Real}=(0.0,1.0))
 
@@ -195,10 +264,26 @@ function makegrid8(r::Int, c::Int, xlim::Tuple{Real,Real}=(0.0,1.0),
 end
 
 
-# A function to generate a graph from points with given coordinates, by
-# creating edges between all points within a certain Euclidean distance of 
-# one another.
-# TODO: write tests
+"""
+    makespatialgraph(coords::C, δ::Real) where C<:SpatialCoordinates
+
+Returns a named tuple `(:G, :locs)`, where `:G` is a graph, and `:locs` is an array of 
+numeric tuples.  Each element of `coords` is a 2- or 3-tuple of spatial coordinates, and
+this argument is returned unchanged as `:locs`.  The graph `:G` has `length(coords)`
+vertices, with edges connecting every pair of vertices within Euclidean distance `δ` of
+each other. 
+
+# Examples
+```jldoctest
+julia> c = [(Float64(i), Float64(j)) for i = 1:5 for j = 1:5];
+julia> out = makespatialgraph(c, sqrt(2));
+julia> out.G
+{25, 72} undirected simple Int64 graph
+
+julia> length(out.locs)
+25
+```
+"""
 function makespatialgraph(coords::C, δ::Real) where C<:SpatialCoordinates
     #Replace coords by an equivalent tuple of Float64, for consistency
     n = length(coords)

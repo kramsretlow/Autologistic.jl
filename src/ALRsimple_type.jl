@@ -24,7 +24,7 @@ An autologistic regression model with "simple smoothing":  the unary parameter i
 
 # Arguments
 - `Y`: the array of dichotomous responses.  Any array with 2 unique values will work.
-  If the array has only one unique value, it must equal one of th coding values. The 
+  If the array has only one unique value, it must equal one of the coding values. The 
   supplied object will be internally represented as a Boolean array.
 - `β`: the regression coefficients.
 - `λ`: the association parameter.
@@ -37,16 +37,15 @@ An autologistic regression model with "simple smoothing":  the unary parameter i
 
 # Examples
 ```jldoctest
-X = rand(10,3);            #-predictors
-Y = rand([-2, 3], 10);     #-responses
-g = Graph(10,20);          #-graph
-u = LinPredUnary(X);
-p = SimplePairwise(g);
-model1 = ALRsimple(u, p, Y=Y);
-model2 = ALRsimple(g, X, Y=Y);
-all([getfield(model1, fn)==getfield(model2, fn) for fn in fieldnames(ALRsimple)])
-
-# output
+julia> using LightGraphs
+julia> X = rand(10,3);            #-predictors
+julia> Y = rand([-2, 3], 10);     #-responses
+julia> g = Graph(10,20);          #-graph
+julia> u = LinPredUnary(X);
+julia> p = SimplePairwise(g);
+julia> model1 = ALRsimple(u, p, Y=Y);
+julia> model2 = ALRsimple(g, X, Y=Y);
+julia> all([getfield(model1, fn)==getfield(model2, fn) for fn in fieldnames(ALRsimple)])
 true
 ```
 """
