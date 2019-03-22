@@ -1,6 +1,3 @@
-# TODO: 
-# [ ] Add more tests for getindex() with simplepairwise (many methods)
-
 using Test
 using LightGraphs, LinearAlgebra
 using Autologistic
@@ -228,7 +225,7 @@ end
          1.0 2.0
          2.1 1.2
          3.0 0.3]
-    Y = reshape([0, 0, 1, 0],(4,1))
+    Y = [0; 0; 1; 0]
     M3 = ALRsimple(makegrid4(2,2)[1], cat(X,X,dims=3), Y=cat(Y,Y,dims=2), 
                    β=[-0.5, 1.5], λ=1.25, centering=expectation)
     @test pseudolikelihood(M3) ≈ 12.333549445795818

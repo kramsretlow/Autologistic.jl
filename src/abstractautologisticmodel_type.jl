@@ -59,6 +59,7 @@ Extracts the unary parameters from an autologistic model. Parameters are always 
 an `Array{Float64,1}`.
 """
 getunaryparameters(M::AbstractAutologisticModel) = getparameters(M.unary)
+
 """
     getpairwiseparameters(M::AbstractAutologisticModel)
 
@@ -66,6 +67,15 @@ Extracts the pairwise parameters from an autologistic model. Parameters are alwa
 an `Array{Float64,1}`.
 """
 getpairwiseparameters(M::AbstractAutologisticModel) = getparameters(M.pairwise)
+
+"""
+    setparameters!(x, newpars::Vector{Float64})
+
+A generic function for setting the parameter values of an autologistic model, a unary term,
+or a pairwise term.  Parameters are always passed as an `Array{Float64,1}`.  If 
+`typeof(x) <: AbstractAutologisticModel`, the `newpars` is assumed partitioned with the
+unary parameters first.
+"""
 function setparameters!(M::AbstractAutologisticModel, newpars::Vector{Float64})
     p, q = (length(getunaryparameters(M)), length(getpairwiseparameters(M)))
     @assert length(newpars) == p + q "newpars has wrong length"
@@ -73,9 +83,21 @@ function setparameters!(M::AbstractAutologisticModel, newpars::Vector{Float64})
     setparameters!(M.pairwise, newpars[p+1:p+q])
     return newpars
 end
+
+"""
+    setunaryparameters!(M::AbstractAutologisticModel, newpars::Vector{Float64})
+
+Sets the unary parameters of autologistic model `M` to the values in `newpars`.
+"""
 function setunaryparameters!(M::AbstractAutologisticModel, newpars::Vector{Float64})
     setparameters!(M.unary, newpars)
 end
+
+"""
+    setpairwiseparameters!(M::AbstractAutologisticModel, newpars::Vector{Float64})
+
+Sets the pairwise parameters of autologistic model `M` to the values in `newpars`.
+"""
 function setpairwiseparameters!(M::AbstractAutologisticModel, newpars::Vector{Float64})
     setparameters!(M.pairwise, newpars)
 end
@@ -140,6 +162,25 @@ end
 # === pseudolikelihood =========================================================
 # pseudolikelihood(M) computes the negative log pseudolikelihood for the given 
 # AbstractAutologisticModel with its responses.  Returns a Float64.
+
+"""
+    pseudolikelihood(M::AbstractAutologisticModel)
+
+Computes the negative log pseudolikelihood for autologistic model `M`. Returns a `Float64`.
+
+# Examples
+```jldoctest
+julia> X = [1.1 2.2
+            1.0 2.0
+            2.1 1.2
+            3.0 0.3];
+julia> Y = [0; 0; 1; 0];
+julia> M3 = ALRsimple(makegrid4(2,2)[1], cat(X,X,dims=3), Y=cat(Y,Y,dims=2), 
+                      β=[-0.5, 1.5], λ=1.25, centering=expectation);
+julia> pseudolikelihood(M3)
+12.333549445795818
+```
+"""
 function pseudolikelihood(M::AbstractAutologisticModel)
     out = 0.0
     Y = makecoded(M)
@@ -679,58 +720,46 @@ end
 
 
 """
-    sample(
-        M::AbstractAutologisticModel, 
-        k::Int = 1;
+    sample(M::AbstractAutologisticModel, k::Int = 1;
         method::SamplingMethods = Gibbs,
         indices = 1:size(M.unary,2), 
         average::Bool = false, 
         config = nothing, 
         burnin::Int = 0,
+        skip::Int = 0,
         verbose::Bool = false
     )
 
-Draws `k` random samples from autologistic model `M`, and either returns the samples 
-themselves, or the estimated probabilities of observing the "high" level at each vertex.
+Draws `k` random samples from autologistic model `M`. For a model with `n` vertices in
+its graph, the return value is:
 
-If the model has more than one observation, then `k` samples are drawn for each
-observation's parameter settings. To restrict the samples to a subset of observations, use
-argument `indices`. 
+- When `average=false`, an `n` × `length(indices)` × `k` array, with singleton dimensions
+  dropped. This array holds the random samples.
+- When `average=true`, an `n`  × `length(indices)` array, with singleton dimensions dropped.
+  This array holds the estimated marginal probabilities of observing the "high" level at 
+  each vertex.
 
-For a model `M` with `n` vertices in its graph:
-
-*   When `average=false`, the return value is `n` × `length(indices)` × `k`, with singleton
-    dimensions dropped. 
-*   When `average=true`, the return value is `n`  × `length(indices)`, with singleton
-    dimensions dropped.
-
-# Keyword Arguments
-
-**`method`** is a member of the enum [`SamplingMethods`](@ref), specifying which sampling
-method will be used.  The default uses Gibbs sampling.  Where feasible, it is recommended 
-to use one of the perfect sampling alternatives. See [`SamplingMethods`](@ref) for more.
-
-**`indices`** gives the indices of the observation to use for sampling. The default is all
-indices, in which case each sample is of the same size as `M.responses`. 
-
-**`average`** controls the form of the output. When `average=true`, the return value is the 
-proportion of "high" samples at each vertex. (Note that this is **not** actually the
-arithmetic average of the samples, unless the coding is (0,1). Rather, it is an estimate of 
-the probability of getting a "high" outcome.)  When `average=false`, the full set of samples
-is returned. 
-
-**`config`** allows a starting configuration of the random variables to be provided. Only
-used if `method=Gibbs`. Any vector of the correct length, with two unique values, can be 
-used as `config`. By default a random configuration is used.
-
-**`burnin`** specifies the number of initial samples to discard from the results.  Only used
-if `method=Gibbs`.
-
-**`skip`** specifies how many samples to throw away between returned samples.  Only used 
-if `method=Gibbs`. 
-
-**`verbose`** controls output to the console.  If `true`, intermediate information about 
-sampling progress is printed to the console. Otherwise no output is shown.
+# Arguments
+- `method`: a member of the enum [`SamplingMethods`](@ref), specifying which sampling
+  method will be used.  The default is Gibbs sampling.  Where feasible, it is recommended 
+  to use one of the perfect sampling alternatives. See [`SamplingMethods`](@ref) for more.
+- `indices`: gives the indices of the observation to use for sampling. If the model has 
+  more than one observation, then `k` samples are drawn for each observation's parameter 
+  settings. Use `indices` to restrict the samples to a subset of observations. 
+- `average`: controls the form of the output. When `average=true`, the return value is the 
+  proportion of "high" samples at each vertex. (Note that this is **not** actually the
+  arithmetic average of the samples, unless the coding is (0,1). Rather, it is an estimate of 
+  the probability of getting a "high" outcome.)  When `average=false`, the full set of
+  samples is returned. 
+- `config`: allows a starting configuration of the random variables to be provided. Only
+  used if `method=Gibbs`. Any vector of the correct length, with two unique values, can be 
+  used as `config`. By default a random configuration is used.
+- `burnin`: specifies the number of initial samples to discard from the results.  Only used
+  if `method=Gibbs`.
+- `skip`: specifies how many samples to throw away between returned samples.  Only used 
+  if `method=Gibbs`. 
+- `verbose`: controls output to the console.  If `true`, intermediate information about 
+  sampling progress is printed to the console. Otherwise no output is shown.
 
 # Examples
 ```jldoctest

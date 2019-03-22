@@ -12,7 +12,7 @@ are:
 * [`ALfull`](@ref): A model with type [`FullUnary`](@ref) as the unary part, and type
   [`FullPairwise`](@ref) as the pairwise part (parameters ``α, Λ``).
 * [`ALsimple`](@ref): A model with type [`FullUnary`](@ref) as the unary part, and type
-  [`SiimplePairwise`](@ref) as the pairwise part (parameters ``α, λ``).
+  [`SimplePairwise`](@ref) as the pairwise part (parameters ``α, λ``).
 * [`ALRsimple`](@ref): A model with type [`LinPredUnary`](@ref) as the unary part, and type
   [`SimplePairwise`](@ref) as the pairwise part (parameters ``β, λ``).
 
@@ -42,8 +42,8 @@ it will be desired to choose some appropriate values from data.
 * [`fit_pl!`](@ref) uses pseudolikelihood to estimate the parameters.
 * [`setparameters!`](@ref), [`setunaryparameters!`](@ref), and [`setpairwiseparameters!`](@ref) can be used to
   set the parameters of the model directly.
-* [`getparameters`](@ref), [`getunaryparameters`](@ref), and [`getpairwiseparameters`](@ref) can be used to retrieve
-  the parameter values.
+* [`getparameters`](@ref), [`getunaryparameters`](@ref), and [`getpairwiseparameters`](@ref)
+can be used to retrieve the parameter values.
 
 Changing the parameters directly, through the fields of the model object, is
 discouraged.  It is preferable for safety to use the above get and set functions.
