@@ -317,16 +317,20 @@ function fit_pl!(M::AbstractAutologisticModel;
         println("-- Finding the maximum pseudolikelihood estimate --")
         println("Calling Optim.optimize with BFGS method...")
     end
-    out = optimize(θ -> pslik!(θ,M), start, BFGS(), opts)
-    ret.estimate = out.minimizer
+    out = try
+        optimize(θ -> pslik!(θ,M), start, BFGS(), opts)
+    catch err
+        err
+    end
     ret.optim = out
-    if !Optim.converged(out)
+    if typeof(out)<:Exception || !Optim.converged(out)
         setparameters!(M, originalparameters)
-        @warn "Optim.optimize did not converge. Model parameters have not been changed."
+        @warn "Optim.optimize did not succeed. Model parameters have not been changed."
         ret.convergence = false
         return ret
     else
         setparameters!(M, out.minimizer)
+        ret.estimate = out.minimizer
         ret.convergence = true
     end
 
@@ -370,8 +374,7 @@ function fit_pl!(M::AbstractAutologisticModel;
 end
 
 
-# TODO: clean up for allocations/speed. Based on experience with sample(), might
-#       want to loop explicitly.  
+# TODO: consider if the main line of linear algebra can be sped up.  
 """
     negpotential(M::AbstractAutologisticModel)
 
@@ -548,12 +551,15 @@ function fit_ml!(M::AbstractAutologisticModel;
         println("Calling Optim.optimize with BFGS method...")
     end
 
-    # TODO: some kind of try/catch around call to optimize()
-    out = optimize(θ -> negloglik!(θ,M,force=force), start, BFGS(), opts)
-    if !Optim.converged(out)
+    out = try
+        optimize(θ -> negloglik!(θ,M,force=force), start, BFGS(), opts)
+    catch err
+        err
+    end
+    ret.optim = out
+    if typeof(out)<:Exception || !Optim.converged(out)
         setparameters!(M, originalparameters)
-        @warn "Optim.optimize did not converge. Model parameters have not been changed."
-        ret.optim = out
+        @warn "Optim.optimize did not succeed. Model parameters have not been changed."
         ret.convergence = false
         return ret
     end
@@ -581,7 +587,6 @@ function fit_ml!(M::AbstractAutologisticModel;
     ret.se = SE
     ret.pvalues = pvals
     ret.CIs = CIs
-    ret.optim = out
     ret.Hinv = Hinv
     ret.convergence = true
     if verbose
@@ -649,7 +654,7 @@ end
 
 
 
-# TODO: optimize for speed/efficiency
+# TODO: look for speed gains
 """
     conditionalprobabilities(M::AbstractAutologisticModel; vertices=1:size(M.unary)[1], 
                              indices=1:size(M.unary,2))

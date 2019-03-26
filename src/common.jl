@@ -301,20 +301,6 @@ function makespatialgraph(coords::C, δ::Real) where C<:SpatialCoordinates
 end
 
 
-# Helper function to compute an inner product between two vectors.
-# Doing this way seems to reduce memory allocations vs. a' * b way.
-# Assume dimensions are correct.
-# TODO: later, try @inline, @inbounds, @boundscheck, etc. for speed.
-# TODO: later, verify if this function is needed!!!
-function innerprod(a, b)::Float64
-    out = 0.0
-    for i in eachindex(a)
-        out += a[i] * b[i]
-    end
-    return out
-end
-
-
 # Open data sets 
 function datasets(name::String)
     if name=="pigmentosa"

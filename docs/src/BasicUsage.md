@@ -40,10 +40,10 @@ it will be desired to choose some appropriate values from data.
 * [`fit_ml!`](@ref) uses maximum likelihood to estimate the parameters.  It is only useful for
   cases where the number of vertices in the graph is small.
 * [`fit_pl!`](@ref) uses pseudolikelihood to estimate the parameters.
-* [`setparameters!`](@ref), [`setunaryparameters!`](@ref), and [`setpairwiseparameters!`](@ref) can be used to
-  set the parameters of the model directly.
+* [`setparameters!`](@ref), [`setunaryparameters!`](@ref), and
+  [`setpairwiseparameters!`](@ref) can be used to set the parameters of the model directly.
 * [`getparameters`](@ref), [`getunaryparameters`](@ref), and [`getpairwiseparameters`](@ref)
-can be used to retrieve the parameter values.
+  can be used to retrieve the parameter values.
 
 Changing the parameters directly, through the fields of the model object, is
 discouraged.  It is preferable for safety to use the above get and set functions.
@@ -56,8 +56,8 @@ inference questions, make plots, and the like.
 For small-graph cases:
 
 * [`fit_ml!`](@ref) returns p-values and 95% confidence intervals that can be used directly.
-* [`fullPMF`](@ref), [`conditionalprobabilities`](@ref), [`marginalprobabilities`](@ref) can be used to get
-  desired quantities from the fitted distribution.
+* [`fullPMF`](@ref), [`conditionalprobabilities`](@ref), [`marginalprobabilities`](@ref) can
+  be used to get desired quantities from the fitted distribution.
 * [`sample`](@ref) can be used to draw random samples from the fitted distribution.
 
 For large-graph cases:

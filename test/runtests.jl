@@ -327,6 +327,8 @@ end
     mle2 = fit_ml!(model, start=[0.07; 0.4], verbose=true, iterations=30, show_trace=true)
     @test isapprox(mle2.estimate, [0.07915; 0.4249], atol=0.001)
     @test isapprox(mle2.pvalues, [0.6279; 0.0511], atol=0.001)
+    mleERR = fit_ml!(model, start=[1000, 1000])
+    @test typeof(mleERR.optim) <: Exception
 
     tup1, tup2  = Autologistic.splitkw((method=Gibbs, iterations=1000, average=true, 
                                        show_trace=false))
@@ -347,6 +349,8 @@ end
     model2 = ALRsimple(G, ones(12,1,3), Y=Y)
     fit = fit_pl!(model2, start=[-0.4, 1.1])
     @test isapprox(fit.estimate, [-0.390104; 1.10103], atol=0.001)
+    fitERR = fit_pl!(model2, start=[1000, 1000])
+    @test typeof(fitERR.optim) <: Exception
     boots1 = [oneboot(model2, start=[-0.4, 1.1]) for i = 1:10]
     samps = zeros(12,3,10)
     ests = zeros(2,10)
