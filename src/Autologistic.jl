@@ -9,6 +9,7 @@ export
     AbstractPairwiseParameter,
     AbstractUnaryParameter,
     ALfit,
+    ALfull,
     ALRsimple,
     ALsimple,
     FullPairwise,
@@ -54,6 +55,7 @@ include("fullunary_type.jl")
 include("linpredunary_type.jl")
 include("simplepairwise_type.jl")
 include("ALsimple_type.jl")
+include("ALfull_type.jl")
 include("ALRsimple_type.jl")
 include("samplers.jl")
 

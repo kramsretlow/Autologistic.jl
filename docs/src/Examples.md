@@ -5,7 +5,7 @@ how to make some plots you might want to use.
 
 The examples:
 
-* [An Ising Model](@ref) shows how to use the package to explore the autologistic
+* [The Ising Model](@ref) shows how to use the package to explore the autologistic
   probability distribution, without concern about covariates or parameter estimation.
 * [Clustered Binary Data (Small ``n``)](@ref) shows how to use the package for regression
   analysis when the graph is small enough to permit computation of the normalizing constant.
@@ -14,7 +14,7 @@ The examples:
   analysis for larger, spatially-referenced graphs. In this case pseudolikelihood is used
   for estimation, and a (possibly parallelized) parametric bootstrap is used for inference.
 
-## An Ising Model
+## The Ising Model
 
 The term "Ising model" is usually used to refer to a Markov random field of dichotomous
 random variables on a regular lattice.  The graph is such that each variable shares an
@@ -28,38 +28,33 @@ In our terminology it's just an autologistic model with the appropriate graph.
 Specifically, it's an `ALsimple` model: one with `FullUnary` type unary parameter, and
 `SimplePairwise` type pairwise parameter.
 
-We can create such a model once we have the graph.  For example, let's create two 30-by-30
-lattices: one without any special handling of the boundary, and one with periodic boundary
-conditions. This can be done with
-[LightGraphs.jl](https://github.com/JuliaGraphs/LightGraphs.jl)'s `Grid` function.
+We can create such a model once we have the graph.  For example, let's create the model on a
+30-by-30 lattice:
 
 ```@example Ising
-n = 30  # numer of rows and columns
-using LightGraphs
-G1 = Grid([n, n], periodic=false)
-G2 = Grid([n, n], periodic=true)
+using Autologistic, Random
+Random.seed!(8888)
+n = 30
+G = makegrid4(n, n, (-1,1), (-1,1))
+α = randn(n^2)
+M1 = ALsimple(G.G, α)
 nothing # hide
 ```
 
-Now create an AL model for each case. Initialize the unary parameters to Gaussian white
-noise. By default the pairwise parameter is set to zero, which implies independence of the
-variables. Use the same parameters for the two models, so the only difference betwen them
-is the graph.
+Above, the line `G = makegrid4(n, n, (-1,1), (-1,1))` produces an n-by-n graph with vertices
+positioned over the square extending from ``-1`` to ``1`` in both directions.  It returns a
+tuple; `G.G` is the graph, and `G.locs` is
+an array of tuples giving the spatial coordinates of each vertex.
 
-```@example Ising
-using Random, Autologistic
-Random.seed!(8888)
-α = randn(n^2)
-M1 = ALsimple(G1, α)
-M2 = ALsimple(G2, α)
-nothing #hide
-```
+`M1 = ALsimple(G.G, α)` creates the model.  The unary parameters `α` were intialized to
+Gaussian white noise. By default the pairwise parameter is set to zero, which implies
+independence of the variables. 
 
-Typing `M2` at the REPL shows information about the model.  It's an `ALsimple` type with one
+Typing `M1` at the REPL shows information about the model.  It's an `ALsimple` type with one
 observation of length 900.
 
 ```@repl Ising
-M2
+M1
 ```
 
 The `conditionalprobabilities` function returns the probablity of observing a ``+1`` state
@@ -82,11 +77,22 @@ introduce a neighbor effect.
 
 ```@example Ising
 setpairwiseparameters!(M1, [0.75])
-setpairwiseparameters!(M2, [0.75])
 nothing # hide
 ```
 
-A quick way to see the effect of this parameter is to observe random samples from the
+We can also generalize the Ising model by allowing the pairwise parameters to be different
+for each edge of the graph.  The `ALfull` type represents such a model, which has a
+`FullUnary` type unary parameter, and a `FullPairwise` type pairwise parameter. For this
+example, let each edge's pairwise parameter be equal to the average distance of its two
+vertices from the origin.
+
+```@example Ising
+using LinearAlgebra, LightGraphs
+λ = [norm((G.locs[e.src] .+ G.locs[e.dst])./2) for e in edges(G.G)]
+M2 = ALfull(G.G, α, λ)
+```
+
+A quick way to compare models with nonzero association is to observe random samples from the
 models. The `sample` function can be used to do this. For this example, use perfect
 sampling using a bounding chain algorithm.
 
@@ -100,25 +106,26 @@ Other options are available for sampling.  The enumeration [`SamplingMethods`](@
 them. The samples we have just drawn can also be visualized using `heatmap`:
 
 ```@example Ising
-pl1 = heatmap(reshape(s1, n, n), c=:grays, colorbar=false, title="regular boundary");
-pl2 = heatmap(reshape(s2, n, n), c=:grays, colorbar=false, title="periodic boundary");
+pl1 = heatmap(reshape(s1, n, n), c=:grays, colorbar=false, title="ALsimple model");
+pl2 = heatmap(reshape(s2, n, n), c=:grays, colorbar=false, title="ALfull model");
 plot(pl1, pl2, size=(800,400), aspect_ratio=1)
 ```
 
 In these plots, black indicates the low state, and white the high state.  A lot of local
-clustering is occurring in the samples due to the neighbor effects.
+clustering is occurring in the samples due to the neighbor effects.  For the `ALfull` model,
+clustering is greater farther from the center of the square.
 
 To see the long-run differences between the two models, we can look at the marginal
 probabilities. They can be estimated by drawing many samples and averaging them
-(note that running this code chunk can take a couple of minutes):
+(note that running this code chunk can take a few minutes):
 
 ```julia
 marg1 = sample(M1, 500, method=perfect_bounding_chain, verbose=true, average=true)
 marg2 = sample(M2, 500, method=perfect_bounding_chain, verbose=true, average=true)
 pl3 = heatmap(reshape(marg1, n, n), c=:grays,
-              colorbar=false, title="regular boundary");
+              colorbar=false, title="ALsimple model");
 pl4 = heatmap(reshape(marg2, n, n), c=:grays,
-              colorbar=false, title="periodic boundary");
+              colorbar=false, title="ALfull model");
 plot(pl3, pl4, size=(800,400), aspect_ratio=1)
 savefig("marginal-probs.png")
 ```
@@ -127,9 +134,10 @@ The figure `marginal-probs.png` looks like this:
 
 ![marginal-probs.png](../assets/marginal-probs.png)
 
-Although the differences between the two marginal distributions are not striking, the
-extra edges connecting top/bottom and left/right do have some influence on the
-probabilities at the periphery of the square.
+The differences between the two marginal distributions are due to the different association
+structures, because the unary parts of the two models are the same.  The `ALfull` model has
+stronger association near the edges of the square, and weaker association near the center.
+The `ALsimple` model has a moderate association level throughout.
 
 As a final demonstration, perform Gibbs sampling for model `M2`, starting from
 a random state.  Display a gif animation of the progress.

@@ -14,7 +14,7 @@ If provide only a graph, set λ = 0. If provide only an integer, set λ = 0 and 
 disconnected graph. If provide a graph and a scalar, convert the scalar to a length-1
 vector.
 
-Unlike `FullPairwise`, every observation must have the same association matrix in this case.
+Every observation must have the same association matrix in this case.
 So while we internally treat it like an n-by-n-by-m matrix, just return a 2D n-by-n matrix
 to the user. 
 

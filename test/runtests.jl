@@ -167,6 +167,34 @@ end
     end
 end
 
+@testset "ALfull constructors" begin
+    g = Graph(10, 20);         
+    alpha = zeros(10, 4);      
+    lambda = rand(20);
+    Y = rand([0, 1], 10, 4); 
+    u = FullUnary(alpha);
+    p = FullPairwise(g, 4);
+    setparameters!(p, lambda)
+    model1 = ALfull(u, p, Y=Y);
+    model2 = ALfull(g, alpha, lambda, Y=Y);
+    model3 = ALfull(g, 4, Y=Y);
+    setparameters!(model3, [alpha[:]; lambda])
+
+    @test all([getfield(model1, fn)==getfield(model2, fn)==getfield(model3, fn)
+               for fn in fieldnames(ALfull)])
+    @test getparameters(model1) == [alpha[:]; lambda]
+    @test getunaryparameters(model1) == alpha[:]
+    @test getpairwiseparameters(model1) == lambda
+    @test size(model2.unary) == (10, 4)
+    @test size(model2.pairwise) == (10, 10, 4)
+
+    setparameters!(model3, [2 .* alpha[:]; 2 .* lambda])
+    setunaryparameters!(model2, 2 .* alpha[:])
+    setpairwiseparameters!(model2, 2 .* lambda)
+    
+    @test getparameters(model3) ≈ getparameters(model2) ≈ [2*alpha[:]; 2*lambda]
+end
+
 @testset "Helper functions" begin
     # --- makebool() ---
     y1 = [false, false, true]

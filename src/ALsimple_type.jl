@@ -70,13 +70,13 @@ mutable struct ALsimple{C<:CenteringKinds,
 
     function ALsimple(y, u, p, c::C, cod::Tuple{R,R}, lab, coords::S) where {C,R,S}
         if !(size(y) == size(u) == size(p)[[1,3]])
-            error("ALRsimple: inconsistent sizes of Y, unary, and pairwise")
+            error("ALsimple: inconsistent sizes of Y, unary, and pairwise")
         end
         if cod[1] >= cod[2]
-            error("ALRsimple: must have coding[1] < coding[2]")
+            error("ALsimple: must have coding[1] < coding[2]")
         end
         if lab[1] == lab[2] 
-            error("ALRsimple: labels must be different")
+            error("ALsimple: labels must be different")
         end
         new{C,R,S}(y,u,p,c,cod,lab,coords)
     end

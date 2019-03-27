@@ -13,8 +13,8 @@ order as `edges(G)`.
 
 The association matrix is stored as a `SparseMatrixCSC{Float64,Int64}` in the field Λ.
 
-As with `SimplePairwise`, the association matrix can not be different for different
-observations.  So while `size` returns a 3-dimensional result, the third index is ignored
+This type does not allow for different observations to have different association matricse.
+So while `size` returns a 3-dimensional result, the third index is ignored
 when accessing the array's elements.
 
 # Constructors
