@@ -21,19 +21,16 @@ data analysis will use the `ALRsimple` model.
 
 Each of the above types have various constructors defined.  For example, `ALRsimple(G, X)`
 will create an `ALRsimple` model with graph `G` and predictor matrix `X`.  Type, e.g.,
-`?ALRsimple` at the REPL to see the constructors #### <== TODO ####.
-
-The package is designed to be extensible if other parametrizations of the unary or pairwise
-parts are desired.  For example, it is planned eventually to add a new
-pairwise type that will allow the level of association to vary across the grpah.  When
-such a type appears, additional ALR model types will be created.
+`?ALRsimple` at the REPL to see the constructors.
 
 Any of the above model types can be used with any of the supported forms of centering, and
-with any desired coding. This facilitates comparison of different model variants.
+with any desired coding.  Centering and coding can be set at the time of construction, or
+the `centering` and `coding` fields of the type can be mutated to change the default
+choices.
 
 **2. Set parameters.**
 
-Depending on the constructor used, the model just initialized will have either default 
+Depending on the constructor used, the model just initialized will have either default
 parameter values or user-specified parameter values.  Usually
 it will be desired to choose some appropriate values from data.
 
@@ -42,8 +39,8 @@ it will be desired to choose some appropriate values from data.
 * [`fit_pl!`](@ref) uses pseudolikelihood to estimate the parameters.
 * [`setparameters!`](@ref), [`setunaryparameters!`](@ref), and
   [`setpairwiseparameters!`](@ref) can be used to set the parameters of the model directly.
-* [`getparameters`](@ref), [`getunaryparameters`](@ref), and [`getpairwiseparameters`](@ref)
-  can be used to retrieve the parameter values.
+* [`getparameters`](@ref), [`getunaryparameters`](@ref), and
+  [`getpairwiseparameters`](@ref) can be used to retrieve the parameter values.
 
 Changing the parameters directly, through the fields of the model object, is
 discouraged.  It is preferable for safety to use the above get and set functions.
@@ -51,7 +48,7 @@ discouraged.  It is preferable for safety to use the above get and set functions
 **3. Inference and exploration.**
 
 After parameter estimation, one typically wants to use the fitted model to answer
-inference questions, make plots, and the like.
+inference questions, make plots, and the so on.
 
 For small-graph cases:
 
@@ -62,10 +59,18 @@ For small-graph cases:
 
 For large-graph cases:
 
-* If using [`fit_pl!`](@ref), ##### TODO #####
+* If using [`fit_pl!`](@ref), argument `nboot` can be used to do inference by parametric
+  bootstrap at the time of fitting.
+* After fitting, `oneboot` and `addboot` can be used to create and add parametric bootstrap
+  replicates after the fact.
 * Sampling can be used to estimate desired quantities like marginal probabilities.  The
   [`sample`](@ref) function implements Gibbs sampling as well as several perfect sampling
   algorithms.
 
+Estimation by `fit_ml!` or `fit_pl!` returns an object of type `ALfit`, which holds the
+parameter estimates and other information.
+
 Plotting can be done using standard Julia capabilities.  The [Examples](@ref) section
 shows how to make a few relevant plots.
+
+The [Examples](@ref) section demonstrates the usage of all of the above capabilities.

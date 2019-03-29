@@ -405,7 +405,7 @@ end
     Y[[3, 5, 7, 12, 14, 17, 18, 22, 23, 24, 25, 27, 30, 31, 34, 35, 36, 37, 40, 43, 
        44, 45, 46, 48, 49]] .= -1.0
     model3.responses = makebool(Y)
-    fit = fit_pl!(model3, nboot=100)
+    fit = fit_pl!(model3, start=[-0.25, -0.06], nboot=100)
     @test isapprox(fit.estimate, [-0.26976, -0.06015], atol=0.001)
 end
 

@@ -48,7 +48,7 @@ an array of tuples giving the spatial coordinates of each vertex.
 
 `M1 = ALsimple(G.G, α)` creates the model.  The unary parameters `α` were intialized to
 Gaussian white noise. By default the pairwise parameter is set to zero, which implies
-independence of the variables. 
+independence of the variables.
 
 Typing `M1` at the REPL shows information about the model.  It's an `ALsimple` type with one
 observation of length 900.
@@ -146,7 +146,7 @@ a random state.  Display a gif animation of the progress.
 nframes = 150
 gibbs_steps = sample(M2, nframes, method=Gibbs)
 anim = @animate for i =  1:nframes
-    heatmap(reshape(gibbs_steps[:,i], n, n), c=:grays, colorbar=false, 
+    heatmap(reshape(gibbs_steps[:,i], n, n), c=:grays, colorbar=false,
             aspect_ratio=1, title="Gibbs sampling: step $(i)")
 end
 gif(anim, "ising_gif.gif", fps=10)
@@ -262,7 +262,7 @@ with the pairwise parameter(s) appended at the end.
 
 Because there are only two vertices in the graph, we can use the full likelihood
 (`fit_ml!` function) to do parameter estimation.  This function returns a structure with
-the estimates as well as standard errors, p-values, and 95% confidence intervals for the 
+the estimates as well as standard errors, p-values, and 95% confidence intervals for the
 parameter estimates.
 
 ```@example pigmentosa
@@ -272,7 +272,7 @@ out = fit_ml!(model)
 To view the estimation results, use `summary`:
 
 ```@example pigmentosa
-summary(out, parnames = ["icept", "aut_dom", "aut_rec", "sex_link", "age", "sex", 
+summary(out, parnames = ["icept", "aut_dom", "aut_rec", "sex_link", "age", "sex",
         "psc", "eye", "λ"])
 ```
 
@@ -484,23 +484,13 @@ LR = glm(@formula(obs ~ altitude + temperature), df, Bernoulli(), LogitLink());
 coef(LR)
 ```
 
-The logistic regression coefficients are not directly comparable to the ALR coefficients,
-because the ALR model uses coding ``(-1, 1)``.  If we want to compare the two models,
-we can transform the symmetric model to use the ``(0, 1)`` coding.
+As mentioned in [The Symmetric Model and Logistic Regression](@ref), the logistic regression
+coefficients are not directly comparable to the ALR coefficients,
+because the ALR model uses ``(-1, 1)`` coding.  If we want to make the parameters
+comparable, we can either transform the symmetric model's parameters, or fit the transformed
+symmetric model (a model with ``(0,1)`` coding and `centering=onehalf`).
 
-!!! note "The symmetric ALR model with (0,1) coding"
-
-    The symmetric ALR model with ``(-1, 1)`` coding is equivalent to a model with ``(0,1)``
-    coding and a constant centering adjustment of 0.5.  If the original model has
-    coefficients ``(β, λ)``, the transformed model has coefficients ``(2β, 4λ)``.
-
-    To compare the symmetric ALR model to a logistic regression model, either
-
-    1. (recommended) Fit the ``(-1,1)`` `ALRsimple` model and transform the parameters, or
-
-    2. Fit an `ALRsimple` model with `coding=(0,1)` and `centering=onehalf`.
-
-Using option 1 with model `hydro`, we have
+The parameter transformation is done as follows:
 
 ```@example hydro
 transformed_pars = [2*getunaryparameters(hydro); 4*getpairwiseparameters(hydro)]
@@ -510,7 +500,7 @@ We see that the association parameter is large (1.45), but the regression parame
 small compared to the logistic regression model.  This is typical: ignoring spatial
 association tends to result in overestimation of the regression effects.
 
-To see that option 2 is also valid, we can fit the transformed model directly:
+We can fit the transformed model directly, to illustrate that the result is the same:
 
 ```@example hydro
 same_as_hydro = ALRsimple(g.G, Xmatrix, Y=df.obs, coding=(0,1), centering=onehalf)

@@ -19,8 +19,8 @@ values used to represent the two states is called the **coding**.
     the ``(-1,1)`` coding is strongly recommended, and is used by default.
 
 When responses are independent (conditional on the covariates), logistic regression is the
-most common model. For cases where the independence assumption might not--responses are
-correlated, even after including covariate effects--autologistic models are a useful
+most common model. For cases where the independence assumption might not—responses are
+correlated, even after including covariate effects—autologistic models are a useful
 option.  They revert to logistic regression models when their association parameters are
 set to zero.
 
@@ -102,5 +102,43 @@ a vector with its own matrix of predictor values.
 
 ## The Symmetric Model and Logistic Regression
 
-===TODO===== (show conditional form and logistic regression connection; mention transforming to make
-comparable parmaters between the symmetric ALR model and the logistic model)
+Autologistic models can be expressed in a conditional log odds form.  If we let ``\pi_i`` be
+the probability that variable ``i`` takes the high level, conditional on the values of all
+of its neighbors, the model holds that
+
+```math
+\text{logit}(\pi_i) = (h-\ell)(\alpha_i + \sum_{j\sim i}\lambda_{ij}(y_j - \mu_j)),
+```
+
+where ``(\ell, h)`` is the coding, ``\lambda_{ij}`` is the ``(i,j)``th element of
+``\Lambda``, and ``j\sim i`` means "all variables that are neighbors of ``i``".
+
+The conditional form illustrates the link between ALR models and logistic
+regression.  In the ALR model, ``\alpha_i = \mathbf{X}_i\boldsymbol{\beta}``.  If all
+``\lambda_{ij}=0`` and the coding is ``(0,1)``, the model becomes a logistic regression
+model.
+
+If we fit an ALR model to a data set, it is natural to wonder how the regression
+coefficients compare to the logistic regression model, which assumes independence.
+Unfortunately, the coefficients of the preferred "symmetric" ALR model are not immediately
+comparable to logistic regression coefficients, because it uses ``(-1,1)``
+coding.  It is not hard to make the model comparable, however.
+
+!!! note "The symmetric ALR model with (0,1) coding"
+
+    The symmetric ALR model with ``(-1, 1)`` coding is equivalent to a model with ``(0,1)``
+    coding and a constant centering adjustment of 0.5.
+
+    If the original symmetric model has coefficients ``(β, Λ)``, the transformed model with
+    ``(0,1)`` coding has coefficients ``(2β, 4Λ)``.  The transformed model's coefficients
+    can be directly compared to logistic regression effect sizes.
+
+    This means there are two ways to compare the symmetric ALR model to a logistic
+    regression model. Either
+
+    1. (recommended) Fit the ``(-1,1)`` `ALRsimple` model and transform the parameters, or
+
+    2. Fit an `ALRsimple` model with `coding=(0,1)` and `centering=onehalf`.
+
+Both of the above options are illustrated in the [Comparison to logistic regression](@ref)
+section of the [Examples](@ref) in this manual.
