@@ -1,5 +1,5 @@
 name = "Autologistic"
-uuid = "05505b62-b0bd-11e8-1cec-1f3e16cbc293"
+uuid = "4d03fd4d-39a1-545a-9bf0-a2e993faffdf"
 authors = ["Mark A. Wolters <mark@mwolters.com>"]
 
 [deps]
