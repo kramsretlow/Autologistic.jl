@@ -125,11 +125,11 @@ function ALfull(graph::SimpleGraph{Int}, count::Int=1;
     p = FullPairwise(graph, count)
     return ALfull(makebool(Y,coding),u,p,centering,coding,labels,coordinates)
 end
+# ==============================================================================
 
 
 # === show methods =============================================================
-
-function Base.show(io::IO, ::MIME"text/plain", m::ALfull)
+function show(io::IO, ::MIME"text/plain", m::ALfull)
     print(io, "Autologistic model of type ALfull with parameter vector [α; Λ].\n",
               "Fields:\n",
               showfields(m,2))
@@ -147,4 +147,5 @@ function showfields(m::ALfull, leadspaces=0)
            spc * "labels       $(m.labels)\n" *
            spc * "coordinates  $(size2string(m.coordinates)) vector of $(eltype(m.coordinates))\n"
 end
+# ==============================================================================
 

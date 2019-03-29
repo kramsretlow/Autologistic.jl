@@ -1,10 +1,3 @@
-# TODO: explore how to use @inbounds, @inline, etc. to optimize performance in these fcns.
-# TODO: for CFTP implementations, put in warnings that appear whenever any elements of Λ 
-#       are negative.  In this case samples might still be useful if mixing time is similar
-#       to the CFTP coalescence time, but exact sampling isn't guaranteed because the 
-#       monotonicity property is lost.  Could also direct the user to cftp_bounding_chain()
-
-
 # Neighbor sum of a certain variable.  Note, writing the neighbor sum as a loop rather 
 # than an inner product saved lots of memory allocations.
 function nbrsum(Λ, Y, μ, row, nbr)::Float64
@@ -78,7 +71,7 @@ end
 # Run CFTP epochs from the jth one forward to time zero.
 function runepochs!(j, times, Y, seeds, lo, hi, Λ, adjlist, α, μ, n)
     for epoch = j:-1:0
-        Random.seed!(seeds[j+1])
+        seed!(seeds[j+1])
         for t = times[j+1,1] : times[j+1,2]
             gibbsstep!(Y, lo, hi, Λ, adjlist, α, μ, n)
         end
@@ -89,25 +82,24 @@ function cftp_reuse_seeds(lo::Float64, hi::Float64,
                     Λ::SparseMatrixCSC{Float64,Int}, adjlist::Array{Array{Int64,1},1},
                     α::Vector{Float64}, μ::Vector{Float64}, n::Int, k::Int, 
                     average::Bool, verbose::Bool)
+    # Keep track of the seeds used.  seeds(j) will hold the seed used to generate samples
+    # in "epochs" j = 0, 1, 2, ... going backwards in time from time zero. The 0th epoch
+    # covers time steps -T + 1 to 0, and the jth epoch covers steps -(2^j)T+1 to -2^(j-1)T.
+    # We'll cap j at maxepoch. 
 
     temp = average ? zeros(Float64, n) : zeros(Float64, n, k)
     T = 2      #-Initial number of time steps to go back.
-    maxepoch = 40  #TODO: magic constant
     seeds = [UInt32[1] for i = 1:maxepoch+1]
     times = [-T * 2 .^(0:maxepoch) .+ 1  [0; -T * 2 .^(0:maxepoch-1)]]
     L = zeros(n)
     H = zeros(n)
+    goodcount = k
 
     for rep = 1:k 
         seeds .= [[rand(UInt32)] for i = 1:maxepoch+1]
         coalesce = false    
-
-        # Keep track of the seeds used.  seeds(j) will hold the seed used to generate samples
-        # in "epochs" j = 0, 1, 2, ... going backwards in time from time zero. The 0th epoch
-        # covers time steps -T + 1 to 0, and the jth epoch covers steps -(2^j)T+1 to -2^(j-1)T.
-        # We'll cap j at 40 as T*2^40 is over a trillion time steps. 
         j = 0
-        while ~coalesce
+        while !coalesce && j <= maxepoch
             fill!(L, lo)
             fill!(H, hi)
             runepochs!(j, times, L, seeds, lo, hi, Λ, adjlist, α, μ, n)
@@ -119,8 +111,9 @@ function cftp_reuse_seeds(lo::Float64, hi::Float64,
             j = j + 1
         end
         if !coalesce
-            @warn "Sampler did not coalesce. Returning NaNs."  #TODO: fix for average case
+            @warn "Sampler did not coalesce in replicate $(rep)." 
             L .= fill(NaN, n)
+            goodcount -= 1
         end
         if average && coalesce
             for i in 1:n
@@ -136,7 +129,7 @@ function cftp_reuse_seeds(lo::Float64, hi::Float64,
         end
     end
     if average
-        return map(x -> (x - k*lo)/(k*(hi-lo)), temp)
+        return map(x -> (x - goodcount*lo)/(goodcount*(hi-lo)), temp)
     else
         return temp
     end
@@ -287,12 +280,11 @@ end
 # Estimate the block size to use for read-once CFTP. Run 15 chains forward until they 
 # coalesce. Return a quantile of the sample of run lengths as the recommended block size.
 function blocksize_estimate(lo, hi, Λ, adjlist, α, μ, n)
-    nrep = 15   #TODO: magic constant
-    coalesce_times = zeros(Int, nrep)
+    coalesce_times = zeros(Int, ntestchains)
     L = zeros(n)
     H = zeros(n)
     U = zeros(n,1)
-    for rep = 1:nrep
+    for rep = 1:ntestchains
         coalesce = false
         fill!(L, lo)
         fill!(H, hi)

@@ -104,10 +104,10 @@ function ALRsimple(graph::SimpleGraph{Int}, X::Float2D3D;
     p = SimplePairwise(λ, graph, size(X,3))
     return ALRsimple(makebool(Y,coding),u,p,centering,coding,labels,coordinates)
 end
-
+# ==============================================================================
 
 # === show methods =============================================================
-function Base.show(io::IO, ::MIME"text/plain", m::ALRsimple)
+function show(io::IO, ::MIME"text/plain", m::ALRsimple)
     print(io, "Autologistic regression model of type ALRsimple with parameter vector [β; λ].\n",
               "Fields:\n",
               showfields(m,2))
@@ -125,6 +125,7 @@ function showfields(m::ALRsimple, leadspaces=0)
            spc * "labels       $(m.labels)\n" *
            spc * "coordinates  $(size2string(m.coordinates)) vector of $(eltype(m.coordinates))\n"
 end
+# ==============================================================================
 
 
 

@@ -60,8 +60,8 @@ end
 end
 
 @testset "SimplePairwise constructors and interfaces" begin
-    n = 10                                                       # length of y_i
-    m = 3                                                 # number of observations
+    n = 10 
+    m = 3  
     λ = 1.0
     G = Graph(n, Int(floor(n*(n-1)/4)))
     p1 = SimplePairwise([λ], G, m)
@@ -227,6 +227,11 @@ end
     coords = [(Float64(i), Float64(j)) for i = 1:5 for j = 1:5]
     out = makespatialgraph(coords, sqrt(2))
     @test ne(out.G) == 2*4*5 + 2*4*4
+
+    # --- hess() ---
+    fcn(x) = x[1]^2 + 2x[2]^2 + x[1]*x[2]
+    H = Autologistic.hess(fcn, [1, 1])
+    @test isapprox(H, [[2; 1] [1; 4]], atol=0.001)
 end
 
 @testset "almodel_functions" begin

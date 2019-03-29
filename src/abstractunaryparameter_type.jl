@@ -1,7 +1,3 @@
-#AbstractUnaryParameter is the α (which could be parametrized, e.g. by β)
-# We make it a 2D AbstractArray so that we can handle observations.
-
-
 """
     AbstractUnaryParameter
 
@@ -26,15 +22,15 @@ true
 ```
 """
 abstract type AbstractUnaryParameter <: AbstractArray{Float64, 2} end
-Base.IndexStyle(::Type{<:AbstractUnaryParameter}) = IndexCartesian()
+IndexStyle(::Type{<:AbstractUnaryParameter}) = IndexCartesian()
 
-function Base.show(io::IO, u::AbstractUnaryParameter)
+function show(io::IO, u::AbstractUnaryParameter)
     r, c = size(u)
     str = "$(r)×$(c) $(typeof(u))"
     print(io, str)
 end
 
-function Base.show(io::IO, ::MIME"text/plain", u::AbstractUnaryParameter)
+function show(io::IO, ::MIME"text/plain", u::AbstractUnaryParameter)
     r, c = size(u)
     if c==1
         str = "\n$(size2string(u)) array with average value $(round(mean(u), digits=3)).\n"

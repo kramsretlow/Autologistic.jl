@@ -80,36 +80,36 @@ FullPairwise(λ::Vector{Float64}, G::SimpleGraph) = FullPairwise(λ, G, 1)
 #---- AbstractArray methods ---- (following sparsematrix.jl)
 
 # getindex - implementations 
-Base.getindex(p::FullPairwise, i::Int, j::Int) = p.Λ[i, j]
-Base.getindex(p::FullPairwise, i::Int) = p.Λ[i]
-Base.getindex(p::FullPairwise, ::Colon, ::Colon) = p.Λ
-Base.getindex(p::FullPairwise, I::AbstractArray) = p.Λ[I]
-Base.getindex(p::FullPairwise, I::AbstractVector, J::AbstractVector) = p.Λ[I,J]
+getindex(p::FullPairwise, i::Int, j::Int) = p.Λ[i, j]
+getindex(p::FullPairwise, i::Int) = p.Λ[i]
+getindex(p::FullPairwise, ::Colon, ::Colon) = p.Λ
+getindex(p::FullPairwise, I::AbstractArray) = p.Λ[I]
+getindex(p::FullPairwise, I::AbstractVector, J::AbstractVector) = p.Λ[I,J]
 
 # getindex - translations
-Base.getindex(p::FullPairwise, I::Tuple{Integer, Integer}) = p[I[1], I[2]]
-Base.getindex(p::FullPairwise, I::Tuple{Integer, Integer, Integer}) = p[I[1], I[2]]
-Base.getindex(p::FullPairwise, i::Int, j::Int, r::Int) = p[i,j]
-Base.getindex(p::FullPairwise, ::Colon, ::Colon, ::Colon) = p[:,:]
-Base.getindex(p::FullPairwise, ::Colon, ::Colon, r::Int) = p[:,:]
-Base.getindex(p::FullPairwise, ::Colon, j) = p[1:size(p.Λ,1), j]
-Base.getindex(p::FullPairwise, i, ::Colon) = p[i, 1:size(p.Λ,2)]
-Base.getindex(p::FullPairwise, ::Colon, j, r) = p[:,j]
-Base.getindex(p::FullPairwise, i, ::Colon, r) = p[i,:]
-Base.getindex(p::FullPairwise, I::AbstractVector{Bool}, J::AbstractRange{<:Integer}) = p[findall(I),J]
-Base.getindex(p::FullPairwise, I::AbstractRange{<:Integer}, J::AbstractVector{Bool}) = p[I,findall(J)]
-Base.getindex(p::FullPairwise, I::Integer, J::AbstractVector{Bool}) = p[I,findall(J)]
-Base.getindex(p::FullPairwise, I::AbstractVector{Bool}, J::Integer) = p[findall(I),J]
-Base.getindex(p::FullPairwise, I::AbstractVector{Bool}, J::AbstractVector{Bool}) = p[findall(I),findall(J)]
-Base.getindex(p::FullPairwise, I::AbstractVector{<:Integer}, J::AbstractVector{Bool}) = p[I,findall(J)]
-Base.getindex(p::FullPairwise, I::AbstractVector{Bool}, J::AbstractVector{<:Integer}) = p[findall(I),J]
+getindex(p::FullPairwise, I::Tuple{Integer, Integer}) = p[I[1], I[2]]
+getindex(p::FullPairwise, I::Tuple{Integer, Integer, Integer}) = p[I[1], I[2]]
+getindex(p::FullPairwise, i::Int, j::Int, r::Int) = p[i,j]
+getindex(p::FullPairwise, ::Colon, ::Colon, ::Colon) = p[:,:]
+getindex(p::FullPairwise, ::Colon, ::Colon, r::Int) = p[:,:]
+getindex(p::FullPairwise, ::Colon, j) = p[1:size(p.Λ,1), j]
+getindex(p::FullPairwise, i, ::Colon) = p[i, 1:size(p.Λ,2)]
+getindex(p::FullPairwise, ::Colon, j, r) = p[:,j]
+getindex(p::FullPairwise, i, ::Colon, r) = p[i,:]
+getindex(p::FullPairwise, I::AbstractVector{Bool}, J::AbstractRange{<:Integer}) = p[findall(I),J]
+getindex(p::FullPairwise, I::AbstractRange{<:Integer}, J::AbstractVector{Bool}) = p[I,findall(J)]
+getindex(p::FullPairwise, I::Integer, J::AbstractVector{Bool}) = p[I,findall(J)]
+getindex(p::FullPairwise, I::AbstractVector{Bool}, J::Integer) = p[findall(I),J]
+getindex(p::FullPairwise, I::AbstractVector{Bool}, J::AbstractVector{Bool}) = p[findall(I),findall(J)]
+getindex(p::FullPairwise, I::AbstractVector{<:Integer}, J::AbstractVector{Bool}) = p[I,findall(J)]
+getindex(p::FullPairwise, I::AbstractVector{Bool}, J::AbstractVector{<:Integer}) = p[findall(I),J]
 
 # setindex!
-Base.setindex!(p::FullPairwise, i::Int, j::Int) =
+setindex!(p::FullPairwise, i::Int, j::Int) =
 	error("Pairwise values cannot be set directly. Use setparameters! instead.")
-Base.setindex!(p::FullPairwise, i::Int, j::Int, k::Int) = 
+setindex!(p::FullPairwise, i::Int, j::Int, k::Int) = 
 	error("Pairwise values cannot be set directly. Use setparameters! instead.")
-Base.setindex!(p::FullPairwise, i::Int) =
+setindex!(p::FullPairwise, i::Int) =
 	error("Pairwise values cannot be set directly. Use setparameters! instead.")
 
 

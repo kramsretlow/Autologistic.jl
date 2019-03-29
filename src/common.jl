@@ -11,6 +11,10 @@ const Float2D3D = Union{Array{Float64,2},Array{Float64,3}}
 """ Type alias for `Union{Array{NTuple{2,T},1},Array{NTuple{3,T},1}} where T<:Real` """
 const SpatialCoordinates = Union{Array{NTuple{2,T},1},Array{NTuple{3,T},1}} where T<:Real
 
+# somewhat arbitrary constants in sampling algorithms
+const maxepoch = 40     #used in cftp_reuse_seeds
+const ntestchains = 15  #used in blocksize_estimate
+
 # Enumerations
 """
     CenteringKinds
@@ -305,10 +309,10 @@ end
 function datasets(name::String)
     if name=="pigmentosa"
         dfpath = joinpath(dirname(pathof(Autologistic)), "..", "assets", "pigmentosa.csv")
-        return CSV.read(dfpath)
+        return read(dfpath)
     elseif name=="hydrocotyle"
         dfpath = joinpath(dirname(pathof(Autologistic)), "..", "assets", "hydrocotyle.csv")
-        return CSV.read(dfpath)
+        return read(dfpath)
     else
         error("Name is not one of the available options.")
     end
@@ -335,7 +339,6 @@ end
 # Approximate the Hessian of fcn at the point x, using a step width h.
 # Uses the O(h^2) central difference approximation.
 # Intended for obtaining standard errors from ML fitting.
-# TODO: tests
 function hess(fcn, x, h=1e-6)  
     n = length(x)
     H = zeros(n,n)
@@ -351,15 +354,14 @@ function hess(fcn, x, h=1e-6)
     end
     
     # Fill the bottom half of H (use symmetry), and return
-    return H + LinearAlgebra.triu(H,1)'
+    return H + triu(H,1)'
 end
 
 # Takes a named tuple (arising from keyword argument list) and produces two named tuples:
 # one with the arguments for optimise(), and one for arguments to sample()
 # Usage: optimargs, sampleargs = splitkw(keyword_tuple)
-# (tests done)
 splitkw = function(kwargs)
-    optimnames = fieldnames(typeof(Optim.Options()))
+    optimnames = fieldnames(typeof(Options()))
     samplenames = (:method, :indices, :average, :config, :burnin, :verbose)
     optimargs = Dict{Symbol,Any}()
     sampleargs = Dict{Symbol,Any}()

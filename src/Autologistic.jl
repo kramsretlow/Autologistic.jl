@@ -1,7 +1,16 @@
 module Autologistic
 
-using LightGraphs, LinearAlgebra, SparseArrays, Statistics, Random, CSV, Optim, 
-      Distributions, Distributed, SharedArrays
+using LightGraphs: Graph, SimpleGraph, nv, ne, adjacency_matrix, edges, add_edge!
+using LinearAlgebra: norm, diag, triu, I
+using SparseArrays: SparseMatrixCSC, sparse
+using CSV: read
+using Optim: optimize, Options, converged, BFGS
+using Distributions: Normal, cdf
+using SharedArrays: SharedArray
+using Random: seed!, rand, randn
+using Distributed: @distributed, workers
+using Statistics: mean, std, quantile
+import Base: show, getindex, setindex!, summary, size, IndexStyle, length
 
 export
     #----- types -----

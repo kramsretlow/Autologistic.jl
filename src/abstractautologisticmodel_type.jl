@@ -101,12 +101,12 @@ Sets the pairwise parameters of autologistic model `M` to the values in `newpars
 function setpairwiseparameters!(M::AbstractAutologisticModel, newpars::Vector{Float64})
     setparameters!(M.pairwise, newpars)
 end
+# ==============================================================================
 
+# === Show Methods==============================================================
+show(io::IO, m::AbstractAutologisticModel) = print(io, "$(typeof(m))")
 
-# === show methods =============================================================
-Base.show(io::IO, m::AbstractAutologisticModel) = print(io, "$(typeof(m))")
-
-function Base.show(io::IO, ::MIME"text/plain", m::AbstractAutologisticModel)
+function show(io::IO, ::MIME"text/plain", m::AbstractAutologisticModel)
     print(io, "Autologistic model of type $(typeof(m)), \n",
               "with $(size(m.unary,1)) vertices, $(size(m.unary, 2)) ",
               "$(size(m.unary,2)==1 ? "observation" : "observations") ", 
@@ -118,7 +118,7 @@ function showfields(m::AbstractAutologisticModel, leadspaces=0)
     return repeat(" ", leadspaces) * 
            "(**Autologistic.showfields not implemented for $(typeof(m))**)\n"
 end
-
+# ==============================================================================
 
 """
     centeringterms(M::AbstractAutologisticModel, kind::Union{Nothing,CenteringKinds}=nothing)
@@ -158,10 +158,6 @@ function centeringterms(M::AbstractAutologisticModel, kind::Union{Nothing,Center
     end
 end
 
-
-# === pseudolikelihood =========================================================
-# pseudolikelihood(M) computes the negative log pseudolikelihood for the given 
-# AbstractAutologisticModel with its responses.  Returns a Float64.
 
 """
     pseudolikelihood(M::AbstractAutologisticModel)
@@ -292,7 +288,7 @@ Fit autologistic model `M` using maximum pseudolikelihood.
 # Examples
 ```jldoctest
 julia> Y=[[fill(-1,4); fill(1,8)] [fill(-1,3); fill(1,9)] [fill(-1,5); fill(1,7)]];
-julia> model = ALRsimple(G, ones(12,1,3), Y=Y);
+julia> model = ALRsimple(makegrid4(4,3).G, ones(12,1,3), Y=Y);
 julia> fit = fit_pl!(model, start=[-0.4, 1.1]);
 julia> summary(fit)
 name          est     se   p-value   95% CI
@@ -312,7 +308,7 @@ function fit_pl!(M::AbstractAutologisticModel;
     ret.kwargs = kwargs
     optimargs, sampleargs = splitkw(kwargs)
 
-    opts = Optim.Options(; optimargs...)
+    opts = Options(; optimargs...)
     if verbose 
         println("-- Finding the maximum pseudolikelihood estimate --")
         println("Calling Optim.optimize with BFGS method...")
@@ -323,7 +319,7 @@ function fit_pl!(M::AbstractAutologisticModel;
         err
     end
     ret.optim = out
-    if typeof(out)<:Exception || !Optim.converged(out)
+    if typeof(out)<:Exception || !converged(out)
         setparameters!(M, originalparameters)
         @warn "Optim.optimize did not succeed. Model parameters have not been changed."
         ret.convergence = false
@@ -546,7 +542,7 @@ function fit_ml!(M::AbstractAutologisticModel;
     npar = length(originalparameters)
     ret = ALfit()  
     ret.kwargs = kwargs
-    opts = Optim.Options(; kwargs...)
+    opts = Options(; kwargs...)
     if verbose
         println("Calling Optim.optimize with BFGS method...")
     end
@@ -557,7 +553,7 @@ function fit_ml!(M::AbstractAutologisticModel;
         err
     end
     ret.optim = out
-    if typeof(out)<:Exception || !Optim.converged(out)
+    if typeof(out)<:Exception || !converged(out)
         setparameters!(M, originalparameters)
         @warn "Optim.optimize did not succeed. Model parameters have not been changed."
         ret.convergence = false
@@ -572,7 +568,7 @@ function fit_ml!(M::AbstractAutologisticModel;
         println("Getting standard errors...")
     end
     Hinv = inv(H)
-    SE = sqrt.(LinearAlgebra.diag(Hinv))
+    SE = sqrt.(diag(Hinv))
     
     pvals = zeros(npar)
     CIs = [(0.0, 0.0) for i=1:npar]
@@ -801,6 +797,11 @@ function sample(M::AbstractAutologisticModel, k::Int = 1; method::SamplingMethod
         out = zeros(Float64, n, nidx)
     else
         out = zeros(Float64, n, nidx, k)
+    end
+    if method ∈ (perfect_read_once, perfect_reuse_samples, perfect_reuse_seeds) && any(M.pairwise .< 0) 
+        @warn "The chosen pefect sampling method isn't theoretically justified for\n" * 
+              "negative pairwise values. Samples might still be similar to Gibbs sampling\n" *
+              "draws. Consider the pefect_bounding_chain method."
     end
 
     # Call the sampling function for each index. Give details if verbose=true.

@@ -62,11 +62,11 @@ end
 
 #---- AbstractArray methods ----
 
-Base.size(u::LinPredUnary) = (size(u.X,1), size(u.X,3))
+size(u::LinPredUnary) = (size(u.X,1), size(u.X,3))
 
 # getindex - implementations
 
-function Base.getindex(u::LinPredUnary, ::Colon, ::Colon)
+function getindex(u::LinPredUnary, ::Colon, ::Colon)
     n, p, m = size(u.X)
     out = zeros(n,m)
     for r = 1:m
@@ -79,14 +79,14 @@ function Base.getindex(u::LinPredUnary, ::Colon, ::Colon)
     return out
 end
 
-function Base.getindex(u::LinPredUnary, I::AbstractArray)
+function getindex(u::LinPredUnary, I::AbstractArray)
     out = u[:,:]
     return out[I]
 end
 
-Base.getindex(u::LinPredUnary, i::Int, r::Int) = sum(u.X[i,:,r] .* u.β)   
+getindex(u::LinPredUnary, i::Int, r::Int) = sum(u.X[i,:,r] .* u.β)   
 
-function Base.getindex(u::LinPredUnary, ::Colon, r::Int) 
+function getindex(u::LinPredUnary, ::Colon, r::Int) 
     n, p, m = size(u.X)
     out = zeros(n)
     for i = 1:n
@@ -97,7 +97,7 @@ function Base.getindex(u::LinPredUnary, ::Colon, r::Int)
     return out
 end
 
-function Base.getindex(u::LinPredUnary, I::AbstractVector, R::AbstractVector)
+function getindex(u::LinPredUnary, I::AbstractVector, R::AbstractVector)
     out = zeros(length(I),length(R))
     for r in 1:length(R)
         for i in 1:length(I)
@@ -110,18 +110,18 @@ function Base.getindex(u::LinPredUnary, I::AbstractVector, R::AbstractVector)
 end
 
 # getindex- translations
-Base.getindex(u::LinPredUnary, I::Tuple{Integer, Integer}) = u[I[1], I[2]]
-Base.getindex(u::LinPredUnary, i::Int, ::Colon) = u[i, 1:size(u.X,3)]
-Base.getindex(u::LinPredUnary, I::AbstractRange{<:Integer}, J::AbstractVector{Bool}) = u[I,findall(J)]
-Base.getindex(u::LinPredUnary, I::AbstractVector{Bool}, J::AbstractRange{<:Integer}) = u[findall(I),J]
-Base.getindex(u::LinPredUnary, I::Integer, J::AbstractVector{Bool}) = u[I,findall(J)]
-Base.getindex(u::LinPredUnary, I::AbstractVector{Bool}, J::Integer) = u[findall(I),J]
-Base.getindex(u::LinPredUnary, I::AbstractVector{Bool}, J::AbstractVector{Bool}) = u[findall(I),findall(J)]
-Base.getindex(u::LinPredUnary, I::AbstractVector{<:Integer}, J::AbstractVector{Bool}) = u[I,findall(J)]
-Base.getindex(u::LinPredUnary, I::AbstractVector{Bool}, J::AbstractVector{<:Integer}) = u[findall(I),J]
+getindex(u::LinPredUnary, I::Tuple{Integer, Integer}) = u[I[1], I[2]]
+getindex(u::LinPredUnary, i::Int, ::Colon) = u[i, 1:size(u.X,3)]
+getindex(u::LinPredUnary, I::AbstractRange{<:Integer}, J::AbstractVector{Bool}) = u[I,findall(J)]
+getindex(u::LinPredUnary, I::AbstractVector{Bool}, J::AbstractRange{<:Integer}) = u[findall(I),J]
+getindex(u::LinPredUnary, I::Integer, J::AbstractVector{Bool}) = u[I,findall(J)]
+getindex(u::LinPredUnary, I::AbstractVector{Bool}, J::Integer) = u[findall(I),J]
+getindex(u::LinPredUnary, I::AbstractVector{Bool}, J::AbstractVector{Bool}) = u[findall(I),findall(J)]
+getindex(u::LinPredUnary, I::AbstractVector{<:Integer}, J::AbstractVector{Bool}) = u[I,findall(J)]
+getindex(u::LinPredUnary, I::AbstractVector{Bool}, J::AbstractVector{<:Integer}) = u[findall(I),J]
 
 # setindex!
-Base.setindex!(u::LinPredUnary, v::Real, i::Int, j::Int) =
+setindex!(u::LinPredUnary, v::Real, i::Int, j::Int) =
     error("Values of $(typeof(u)) must be set using setparameters!().")
 
 

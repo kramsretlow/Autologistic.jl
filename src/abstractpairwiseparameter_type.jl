@@ -38,22 +38,22 @@ true
 """
 abstract type AbstractPairwiseParameter <: AbstractArray{Float64, 3} end
 
-Base.IndexStyle(::Type{<:AbstractPairwiseParameter}) = IndexCartesian()
+IndexStyle(::Type{<:AbstractPairwiseParameter}) = IndexCartesian()
 
 #---- fallback methods --------------
-Base.size(p::AbstractPairwiseParameter) = (nv(p.G), nv(p.G), p.count)
+size(p::AbstractPairwiseParameter) = (nv(p.G), nv(p.G), p.count)
 
-function Base.getindex(p::AbstractPairwiseParameter, I::AbstractVector, J::AbstractVector)
+function getindex(p::AbstractPairwiseParameter, I::AbstractVector, J::AbstractVector)
     error("getindex not implemented for $(typeof(p))")
 end
 
-function Base.show(io::IO, p::AbstractPairwiseParameter)
+function show(io::IO, p::AbstractPairwiseParameter)
     r, c, m = size(p)
     str = "$(size2string(p)) $(typeof(p))"
     print(io, str)
 end
 
-function Base.show(io::IO, ::MIME"text/plain", p::AbstractPairwiseParameter)
+function show(io::IO, ::MIME"text/plain", p::AbstractPairwiseParameter)
     r, c, m = size(p)
     if m==1
         str = " with $(r) vertices.\n"

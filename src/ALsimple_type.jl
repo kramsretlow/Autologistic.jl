@@ -125,11 +125,10 @@ function ALsimple(graph::SimpleGraph{Int}, count::Int=1;
     p = SimplePairwise(λ, graph, count)
     return ALsimple(makebool(Y,coding),u,p,centering,coding,labels,coordinates)
 end
-
+# ==============================================================================
 
 # === show methods =============================================================
-
-function Base.show(io::IO, ::MIME"text/plain", m::ALsimple)
+function show(io::IO, ::MIME"text/plain", m::ALsimple)
     print(io, "Autologistic model of type ALsimple with parameter vector [α; λ].\n",
               "Fields:\n",
               showfields(m,2))
@@ -147,4 +146,5 @@ function showfields(m::ALsimple, leadspaces=0)
            spc * "labels       $(m.labels)\n" *
            spc * "coordinates  $(size2string(m.coordinates)) vector of $(eltype(m.coordinates))\n"
 end
+# ==============================================================================
 

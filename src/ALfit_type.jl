@@ -56,9 +56,9 @@ ALfit() = ALfit(zeros(Float64,0),
 
 
 # === show methods =============================================================
-Base.show(io::IO, f::ALfit) = print(io, "ALfit")
+show(io::IO, f::ALfit) = print(io, "ALfit")
 
-function Base.show(io::IO, ::MIME"text/plain", f::ALfit)
+function show(io::IO, ::MIME"text/plain", f::ALfit)
     print(io, "Autologistic model fitting results. Its non-empty fields are:\n", 
           showfields(f,2), "Use summary(fit; [parnames, sigdigits]) to see a table of estimates.\n",
           "For pseudolikelihood, use oneboot() and addboot!() to add bootstrap after the fact.")
@@ -122,6 +122,7 @@ function showfields(f::ALfit, leadspaces=0)
     end
     return out
 end
+# ==============================================================================
 
 # Line up all strings in rows 2:end of a column of String matrix S, so that a certain
 # character (e.g. decimal point or comma) aligns. Do this by prepending spaces.
@@ -150,7 +151,7 @@ function align!(S, col, char)
     end
 end
 
-function Base.summary(io::IO, f::ALfit; parnames=nothing, sigdigits=3)
+function summary(io::IO, f::ALfit; parnames=nothing, sigdigits=3)
     npar = length(f.estimate)
     if npar==0
         println(io, "No estimates to tabulate")
@@ -203,8 +204,8 @@ function Base.summary(io::IO, f::ALfit; parnames=nothing, sigdigits=3)
     end
 end
 
-function Base.summary(f::ALfit; parnames=nothing, sigdigits=3)
-    Base.summary(stdout, f; parnames=parnames, sigdigits=sigdigits)
+function summary(f::ALfit; parnames=nothing, sigdigits=3)
+    summary(stdout, f; parnames=parnames, sigdigits=sigdigits)
 end
 
 """

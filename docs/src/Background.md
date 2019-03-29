@@ -6,10 +6,10 @@ conventions and terminology that will help you to make appropriate use of `Autol
 The package is concerned with the analysis of dichotomous data: categorical observations
 that can take two possible values (low or high, alive or dead, present or absent, etc.).  
 It is common to refer to such data as binary, and to use numeric values 0 and 1 to
-represent the two states, but the two numbers we choose to represent the two states
-is an arbitrary choice. This might seem like a small detail, but for autologistic
-regression models, the choice of numeric coding is very important. The pair of 
-values used to represent the two states is called the *coding*.
+represent the two states. We do not have to use 0 and 1, however: any other pair of numbers
+could be used instead. This might seem like a small detail, but for autologistic
+regression models, the choice of numeric coding is very important. The pair of
+values used to represent the two states is called the **coding**.
 
 !!! note "Important Fact 1"
 
@@ -18,8 +18,11 @@ values used to represent the two states is called the *coding*.
     changes the model. For [a variety of reasons](https://doi.org/10.3389/fams.2017.00024),
     the ``(-1,1)`` coding is strongly recommended, and is used by default.
 
-Logistic regression is the most common model for independent binary responses.  
-Autologistic models are one way to model correlated binary/dichotomous responses.
+When responses are independent (conditional on the covariates), logistic regression is the
+most common model. For cases where the independence assumption might not--responses are
+correlated, even after including covariate effects--autologistic models are a useful
+option.  They revert to logistic regression models when their association parameters are
+set to zero.
 
 ## The Autologistic (AL) Model
 
@@ -42,8 +45,8 @@ Inside the exponential of the PMF there are three terms:
 
 * The first term is the **unary** term, and ``\mathbf{\alpha}`` is called the
   **unary parameter**.  It summarizes each variable's endogenous tendency to take the "high"
-  state (larger positive ``\alpha_i`` values make random variable ``Y_i`` more likely to take
-  the "high" value).  Note that in practical models, ``\mathbf{\alpha}`` could be expressed
+  state. Larger positive ``\alpha_i`` values make random variable ``Y_i`` more likely to take
+  the "high" value.  Note that in practical models, ``\mathbf{\alpha}`` could be expressed
   in terms of some other parameters.
 * The second term is an optional **centering** term, and the value ``\mu_i`` is called the
   centering adjustment for variable ``i``.  The package includes different options
@@ -64,7 +67,11 @@ Inside the exponential of the PMF there are three terms:
   random variables.  Parameter ``\boldsymbol{\Lambda}`` is a symmetric matrix.  If it has
   a nonzero entry at position ``(i,j)``, then variables ``i`` and ``j`` share an edge in the
   graph associated with the model, and the value of the entry controls the strength of
-  association between those two variables.
+  association between those two variables. ``\boldsymbol{\Lambda}`` can be parametrized in
+  different ways.  The simplest and most common option is to let
+  ``\boldsymbol{\Lambda} = \lambda\mathbf{A}``, where ``\mathbf{A}`` is the adjacency
+  matrix of the graph.  This "simple pairwise" option has only a single association
+  parameter, ``\lambda``.
 
 The autogologistic model is a
 [probabilistic graphical model](https://en.wikipedia.org/wiki/Graphical_model), more
@@ -74,9 +81,26 @@ the variables. `Autologistic.jl` uses `LightGraphs.jl` to represent the graph.
 
 ## The Autologistic Regression (ALR) Model
 
-TODO
+The AL model becomes an ALR model when the unary parameter is written as a linear
+predictor:
+
+```math
+\Pr(\mathbf{Y}=\mathbf{y}) \propto \exp\left(\mathbf{y}^T\mathbf{X}\boldsymbol{\beta} -
+\mathbf{y}^T\boldsymbol{\Lambda}\boldsymbol{\mu} +
+\frac{1}{2}\mathbf{y}^T\boldsymbol{\Lambda}\mathbf{y}\right)
+```
+
+where ``\mathbf{X}`` is a matrix of predictors/covariates, and ``\boldsymbol{\beta}``
+is a vector of regression coefficients.
+
+Note that because the responses are correlated, we treat each vector ``\mathbf{y}`` as
+a single observation, consisting of a set of "variables," "vertices," or "responses." If
+the number of variables is large enough, the model can be fit with only one observation.
+With more than one observation, we can write the data as
+``(\mathbf{y}_1, \mathbf{X}_1), \ldots (\mathbf{y}_m, \mathbf{X}_m)``. Each observation is
+a vector with its own matrix of predictor values.  
 
 ## The Symmetric Model and Logistic Regression
 
-(show conditional form and logistic regression connection; mention transforming to make
+===TODO===== (show conditional form and logistic regression connection; mention transforming to make
 comparable parmaters between the symmetric ALR model and the logistic model)
