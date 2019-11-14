@@ -58,7 +58,7 @@ mutable struct FullPairwise <: AbstractPairwiseParameter
 			error("FullPairwise: count must be positive")
 		end
 		i = 1
-		Λ = sparse(zeros(nv(g),nv(g)))
+		Λ = spzeros(nv(g),nv(g))
 		for e in edges(g)
 			Λ[e.src,e.dst] = Λ[e.dst,e.src] = lam[i]
 			i += 1

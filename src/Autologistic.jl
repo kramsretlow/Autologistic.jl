@@ -2,7 +2,7 @@ module Autologistic
 
 using LightGraphs: Graph, SimpleGraph, nv, ne, adjacency_matrix, edges, add_edge!
 using LinearAlgebra: norm, diag, triu, I
-using SparseArrays: SparseMatrixCSC, sparse
+using SparseArrays: SparseMatrixCSC, sparse, spzeros
 using CSV: read
 using Optim: optimize, Options, converged, BFGS
 using Distributions: Normal, cdf
