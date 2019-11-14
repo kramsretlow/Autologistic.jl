@@ -11,6 +11,7 @@ using Random: seed!, rand, randn
 using Distributed: @distributed, workers
 using Statistics: mean, std, quantile
 import Base: show, getindex, setindex!, summary, size, IndexStyle, length
+import Distributions: sample
 
 export
     #----- types -----
