@@ -60,7 +60,8 @@ mutable struct FullPairwise <: AbstractPairwiseParameter
 		i = 1
 		Λ = spzeros(nv(g),nv(g))
 		for e in edges(g)
-			Λ[e.src,e.dst] = Λ[e.dst,e.src] = lam[i]
+			Λ[e.src,e.dst] = lam[i]
+			Λ[e.dst,e.src] = lam[i]
 			i += 1
 		end
 		new(lam, g, m, Λ)
