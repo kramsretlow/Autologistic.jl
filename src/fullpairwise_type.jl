@@ -64,7 +64,7 @@ mutable struct FullPairwise <: AbstractPairwiseParameter
 			vv1[i] = e.src
 			vv2[i] = e.dst
 		end
-		Λ = sparse([vv1; vv2], [vv2; vv1], [λ; λ], nv(g), nv(g))
+		Λ = sparse([vv1; vv2], [vv2; vv1], [lam; lam], nv(g), nv(g))
 		new(lam, g, m, Λ)
 	end
 end
