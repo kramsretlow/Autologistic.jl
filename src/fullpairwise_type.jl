@@ -63,6 +63,7 @@ mutable struct FullPairwise <: AbstractPairwiseParameter
 		for e in edges(g)
 			vv1[i] = e.src
 			vv2[i] = e.dst
+			i += 1
 		end
 		Λ = sparse([vv1; vv2], [vv2; vv1], [lam; lam], nv(g), nv(g))
 		new(lam, g, m, Λ)
