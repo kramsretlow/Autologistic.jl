@@ -11,6 +11,7 @@ println("Running tests:")
     u1 = FullUnary(M[:,1])
     u2 = FullUnary(M)
     
+    @test sprint(io -> show(io,u1)) == "3×1 FullUnary"
     @test u1[2] == 2.2
     @test u2[2,3] == 8.8
     @test size(u1) == (3,1)
@@ -51,11 +52,13 @@ end
     @test size(u1) == size(u4) == size(u6) == (4,2)
     @test size(u2) == size(u3) == size(u5) == (4,1)
     @test u1[3,2] == u1[7] == 68.0
+    @test u1[[1 2; 2 2]] == [14.0 24.0; 24.0 24.0]
     @test getparameters(u1) == beta
 
     setparameters!(u1, [2.0, 3.0, 4.0])
 
     @test getparameters(u1) == [2.0, 3.0, 4.0]
+    @test_throws Exception LinPredUnary(X, [1,2])
 
 end
 
@@ -72,12 +75,15 @@ end
     p6 = SimplePairwise(λ, G)
     p7 = SimplePairwise(λ, G, m)
 
+    @test sprint(io -> show(io,p1)) == "10×10×3 SimplePairwise"
     @test any(i -> (i!==(n,n,m)), [size(j) for j in [p1, p2, p3, p4, p5, p6, p7]])
     @test p1[2,2,2] == p1[2,2] == λ*adjacency_matrix(G,Float64)[2,2]
 
     setparameters!(p1, [2.0])
 
     @test getparameters(p1) == [2.0]
+    @test_throws Exception SimplePairwise([1,2],G,m)
+    @test_throws Exception SimplePairwise([1],G,0)
 end
 
 @testset "FullPairwise constructors and interfaces" begin
