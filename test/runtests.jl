@@ -315,10 +315,10 @@ end
     out4 = sample(M6, 10000, method=perfect_reuse_samples, average=true)
     out5 = sample(M6, 10000, method=perfect_reuse_seeds, average=true)
     out6 = sample(M6, 10000, method=perfect_bounding_chain, average=true)
-    @test isapprox(out3, marg, atol=0.03, norm=x->norm(x,Inf))
-    @test isapprox(out4, marg, atol=0.03, norm=x->norm(x,Inf))
-    @test isapprox(out5, marg, atol=0.03, norm=x->norm(x,Inf))
-    @test isapprox(out6, marg, atol=0.03, norm=x->norm(x,Inf))
+    @test isapprox(out3, marg, atol=0.04, norm=x->norm(x,Inf))
+    @test isapprox(out4, marg, atol=0.04, norm=x->norm(x,Inf))
+    @test isapprox(out5, marg, atol=0.04, norm=x->norm(x,Inf))
+    @test isapprox(out6, marg, atol=0.04, norm=x->norm(x,Inf))
 
     tbl = fullPMF(M6).table
     checkthree(x) = all(x[1:3] .== -1.0)
@@ -382,7 +382,7 @@ end
     theboot2 = oneboot(model, [0.1,0.02])
     @test getparameters(model) == oldpar
     @test keys(theboot) == keys(theboot2) == (:sample, :estimate, :convergence)
-    @test collect(map(x -> size(x), theboot)) == [(12,), (2,), ()]
+    @test map(x -> size(x), values(theboot)) == ((12,), (2,), ())
 
     Y=[[fill(-1,4); fill(1,8)] [fill(-1,3); fill(1,9)] [fill(-1,5); fill(1,7)]]
     model2 = ALRsimple(G, ones(12,1,3), Y=Y)
