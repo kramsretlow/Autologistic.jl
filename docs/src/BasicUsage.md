@@ -48,7 +48,7 @@ discouraged.  It is preferable for safety to use the above get and set functions
 **3. Inference and exploration.**
 
 After parameter estimation, one typically wants to use the fitted model to answer
-inference questions, make plots, and the so on.
+inference questions, make plots, and so on.
 
 For small-graph cases:
 

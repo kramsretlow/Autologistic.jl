@@ -328,11 +328,7 @@ makegray(x, lo, hi) = RGB([(x-lo)/(hi-lo) for i=1:3]...)
 # Function to plot the graph with node shading determined by v.
 # Plot each node as a square and don't show the edges.
 function myplot(v, lohi=nothing)  
-    if lohi==nothing
-        colors = makegray.(v, minimum(v), maximum(v))
-    else
-        colors = makegray.(v, lohi[1], lohi[2])
-    end
+    colors = lohi==nothing ? makegray.(v, minimum(v), maximum(v)) : makegray.(v, lohi[1], lohi[2])
     return graphplot(g.G, x=df.X, y=df.Y, background_color = :lightblue,
                 marker = :square, markersize=2, markerstrokewidth=0,
                 markercolor = colors, yflip = true, linecolor=nothing)
@@ -351,7 +347,7 @@ We can see that the species primarily is found at low-altitude locations. To mod
 effect of altitude and temperature on species presence, construct an `ALRsimple` model.
 
 ```@example hydro
-# Autologistic.jl requres predictors to be a matrix of Float64
+# Autologistic.jl reqiures predictors to be a matrix of Float64
 Xmatrix = Array{Float64}([ones(2995) df.altitude df.temperature])
 
 # Create the model

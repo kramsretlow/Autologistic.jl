@@ -56,8 +56,8 @@ an AL or ALR model type.
   different codings.
 * Use functions `makebool` and `makecoded` to get to and from coded/boolean forms of the
   responses.
-* Parameters are always represented as **vectors** of `Float64`, with unary parameters first
-  and pairwise parameters at the end.  
+* Parameters are always represented as **vectors** of `Float64`. If we get all the model's 
+  parameters, they are in a single vector with unary parameters first and pairwise parameters at the end.  
 * The above is true even when the parameter only has length 1, as with the `SimplePairwise`
   type.  So you need to use square brackets, as in `setparameters!(MyPairwise, [1.0])`, when
   setting the parameters in that case.
@@ -68,8 +68,8 @@ an AL or ALR model type.
 ## Random Sampling
 
 Random sampling is particularly important for AL/ALR models, because (except for very small
-models), it isn't possible to evaluate the normalized PMF.  Monte Carlow approaches to
-Estimation and inference are common with these models.  
+models), it isn't possible to evaluate the normalized PMF.  Monte Carlo approaches to
+estimation and inference are common with these models.  
 
 The `sample` function is provided for random sampling from an AL/ALR model.  The function
 takes a `method` argument, which specifies the sampling algorithm to use. Use
