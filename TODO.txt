@@ -5,6 +5,7 @@ A list of ideas for future improvement of the package:
 [ ] Add MCML inference as described in Hughes, Haran, and Caragea (2011)
 [ ] Add Bayesian inference as described in Hughes, Haran, and Caragea (2011)? 
     (maybe not-it's impractically slow...)
+    (OR, is ABC feasible for autologistic?)
 [ ] Think about how partially-observed graphs (missing responses) could be handled.
 [ ] Implement Swendsen-Wang (either as a MC sampler or bounding chain-type perfect
     sampler) (see Huber, 2016 book).
