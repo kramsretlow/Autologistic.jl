@@ -5,6 +5,7 @@ A list of ideas for future improvement of the package:
 [ ] Add MCML inference as described in Hughes, Haran, and Caragea (2011)
 [ ] Add Bayesian inference as described in Hughes, Haran, and Caragea (2011)? 
     (maybe not-it's impractically slow...)
+    (OR, is ABC feasible for autologistic?)
 [ ] Think about how partially-observed graphs (missing responses) could be handled.
 [ ] Implement Swendsen-Wang (either as a MC sampler or bounding chain-type perfect
     sampler) (see Huber, 2016 book).
@@ -14,7 +15,10 @@ A list of ideas for future improvement of the package:
     trade-offs elsewhere due to use of generic type? Any numerical problems with existing 
     implementation that would justify the trouble of making the change?
 [ ] Consider using StatsModels.DataFrameRegressionModel approach as in GLM for supplying predictors
-    and responses as a DataFrame.
+    and responses as a DataFrame. (less invasive alternative: use Tables.jl tables for X, Y, maybe params)
 [ ] Consider changing FullPairwise to allow one parameter per edge *per observation*, for
     consistency with how FullUnary is defined. (currently every observation gets the same 
     Λ in FullPairwise)
+[ ] Add a function for MAP estimation (is this computationally feasible for all cases?)
+[ ] Add a convenience function for prediction with new X data. Would need kwargs for controlling
+    sampling and which "prediction" we want (mean, MAP, etc.)

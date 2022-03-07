@@ -19,7 +19,7 @@ values used to represent the two states is called the **coding**.
     the ``(-1,1)`` coding is strongly recommended, and is used by default.
 
 When responses are independent (conditional on the covariates), logistic regression is the
-most common model. For cases where the independence assumption might not—responses are
+most common model. For cases where the independence assumption might not hold—responses are
 correlated, even after including covariate effects—autologistic models are a useful
 option.  They revert to logistic regression models when their association parameters are
 set to zero.
@@ -27,8 +27,9 @@ set to zero.
 ## The Autologistic (AL) Model
 
 Let ``\mathbf{Y}`` be a vector of ``n`` dichotomous random variables, expressed using any
-chosen coding.  The AL model is a probability model for the joint probabiliyt mass function
-(PMF) of the random vector:
+chosen coding.  The AL model is a probability model for the joint distribution of the variables.
+Under the AL model, the joint probability mass function
+(PMF) of the random vector is:
 
 ```math
 \Pr(\mathbf{Y}=\mathbf{y}) \propto \exp\left(\mathbf{y}^T\boldsymbol{\alpha} -
@@ -41,7 +42,7 @@ The model is only specified up to a proportionality constant.  The proportionali
 evaluating it requires computing the right hand side of the above equation for ``2^n``
 possible configurations of the dichotomous responses.
 
-Inside the exponential of the PMF there are three terms:
+Inside the exponential above, there are three terms:
 
 * The first term is the **unary** term, and ``\mathbf{\alpha}`` is called the
   **unary parameter**.  It summarizes each variable's endogenous tendency to take the "high"
@@ -59,7 +60,7 @@ Inside the exponential of the PMF there are three terms:
 !!! note "Important Fact 2"
 
     Just as with coding, changing an un-centered model to a centered one is not a minor
-    change.  It produces a different probability model entirely.  Again, there is evidence
+    change.  It produces a different probability model entirely.  There is evidence
     that [centering has drawbacks](https://doi.org/10.3389/fams.2017.00024), so the
     uncentered model is used by default.
 
@@ -102,9 +103,9 @@ a vector with its own matrix of predictor values.
 
 ## The Symmetric Model and Logistic Regression
 
-Autologistic models can be expressed in a conditional log odds form.  If we let ``\pi_i`` be
+Autologistic models can be expressed in a conditional log odds form.  Let ``\pi_i`` be
 the probability that variable ``i`` takes the high level, conditional on the values of all
-of its neighbors, the model holds that
+of its neighbors. Then the AL model implies
 
 ```math
 \text{logit}(\pi_i) = (h-\ell)(\alpha_i + \sum_{j\sim i}\lambda_{ij}(y_j - \mu_j)),

@@ -305,14 +305,18 @@ function makespatialgraph(coords::C, δ::Real) where C<:SpatialCoordinates
 end
 
 
-# Open data sets 
+"""
+    `Autologistic.datasets(name::String)`
+
+Open data sets for demonstrations of Autologistic regression. Returns the data set as a `DataFrame`.
+"""
 function datasets(name::String)
     if name=="pigmentosa"
         dfpath = joinpath(dirname(pathof(Autologistic)), "..", "assets", "pigmentosa.csv")
-        return read(dfpath)
+        return read(dfpath, DataFrame)
     elseif name=="hydrocotyle"
         dfpath = joinpath(dirname(pathof(Autologistic)), "..", "assets", "hydrocotyle.csv")
-        return read(dfpath)
+        return read(dfpath, DataFrame)
     else
         error("Name is not one of the available options.")
     end
