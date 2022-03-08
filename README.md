@@ -29,8 +29,8 @@ Much more detail is provided in the [documentation](https://kramsretlow.github.i
 
 ```julia
 # To get a feeling for the package facilities.
-# The package uses LightGraphs.jl for graphs.
-using Autologistic, LightGraphs
+# The package uses Graphs.jl for graphs.
+using Autologistic, Graphs
 g = Graph(100, 400)            #-Create a random graph (100 vertices, 400 edges)
 X = [ones(100) rand(100,3)]    #-A matrix of predictors.
 Y = rand([0, 1], 100)          #-A vector of binary responses.

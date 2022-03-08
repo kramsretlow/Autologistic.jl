@@ -1,5 +1,5 @@
 using Test
-using LightGraphs, LinearAlgebra
+using Graphs, LinearAlgebra
 using Autologistic
 
 println("Running tests:")

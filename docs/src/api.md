@@ -2,7 +2,7 @@
 
 ```@meta
 CurrentModule = Autologistic
-DocTestSetup = :(using Autologistic, LightGraphs)
+DocTestSetup = :(using Autologistic, Graphs)
 ```
 
 ## Index

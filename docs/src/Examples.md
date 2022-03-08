@@ -87,7 +87,7 @@ example, let each edge's pairwise parameter be equal to the average distance of 
 vertices from the origin.
 
 ```@example Ising
-using LinearAlgebra, LightGraphs
+using LinearAlgebra, Graphs
 λ = [norm((G.locs[e.src] .+ G.locs[e.dst])./2) for e in edges(G.G)]
 M2 = ALfull(G.G, α, λ)
 ```
@@ -162,7 +162,7 @@ is an opthalmology data set.  The data comes from 444 patients that had both eye
 examined.  The data can be loaded with `Autologistic.datasets`:
 
 ```@repl pigmentosa
-using Autologistic, DataFrames, LightGraphs
+using Autologistic, DataFrames, Graphs
 df = Autologistic.datasets("pigmentosa");
 first(df, 6)
 describe(df)
@@ -291,7 +291,7 @@ example.  The response in this data set is the presence/absence of a certain pla
 in a grid of 2995 regions covering Germany. The data set is included in Autologistic.jl:
 
 ```@repl hydro
-using Autologistic, DataFrames, LightGraphs
+using Autologistic, DataFrames, Graphs
 df = Autologistic.datasets("hydrocotyle")
 ```
 
@@ -309,14 +309,14 @@ nothing # hide
 ```
 
 `makespatialgraph` creates the graph by adding edges between any vertices with Euclidean
-distance smaller than a cutoff distance (Lightgraphs.jl has a `euclidean_graph` function
+distance smaller than a cutoff distance (Graphs.jl has a `euclidean_graph` function
 that does the same thing).  For these data arranged on a grid, a threshold
 of 1.0 will make a 4-nearest-neighbors lattice. Letting the threshold be `sqrt(2)` would
 make an 8-nearest-neighbors lattice.
 
 We can visualize the graph, the responses, and the predictors using
 [GraphRecipes.jl](https://github.com/JuliaPlots/GraphRecipes.jl) (there are
-[several other](http://juliagraphs.github.io/LightGraphs.jl/latest/plotting.html)
+[several other](https://juliagraphs.org/Graphs.jl/stable/plotting/)
 options for plotting graphs as well).
 
 ```@example hydro

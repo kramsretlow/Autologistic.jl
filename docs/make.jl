@@ -1,5 +1,5 @@
 using Autologistic
-using LightGraphs, DataFrames, CSV, Plots
+using Graphs, DataFrames, CSV, Plots
 using Documenter
 makedocs(
     sitename = "Autologistic.jl",

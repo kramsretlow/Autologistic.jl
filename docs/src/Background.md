@@ -78,7 +78,7 @@ The autogologistic model is a
 [probabilistic graphical model](https://en.wikipedia.org/wiki/Graphical_model), more
 specifically a [Markov random field](https://en.wikipedia.org/wiki/Markov_random_field),
 meaning it has an undirected graph that encodes conditional probability relationships among
-the variables. `Autologistic.jl` uses `LightGraphs.jl` to represent the graph.
+the variables. `Autologistic.jl` uses `Graphs.jl` to represent the graph.
 
 ## The Autologistic Regression (ALR) Model
 

@@ -61,7 +61,7 @@ an AL or ALR model type.
 * The above is true even when the parameter only has length 1, as with the `SimplePairwise`
   type.  So you need to use square brackets, as in `setparameters!(MyPairwise, [1.0])`, when
   setting the parameters in that case.
-* The package uses [LightGraphs.jl](https://github.com/JuliaGraphs/LightGraphs.jl) for
+* The package uses [Graphs.jl](https://github.com/JuliaGraphs/Graphs.jl) for
   representing graphs, and [Optim.jl](https://github.com/JuliaNLSolvers/Optim.jl) for
   optimization.
 

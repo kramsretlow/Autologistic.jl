@@ -37,7 +37,7 @@ An autologistic regression model with "simple smoothing":  the unary parameter i
 
 # Examples
 ```jldoctest
-julia> using LightGraphs
+julia> using Graphs
 julia> X = rand(10,3);            #-predictors
 julia> Y = rand([-2, 3], 10);     #-responses
 julia> g = Graph(10,20);          #-graph
