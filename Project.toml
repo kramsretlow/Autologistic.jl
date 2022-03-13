@@ -1,6 +1,6 @@
 name = "Autologistic"
 uuid = "4d03fd4d-39a1-545a-9bf0-a2e993faffdf"
-version = "0.5.0"
+version = "0.5.1"
 
 [deps]
 CSV = "336ed68f-0bac-5ca0-87d4-7b16caf5d00b"

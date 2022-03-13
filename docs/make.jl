@@ -1,6 +1,6 @@
+using Documenter
 using Autologistic
 using Graphs, DataFrames, CSV, Plots
-using Documenter
 makedocs(
     sitename = "Autologistic.jl",
     modules = [Autologistic],

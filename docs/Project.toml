@@ -1,7 +1,7 @@
 [deps]
 Documenter = "e30172f5-a6a5-5a46-863b-614d45cd2de4"
-Autologistic = "05505b62-b0bd-11e8-1cec-1f3e16cbc293"
-Graphs = "093fc24a-ae57-5d10-9952-331d41423f4d"
+Autologistic = "4d03fd4d-39a1-545a-9bf0-a2e993faffdf"
+Graphs = "86223c79-3864-5bf0-83f7-82e725a168b6"
 LinearAlgebra = "37e2e46d-f89d-539d-b4ee-838fcccc9c8e"
 Statistics = "10745b16-79ce-11e8-11f9-7d13ad32a3b2"
 DataFrames = "a93c6f00-e57d-5684-b7b6-d8193f3e46c0"

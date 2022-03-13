@@ -27,6 +27,10 @@ the association could be added.
 
 Much more detail is provided in the [documentation](https://kramsretlow.github.io/Autologistic.jl/stable).
 
+**NOTE:** As of `v0.5.0`, `Autologistic.jl` uses `Graphs.jl` to represent its graphs. Prior versions
+used the predecessor package `LightGraphs.jl`. You may need to update earlier code if you were supplying 
+graphs into autologistic types.
+
 ```julia
 # To get a feeling for the package facilities.
 # The package uses Graphs.jl for graphs.

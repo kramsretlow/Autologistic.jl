@@ -132,7 +132,7 @@ savefig("marginal-probs.png")
 
 The figure `marginal-probs.png` looks like this:
 
-![marginal-probs.png](../assets/marginal-probs.png)
+![marginal-probs.png](assets/marginal-probs.png)
 
 The differences between the two marginal distributions are due to the different association
 structures, because the unary parts of the two models are the same.  The `ALfull` model has
@@ -152,7 +152,7 @@ end
 gif(anim, "ising_gif.gif", fps=10)
 ```
 
-![ising_gif.gif](../assets/ising_gif.gif)
+![ising_gif.gif](assets/ising_gif.gif)
 
 ## Clustered Binary Data (Small ``n``)
 
@@ -561,7 +561,7 @@ plot(myplot(centered_marg, (0,1)), myplot(symmetric_marg, (0,1)),
      title=["Centered Model" "Symmetric Model"])
 ```
 
-![noassociation.png](../assets/noassociation.png)
+![noassociation.png](assets/noassociation.png)
 
 If we remove the spatial association term, the centered model predicts a very low
 probability of seeing the plant anywhere--including in locations with low elevation, where
